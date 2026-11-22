@@ -321,6 +321,179 @@ public sealed class Round12UnionPayloadPatternTests
         Assert.True(stage0.Success, string.Join("\n", stage0.Errors));
     }
 
+
+    public static IEnumerable<object[]> NoneTypeDesignations()
+    {
+        yield return ["b18-nonetype-designation", """
+            Option<int> o = None;
+            if (o is NoneType n) WriteLine(Use(n));
+            static int Use(NoneType n) => 7;
+            """, "7\n"];
+        yield return ["t06-nonetype-designation-used", """
+            Option<int> o = None;
+            if (o is NoneType n) WriteLine(Use(n));
+            WriteLine(o switch { NoneType m => Use(m), Some<int> => 2 });
+            static int Use(NoneType n) => 7;
+            """, "7\n7\n"];
+        yield return ["n82-01-is-designation-used", """
+            Option<int> o = None;
+            if (o is NoneType n) WriteLine(Use(n));
+            WriteLine(o is NoneType m && Use(m) == 7);
+            static int Use(NoneType n) => 7;
+            """, "7\nTrue\n"];
+        yield return ["n82-02-switch-expr-arms", """
+            Option<int> o = None;
+            WriteLine(o switch { NoneType m => Use(m), Some<int> => 2 });
+            WriteLine(o switch { Some<int>(var x) => x, NoneType m => Use(m) + 1 });
+            WriteLine(o switch { NoneType m when Use(m) > 9 => 1, NoneType m2 => Use(m2) + 2, _ => 0 });
+            static int Use(NoneType n) => 7;
+            """, "7\n8\n9\n"];
+        yield return ["n82-03-switch-stmt-arms", """
+            Option<int> o = None;
+            switch (o)
+            {
+                case Some<int>(var x): WriteLine(x); break;
+                case NoneType n: WriteLine(Use(n)); break;
+            }
+            switch (o)
+            {
+                case NoneType n when Use(n) == 7: WriteLine(1); break;
+                default: WriteLine(2); break;
+            }
+            static int Use(NoneType n) => 7;
+            """, "7\n1\n"];
+        yield return ["n82-04-generic-and-views", """
+            WriteLine(G<int>(None));
+            WriteLine(G<int>(Some(1)));
+            Option<Box> o = None;
+            WriteLine(o.AsRef() is NoneType r ? Use(r) : 0);
+            WriteLine(o.AsMut() switch { NoneType q => Use(q), _ => 0 });
+            static int G<T>(Option<T> o) => o is NoneType n ? Use(n) : 1;
+            static int Use(NoneType n) => 7;
+            public sealed class Box(int v) { public int V = v; }
+            """, "7\n1\n7\n7\n"];
+        yield return ["n82-05-rvalue-and-linear", """
+            WriteLine(Mk() is NoneType n ? Use(n) : 0);
+            WriteLine(MkRes() switch { NoneType m => Use(m), Some<Res>(var r) => Close(r) });
+            static Option<int> Mk() => None;
+            static Option<Res> MkRes() => None;
+            static int Use(NoneType n) => 7;
+            static int Close(Res r) { using var x = r; return 1; }
+            public sealed class Res : IDisposable { public void Dispose() { } }
+            """, "7\n7\n"];
+        yield return ["n82-06-designation-copied-and-returned", """
+            Option<int> o = None;
+            if (o is NoneType n)
+            {
+                NoneType k = n;
+                Option<int> back = k;
+                WriteLine(back.IsSome);
+                WriteLine(Keep(n).IsSome);
+            }
+            static Option<int> Keep(NoneType n) => n;
+            """, "False\nFalse\n"];
+        yield return ["n82-07-nested-designation", """
+            Option<Option<int>> o = Some<Option<int>>(None);
+            if (o is Some<Option<int>>(NoneType n)) WriteLine(Use(n));
+            WriteLine(o switch { Some<Option<int>>(NoneType m) => Use(m), _ => 0 });
+            Result<Option<int>, int> r = Ok<Option<int>>(None);
+            WriteLine(r is Ok<Option<int>>(NoneType k) ? Use(k) : 0);
+            static int Use(NoneType n) => 7;
+            """, "7\n7\n7\n"];
+        yield return ["n25-nonetype-designation-unused", """
+            Option<int> o = None;
+            if (o is NoneType n) WriteLine(1);
+            WriteLine(o switch { NoneType n2 => 1, Some<int> => 2 });
+            """, "1\n1\n"];
+        yield return ["h01-is-nonetype-value-position", """
+            Option<int> o = None;
+            bool b = o is NoneType n;
+            WriteLine(b);
+            Option<int> p = Some(2);
+            bool c = p is NoneType m;
+            WriteLine(c);
+            """, "True\nFalse\n"];
+    }
+
+    [Theory]
+    [MemberData(nameof(NoneTypeDesignations))]
+    public async Task NoneTypeDesignation_HoldsNoneWhenItsArmMatches(string shape, string source, string expected)
+    {
+        var result = await Round12RuleWitness.AcceptAsync(source, expected);
+        Assert.True(result.Managed.Exit == 0, $"{shape}: managed exit {result.Managed.Exit}");
+    }
+
+    public static IEnumerable<object[]> MultiFilePrograms()
+    {
+        yield return ["mf01-c24-each-file-once", """
+            Option<int> o = Some(7);
+            WriteLine(o is Some<int> /*@*/{ } ? 1 : 0);
+            WriteLine(o is NoneType { } ? 1 : 0);
+            WriteLine(B.F(o) ? 1 : 0);
+            """, """
+            static class B
+            {
+                public static bool F(Option<int> o) => o is Some<int>(7) /*@*/{ } || o is NoneType { };
+                public static bool G(Option<int> o) => o is Some<int> { Value: 1 };
+            }
+            """, """
+            static class C
+            {
+                public static int H(Result<int, int> r) => r switch { Ok<int> /*@*/{ Value: 3 } => 1, _ => 0 };
+            }
+            """, "B.cs:VIB000|C.cs:VIB000|Program.cs:VIB000"];
+        yield return ["mf02-c24-does-not-hide-other-file", """
+            Option<int> o = Some(7);
+            WriteLine(o is Some<int> /*@*/{ } ? 1 : 0);
+            WriteLine(B.F());
+            """, """
+            static class B
+            {
+                public static int F() { Vec<int> v = [1]; Vec<int> w = v; return v.Count + w.Count; }
+            }
+            """, "", "B.cs:VIB001|Program.cs:VIB000"];
+        yield return ["mf05-three-files-three-rules", """
+            Option<int> o = Some(7);
+            WriteLine(o is Some<int>(7) /*@*/{ } ? 1 : 0);
+            WriteLine(B.F());
+            WriteLine(C.G(o) ? 1 : 0);
+            """, """
+            static class B
+            {
+                public static int F() { Vec<int> v = [1]; Option<Vec<int>> p = Some(v); return p switch { Some<Vec<int>>(var w) => Take(w), NoneType => 0 }; }
+                static int Take(Vec<int> v) => v.Count;
+            }
+            """, """
+            static class C
+            {
+                public static bool G(Option<int> o) => o is Some<int>(> 3);
+            }
+            """, "B.cs:VIB005|C.cs:VIB000|Program.cs:VIB000"];
+    }
+
+    [Theory]
+    [MemberData(nameof(MultiFilePrograms))]
+    public async Task C24_EachFileKeepsItsOwnDiagnostics(string shape, string a, string b, string c, string expected)
+    {
+        await WithCompilationAsync(a, async compilation =>
+        {
+            var options = (CSharpParseOptions)compilation.SyntaxTrees.First(tree => Path.GetFileName(tree.FilePath) == "Program.cs").Options;
+            compilation = compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(b, options, "B.cs"));
+            if (c.Length > 0)
+            {
+                compilation = compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(c, options, "C.cs"));
+            }
+            AssertNoCSharpWarnings(compilation);
+            var stage0 = VibraniumFrontend.CompileAndCheck(compilation).Diagnostics;
+            var analyzer = await AnalyzeAsync(compilation);
+            string actual = string.Join("|", stage0.Select(d => $"{Path.GetFileName(d.Span.FilePath)}:{d.Id}").Order(StringComparer.Ordinal));
+            Assert.True(actual == expected, $"{shape}: expected {expected}, got {actual}");
+            var stage0Spans = stage0.Select(d => (File: Path.GetFileName(d.Span.FilePath), d.Id, d.Span.Start)).OrderBy(x => x.File, StringComparer.Ordinal).ThenBy(x => x.Start).ThenBy(x => x.Id, StringComparer.Ordinal).ToArray();
+            var analyzerSpans = analyzer.Select(d => (File: Path.GetFileName(d.Location.SourceTree?.FilePath) ?? "", d.Id, d.Location.SourceSpan.Start)).OrderBy(x => x.File, StringComparer.Ordinal).ThenBy(x => x.Start).ThenBy(x => x.Id, StringComparer.Ordinal).ToArray();
+            Assert.Equal(stage0Spans, analyzerSpans);
+        });
+    }
+
     private static void AssertNoCSharpWarnings(Compilation compilation)
     {
         var problems = compilation.GetDiagnostics().Where(d => d.Severity >= DiagnosticSeverity.Warning);

@@ -63,7 +63,8 @@ internal sealed partial class SyntaxAndSymbolGatekeeper
         SyntaxKind.AsExpression or SyntaxKind.ListPattern or SyntaxKind.SlicePattern or SyntaxKind.LabeledStatement or
         ExperimentalUnsafeExpression or ExperimentalSafeKeyword or SyntaxKind.SpreadElement or
         SyntaxKind.OmittedTypeArgument or SyntaxKind.AnonymousObjectCreationExpression or
-        SyntaxKind.TypeOfExpression or SyntaxKind.ErrorDirectiveTrivia or SyntaxKind.ReferenceDirectiveTrivia or
+        SyntaxKind.TypeOfExpression or SyntaxKind.TupleType or SyntaxKind.TupleExpression or SyntaxKind.WithElement or
+        SyntaxKind.ErrorDirectiveTrivia or SyntaxKind.ReferenceDirectiveTrivia or
         SyntaxKind.LoadDirectiveTrivia or SyntaxKind.ShebangDirectiveTrivia or SyntaxKind.IgnoredDirectiveTrivia => SyntaxKindSupport.Unsupported,
 
         // Diagnosed by a token, containing syntax, a declaration cut (including init), or a specific rule (e.g. VIB008).
@@ -91,7 +92,7 @@ internal sealed partial class SyntaxAndSymbolGatekeeper
         SyntaxKind.LockStatement or SyntaxKind.ExtensionBlockDeclaration or SyntaxKind.WithExpression or
         SyntaxKind.SizeOfExpression or SyntaxKind.InterpolatedStringExpression or
         SyntaxKind.ImplicitStackAllocArrayCreationExpression or SyntaxKind.ExplicitInterfaceSpecifier or
-        SyntaxKind.TupleType or SyntaxKind.TupleExpression or SyntaxKind.TupleElement or
+        SyntaxKind.TupleElement or
         SyntaxKind.ParenthesizedVariableDesignation or SyntaxKind.ForEachVariableStatement or
         SyntaxKind.CollectionInitializerExpression or SyntaxKind.ObjectInitializerExpression or
         SyntaxKind.ComplexElementInitializerExpression or SyntaxKind.ImplicitElementAccess or
@@ -131,7 +132,7 @@ internal sealed partial class SyntaxAndSymbolGatekeeper
         SyntaxKind.FunctionPointerCallingConvention or SyntaxKind.WithInitializerExpression or
         SyntaxKind.DefaultConstraint or SyntaxKind.PrimaryConstructorBaseType or
         SyntaxKind.FunctionPointerUnmanagedCallingConventionList or
-        SyntaxKind.FunctionPointerUnmanagedCallingConvention or SyntaxKind.WithElement or
+        SyntaxKind.FunctionPointerUnmanagedCallingConvention or
         SyntaxKind.ExternAliasDirective => SyntaxKindSupport.CheckedRestriction,
 
         // Punctuation and lexical forms used by admitted grammar. Syntax and symbol checks below still apply.

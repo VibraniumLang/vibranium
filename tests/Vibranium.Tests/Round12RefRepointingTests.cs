@@ -289,6 +289,14 @@ public sealed class Round12RefRepointingTests
             WriteLine(sink);
             static ref int Pick(int tag, Span<int> data, int i) => ref data[(i + tag) & 1];
             """, "VIB003"];
+        yield return ["adv-n53-intermediate-loan-index", """
+            Span<int> t = [0, 4];
+            int dummy = 0;
+            ref int sink = ref dummy;
+            sink = ref t[Id(sink = ref t[0])];
+            WriteLine(sink);
+            static int Id(int x) => x;
+            """, "VIB003"];
     }
 
     [Theory]

@@ -218,6 +218,11 @@ public abstract record MirOperand
     {
         // A move implementing this switch's own pattern, not a move performed by a guard.
         public int? SelectingSwitchMatchBorrowId { get; init; }
+        // D1-W, analysis only. A call that reads its receiver after its arguments moves it out before them:
+        // that move holds the moved local (HoldsMovedPlace) until the call's own read of the moved value,
+        // which names the local to release (ReleasesMovedPlace).
+        public bool HoldsMovedPlace { get; init; }
+        public int? ReleasesMovedPlace { get; init; }
     }
     public sealed record Const(MirConstant Value, MirType Type, VibraniumSpan Span) : MirOperand;
 }

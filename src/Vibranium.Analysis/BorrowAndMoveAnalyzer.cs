@@ -74,15 +74,19 @@ public static class BorrowAndMoveAnalyzer
         Moved,
     }
 
-    private readonly struct LocalInitState(LocalInitKind kind, string? initFieldsKey = null) : IEquatable<LocalInitState>
+    private readonly struct LocalInitState(LocalInitKind kind, string? initFieldsKey = null, bool isHeld = false) : IEquatable<LocalInitState>
     {
         public LocalInitKind Kind { get; } = kind;
         // Sorted comma-joined initialized field names when Kind == PartialStruct
         public string? InitFieldsKey { get; } = initFieldsKey;
+        // D1-W: moved by a call that has not read the moved value yet, and not used since. Meet keeps it
+        // only when every path holds: a use on any path leaves the plain Moved state (VIB001 only).
+        public bool IsHeld { get; } = isHeld;
 
         public static readonly LocalInitState Uninitialized = new(LocalInitKind.Uninitialized);
         public static readonly LocalInitState Initialized = new(LocalInitKind.Initialized);
         public static readonly LocalInitState Moved = new(LocalInitKind.Moved);
+        public static readonly LocalInitState MovedHeld = new(LocalInitKind.Moved, isHeld: true);
 
         public bool IsFieldInitialized(string fieldName)
         {
@@ -143,11 +147,11 @@ public static class BorrowAndMoveAnalyzer
         }
 
         public bool Equals(LocalInitState other) =>
-            Kind == other.Kind && string.Equals(InitFieldsKey, other.InitFieldsKey, StringComparison.Ordinal);
+            Kind == other.Kind && IsHeld == other.IsHeld && string.Equals(InitFieldsKey, other.InitFieldsKey, StringComparison.Ordinal);
 
         public override bool Equals(object? obj) => obj is LocalInitState s && Equals(s);
 
-        public override int GetHashCode() => ((int)Kind * 397) ^ (InitFieldsKey?.GetHashCode() ?? 0);
+        public override int GetHashCode() => ((int)Kind * 397) ^ (IsHeld ? 1 : 0) ^ (InitFieldsKey?.GetHashCode() ?? 0);
     }
 
     private sealed class MoveFlowState : IEquatable<MoveFlowState>
@@ -744,6 +748,15 @@ public static class BorrowAndMoveAnalyzer
             _activationSpans.TryGetValue(carrier, out var spans) && spans.Any(span =>
                 span.FilePath == operandSpan.FilePath && span.Start <= operandSpan.Start &&
                 operandSpan.Start + operandSpan.Length <= span.Start + span.Length);
+
+        // N68: a call operand moves or reads its own storage. Only a place reached through a borrow also
+        // touches what that borrow names, so only then is a sibling operand's loan on the referent a conflict.
+        private List<PlacePath> CallOperandPaths(MirPlace place, List<PlacePath> effectivePaths) =>
+            place.Projections.Count > 0 && place.Projections[0] is MirProjection.Deref ||
+            place.LocalId >= 0 && place.LocalId < _localCount &&
+            (_isBorrowedPatternBinding[place.LocalId] || _fn.Locals[place.LocalId].PassKind != MirPassKind.ByValue)
+                ? effectivePaths
+                : new List<PlacePath> { PlacePath.FromPlace(place) };
 
         private void ComputeReachableBlocks()
         {
@@ -1814,7 +1827,13 @@ public static class BorrowAndMoveAnalyzer
                 return;
             }
 
+            if (cm.ReleasesMovedPlace is int held && state.Init[held].IsHeld)
+            {
+                // D1-W: here the call reads the value it moved out of that local, which ends the hold.
+                state.Init[held] = LocalInitState.Moved;
+            }
             var local = _fn.Locals[lid];
+            bool wasInitialized = state.Init[lid].Kind == LocalInitKind.Initialized;
             CheckPlaceIsInitialized(cm.Place, state, cm.Span, emitDiagnostics);
 
             if (forceCopy || _module.IsCopy(cm.Type))
@@ -1859,7 +1878,8 @@ public static class BorrowAndMoveAnalyzer
                 return;
             }
 
-            state.Init[lid] = LocalInitState.Moved;
+            // D1-W: a receiver that was already moved is VIB001 at this move and is not held.
+            state.Init[lid] = cm.HoldsMovedPlace && wasInitialized ? LocalInitState.MovedHeld : LocalInitState.Moved;
             state.MayBeLiveLinear[lid] = false;
         }
 
@@ -2029,6 +2049,11 @@ public static class BorrowAndMoveAnalyzer
         private void CheckPlaceIsInitialized(MirPlace place, MoveFlowState state, VibraniumSpan span, bool emitDiagnostics)
         {
             place = ResolveInitializationSnapshot(place);
+            if (place.LocalId >= 0 && place.LocalId < _localCount && state.Init[place.LocalId].IsHeld)
+            {
+                // D1-W, "moved wins": an argument that uses the moved receiver is VIB001 only, even if it then writes it.
+                state.Init[place.LocalId] = LocalInitState.Moved;
+            }
             if (!emitDiagnostics || place.LocalId < 0 || place.LocalId >= _localCount)
             {
                 return;
@@ -2075,6 +2100,12 @@ public static class BorrowAndMoveAnalyzer
             if (lid < 0 || lid >= _localCount)
             {
                 return;
+            }
+
+            if (emitDiagnostics && state.Init[lid].IsHeld)
+            {
+                Emit(VibraniumDiagnosticIds.ConflictWithActiveBorrow,
+                    $"Cannot write '{_fn.Locals[lid].Name}' while the call that moved it as its receiver evaluates its arguments.", span);
             }
 
             if (target.Projections.Count == 0)
@@ -3555,20 +3586,22 @@ public static class BorrowAndMoveAnalyzer
             if (!emitDiagnostics) return;
 
             var movedPaths = ExpandEffectivePaths(movedPlace, prov);
+            var operandPaths = CallOperandPaths(movedPlace, movedPaths);
             var ancestors = CollectAncestorCarriers(movedPlace, prov);
             int ordinaryConflict = -1;
             bool cursorConflict = false;
             foreach (int liveId in liveAfter)
             {
                 if (liveId == selectingSwitchMatchBorrowId || IsBorrowAncestor(liveId, ancestors)) continue;
+                bool retained = IsRetainedCallOperand(liveId, span);
                 foreach (var loan in prov.GetLoans(liveId))
                 {
                     bool cursor = movedPlace.Projections.Count == 0 && loan.Kind == LoanKind.StepCursor &&
                         loan.CursorOrStackLocalId == movedPlace.LocalId;
                     bool overlaps = cursor || loan.Kind == LoanKind.PlaceBorrow && loan.Path is not null &&
-                        movedPaths.Any(loan.Path.Overlaps);
+                        (retained ? operandPaths : movedPaths).Any(loan.Path.Overlaps);
                     if (!overlaps) continue;
-                    if (IsRetainedCallOperand(liveId, span))
+                    if (retained)
                     {
                         _rejectedActivationMoves.Add((movedPlace, span));
                         Emit(VibraniumDiagnosticIds.ConflictWithActiveBorrow,
@@ -3628,6 +3661,7 @@ public static class BorrowAndMoveAnalyzer
             if (!emitDiagnostics) return;
 
             var readPaths = ExpandEffectivePaths(readPlace, prov);
+            var operandPaths = CallOperandPaths(readPlace, readPaths);
             var ancestorCarriers = CollectAncestorCarriers(readPlace, prov);
             foreach (int liveId in liveAfter)
             {
@@ -3636,11 +3670,12 @@ public static class BorrowAndMoveAnalyzer
                     // Reading through `r` (or a derived carrier chain) does not conflict with its own ancestor loans
                     continue;
                 }
+                var checkedPaths = IsRetainedCallOperand(liveId, span) ? operandPaths : readPaths;
                 foreach (var loan in prov.GetLoans(liveId))
                 {
                     if (loan.Kind == LoanKind.PlaceBorrow && loan.IsActiveExclusive && loan.Path is not null)
                     {
-                        foreach (var rp in readPaths)
+                        foreach (var rp in checkedPaths)
                         {
                             if (loan.Path.Overlaps(rp))
                             {

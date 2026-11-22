@@ -188,7 +188,11 @@ internal sealed partial class CfgMirLowerer
                 _currentOrderedBlockIds.Add(mergeBlk);
 
                 var matchStmts = new List<MirStatement>();
-                if (wrapperLocalSym is not null)
+                if (wrapperLocalSym is not null && !isSomeArm)
+                {
+                    matchStmts.Add(NoneDesignationAssign(wrapperLocalSym, span, true));
+                }
+                else if (wrapperLocalSym is not null)
                 {
                     int wId = GetOrCreateLocalId(wrapperLocalSym, isPatternBindingOverride: true);
                     matchStmts.Add(new MirStatement.Assign(
@@ -588,6 +592,10 @@ internal sealed partial class CfgMirLowerer
         keyword = default;
         return false;
     }
+
+    // C25 rejects this ref reassignment and its value is not lowered, so a capture inside it binds nothing.
+    private static bool IsInConditionalRefReassignment(IOperation op) =>
+        op.Syntax.AncestorsAndSelf().OfType<AssignmentExpressionSyntax>().Any(a => TryGetConditionalRefReassignmentKeyword(a, out _));
 
     internal static void CheckConditionalRefReassignments(SyntaxNode root, List<VibraniumDiagnostic> diagnostics)
     {
@@ -2716,6 +2724,7 @@ internal sealed partial class CfgMirLowerer
         {
             var resSpanType = new MirType.SpanType(MapMirType(SubstituteType(spanElem)), spanRo);
             var spanPlace = LowerPlaceOrMaterializeTemp(inv.Instance, resSpanType, isMutableAccess: false, span);
+            spanPlace = ReserveReceiverPlaceBeforeArgs(spanPlace, resSpanType, isMutable: !spanRo, isTwoPhaseBorrow: !spanRo, span);
             var startOp = LowerOperand(inv.Arguments[0].Value, MirType.Int32);
 
             MirOperand lenOp;
@@ -3284,8 +3293,9 @@ internal sealed partial class CfgMirLowerer
                     }
                     case "Expect":
                     {
-                        var optOp = LowerOperand(inv.Instance, optT);
+                        var optRead = ReserveReceiverOperandBeforeArgs(inv.Instance, optT, span);
                         var msgOp = LowerOperand(inv.Arguments[0].Value, MirType.StringLiteral);
+                        var optOp = optRead();
                         var dest = destPlace ?? MirPlace.Local(CreateTempLocal(innerT, span));
                         _currentStmts.Add(new MirStatement.Intrinsic(
                             MirIntrinsicKind.OptionExpect, dest, null, false, new[] { optOp, msgOp }, Array.Empty<MirPlace>(), innerT, span));
@@ -3298,8 +3308,9 @@ internal sealed partial class CfgMirLowerer
                         {
                             EmitDiag(VibraniumDiagnosticIds.LinearResourceViolation, "'Option.UnwrapOr' cannot be used on linear IDisposable resources.", span);
                         }
-                        var optOp = LowerOperand(inv.Instance, optT);
+                        var optRead = ReserveReceiverOperandBeforeArgs(inv.Instance, optT, span);
                         var fbOp = LowerOperand(inv.Arguments[0].Value, innerT);
+                        var optOp = optRead();
                         var dest = destPlace ?? MirPlace.Local(CreateTempLocal(innerT, span));
                         _currentStmts.Add(new MirStatement.Intrinsic(
                             MirIntrinsicKind.OptionUnwrapOr, dest, null, false, new[] { optOp, fbOp }, Array.Empty<MirPlace>(), innerT, span));
@@ -3428,8 +3439,9 @@ internal sealed partial class CfgMirLowerer
                     }
                     case "Expect":
                     {
-                        var resOp = LowerOperand(inv.Instance, resT);
+                        var resRead = ReserveReceiverOperandBeforeArgs(inv.Instance, resT, span);
                         var msgOp = LowerOperand(inv.Arguments[0].Value, MirType.StringLiteral);
+                        var resOp = resRead();
                         var dest = destPlace ?? MirPlace.Local(CreateTempLocal(okT, span));
                         _currentStmts.Add(new MirStatement.Intrinsic(
                             MirIntrinsicKind.ResultExpect, dest, null, false, new[] { resOp, msgOp }, Array.Empty<MirPlace>(), okT, span));
@@ -3442,8 +3454,9 @@ internal sealed partial class CfgMirLowerer
                         {
                             EmitDiag(VibraniumDiagnosticIds.LinearResourceViolation, "'Result.UnwrapOr' cannot be used on linear IDisposable resources.", span);
                         }
-                        var resOp = LowerOperand(inv.Instance, resT);
+                        var resRead = ReserveReceiverOperandBeforeArgs(inv.Instance, resT, span);
                         var fbOp = LowerOperand(inv.Arguments[0].Value, okT);
+                        var resOp = resRead();
                         var dest = destPlace ?? MirPlace.Local(CreateTempLocal(okT, span));
                         _currentStmts.Add(new MirStatement.Intrinsic(
                             MirIntrinsicKind.ResultUnwrapOr, dest, null, false, new[] { resOp, fbOp }, Array.Empty<MirPlace>(), okT, span));
@@ -4083,6 +4096,7 @@ internal sealed partial class CfgMirLowerer
             if (prop.Property.IsIndexer && prop.Arguments.Length == 1)
             {
                 var sPlace = LowerPlaceOrMaterializeTemp(prop.Instance, spanMirT, isMutableAccess: false, span);
+                sPlace = ReserveReceiverPlaceBeforeArgs(sPlace, spanMirT, isMutable: false, isTwoPhaseBorrow: false, span);
                 var idxOp = LowerOperand(prop.Arguments[0].Value, MirType.Int32);
                 int refTmp = CreateTempRefLocal(elemT, isMutable: false, span);
                 _currentStmts.Add(new MirStatement.Intrinsic(
@@ -4155,10 +4169,8 @@ internal sealed partial class CfgMirLowerer
                 var recvPlace = isVec
                     ? LowerPlace(implIdx.Instance, isMutableAccess: true, isTwoPhaseBorrow: true)
                     : LowerPlaceOrMaterializeTemp(implIdx.Instance, recvMirT, isMutableAccess: false, span);
-                if (isVec)
-                {
-                    recvPlace = ReserveReceiverPlaceBeforeArgs(recvPlace, recvMirT, isMutable: true, isTwoPhaseBorrow: true, span);
-                }
+                bool mutableView = isVec || recvMirT is MirType.SpanType { IsReadOnly: false };
+                recvPlace = ReserveReceiverPlaceBeforeArgs(recvPlace, recvMirT, isMutable: mutableView, isTwoPhaseBorrow: mutableView, span);
 
                 var (startOp, lenOp) = LowerRangeBounds(implIdx.Argument, recvPlace, isVec, span);
                 var kind = isVec ? MirIntrinsicKind.VecSliceMut : MirIntrinsicKind.SpanSlice;
@@ -4171,10 +4183,7 @@ internal sealed partial class CfgMirLowerer
             {
                 var elemT = isVec ? ((MirType.VecType)recvMirT).Element : MapMirType(SubstituteType(spanElem));
                 var recvPlace = LowerPlaceOrMaterializeTemp(implIdx.Instance, recvMirT, isMutableAccess: false, span);
-                if (isVec)
-                {
-                    recvPlace = ReserveReceiverPlaceBeforeArgs(recvPlace, recvMirT, isMutable: false, isTwoPhaseBorrow: false, span);
-                }
+                recvPlace = ReserveReceiverPlaceBeforeArgs(recvPlace, recvMirT, isMutable: false, isTwoPhaseBorrow: false, span);
                 var idxOp = LowerSystemIndex(implIdx.Argument, recvPlace, isVec, span);
                 int refTmp = CreateTempRefLocal(elemT, isMutable: false, span);
                 var kind = isVec ? MirIntrinsicKind.VecIndexRef : MirIntrinsicKind.SpanIndexRef;
@@ -4561,8 +4570,9 @@ internal sealed partial class CfgMirLowerer
                     var elemT = MapMirType(SubstituteType(spanElem));
                     var spanMirT = new MirType.SpanType(elemT, spanRo);
                     var sPlace = LowerPlaceOrMaterializeTemp(idxInst, spanMirT, isMutableAccess: isMut, span, isTwoPhaseBorrow: isTwoPhaseBorrow);
-                    var idxOp = LowerOperand(propIdx.Arguments[0].Value, MirType.Int32);
                     bool effectiveMut = isMut && !spanRo;
+                    sPlace = ReserveReceiverPlaceBeforeArgs(sPlace, spanMirT, isMutable: effectiveMut, isTwoPhaseBorrow: effectiveMut, span);
+                    var idxOp = LowerOperand(propIdx.Arguments[0].Value, MirType.Int32);
                     _currentStmts.Add(new MirStatement.Intrinsic(
                         MirIntrinsicKind.SpanIndexRef, null, refDestLocalId, effectiveMut, new[] { idxOp }, new[] { sPlace }, new MirType.RefType(elemT, effectiveMut), span, isTwoPhaseBorrow));
                     return true;
@@ -4635,12 +4645,9 @@ internal sealed partial class CfgMirLowerer
                     var recvPlace = (isVec && isMut)
                         ? LowerPlace(implIdx.Instance, isMutableAccess: true, isTwoPhaseBorrow: true)
                         : LowerPlaceOrMaterializeTemp(implIdx.Instance, recvMirT, isMutableAccess: isMut, span, isTwoPhaseBorrow: isTwoPhaseBorrow);
-                    if (isVec)
-                    {
-                        recvPlace = ReserveReceiverPlaceBeforeArgs(recvPlace, recvMirT, isMutable: isMut, isTwoPhaseBorrow: isMut, span);
-                    }
-                    var idxOp = LowerSystemIndex(implIdx.Argument, recvPlace, isVec, span);
                     bool effectiveMut = isMut && !(isSpan && spanRo);
+                    recvPlace = ReserveReceiverPlaceBeforeArgs(recvPlace, recvMirT, isMutable: effectiveMut, isTwoPhaseBorrow: effectiveMut, span);
+                    var idxOp = LowerSystemIndex(implIdx.Argument, recvPlace, isVec, span);
                     _currentStmts.Add(new MirStatement.Intrinsic(
                         isVec ? MirIntrinsicKind.VecIndexRef : MirIntrinsicKind.SpanIndexRef,
                         null,
@@ -4783,6 +4790,48 @@ internal sealed partial class CfgMirLowerer
         return place.Projections.Any(p => p is MirProjection.Field { ThroughClassHeap: true })
             ? ReserveReceiverPlaceBeforeArgs(place, type, isMutable: true, isTwoPhaseBorrow: true, span)
             : place;
+    }
+
+    // F14: C# passes this receiver by reference and reads it after the arguments. A Copy place receiver stays
+    // borrowed while they run; a !Copy one is moved out before them, as every consuming receiver is.
+    // Call the returned function after lowering the arguments.
+    private Func<MirOperand> ReserveReceiverOperandBeforeArgs(IOperation instance, MirType recvT, VibraniumSpan span)
+    {
+        if (!CanLowerAsDirectPlace(instance))
+        {
+            var operand = LowerOperand(instance, recvT);
+            return () => operand;
+        }
+        if (!_module.IsCopy(recvT))
+        {
+            int temp = CreateTempLocal(recvT, span);
+            var value = LowerOperand(instance, recvT);
+            // A capture that moved the receiver before a branching argument already holds it.
+            int? held = UnwrapImplicitIdentityConversion(instance) is IFlowCaptureReferenceOperation fcr &&
+                _captures.TryGetValue(fcr.Id, out var capture) ? capture.MovedPlaceLocalId : null;
+            if (held is null)
+            {
+                value = HoldMovedPlace(value, out held);
+            }
+            _currentStmts.Add(new MirStatement.Assign(MirPlace.Local(temp), new MirRvalue.Use(value), span));
+            var moved = new MirOperand.CopyOrMove(MirPlace.Local(temp), recvT, span) { ReleasesMovedPlace = held };
+            return () => moved;
+        }
+        var reserved = ReserveReceiverPlaceBeforeArgs(LowerPlace(instance, isMutableAccess: false), recvT, isMutable: false, isTwoPhaseBorrow: false, span);
+        return () => new MirOperand.CopyOrMove(reserved, recvT, span);
+    }
+
+    // D1-W: C# reads a moved receiver's place only after the arguments, so the moved local is held until then: an
+    // argument that writes it is VIB003, while any other use of it stays a use of a moved value (VIB001).
+    private static MirOperand HoldMovedPlace(MirOperand moved, out int? heldLocalId)
+    {
+        heldLocalId = null;
+        if (moved is not MirOperand.CopyOrMove { Place.Projections.Count: 0 } cm)
+        {
+            return moved;
+        }
+        heldLocalId = cm.Place.LocalId;
+        return cm with { HoldsMovedPlace = true };
     }
 
     private MirPlace ReserveReceiverPlaceBeforeArgs(

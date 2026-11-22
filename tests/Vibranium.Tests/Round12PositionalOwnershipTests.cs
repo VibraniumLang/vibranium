@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -49,6 +50,152 @@ public sealed class Round12PositionalOwnershipTests
     [InlineData(true, true)]
     public Task RefutableBindingBeforeLaterRetestRemainsBorrowed(bool result, bool statement) =>
         Round12RuleWitness.RejectAsync(Refutable(result, statement, retest: true), "VIB005", exact: true);
+
+
+    public static IEnumerable<object[]> RvalueOwnershipAccepts()
+    {
+        yield return ["s01-stmt-pair-then-var", """
+            WriteLine(F(3)); WriteLine(F(0));
+            static int F(int n)
+            {
+                switch (Mk(n))
+                {
+                    case Some<Vec<int>>(var v): return Take(v);
+                    case NoneType: return 0;
+                    case var x: return x.IsSome ? 1 : 2;
+                }
+            }
+            static Option<Vec<int>> Mk(int n) { if (n == 0) return None; Vec<int> v = [n, n + 1]; return Some(v); }
+            static int Take(Vec<int> v) => v.Count;
+            """, "2\n0\n", ""];
+        yield return ["s03-stmt-result-pair-then-var", """
+            WriteLine(F(3)); WriteLine(F(-3));
+            static int F(int n)
+            {
+                switch (MkR(n))
+                {
+                    case Ok<Vec<int>>(var v): return Take(v);
+                    case Err<Vec<int>>: return 0;
+                    case var x: return x.IsOk ? 1 : 2;
+                }
+            }
+            static Result<Vec<int>, Vec<int>> MkR(int n) { Vec<int> v = [n, n + 1, n + 2]; if (n < 0) return Err(v); return Ok(v); }
+            static int Take(Vec<int> v) => v.Count;
+            """, "3\n0\n", ""];
+        yield return ["s04-stmt-pair-both-bind-then-var", """
+            WriteLine(F(3)); WriteLine(F(-3));
+            static int F(int n)
+            {
+                switch (MkR(n))
+                {
+                    case Ok<Vec<int>>(var v): return Take(v);
+                    case Err<Vec<int>>(var e): return -Take(e);
+                    case var x: return x.IsOk ? 1 : 2;
+                }
+            }
+            static Result<Vec<int>, Vec<int>> MkR(int n) { Vec<int> v = [n, n + 1, n + 2]; if (n < 0) return Err(v); return Ok(v); }
+            static int Take(Vec<int> v) => v.Count;
+            """, "3\n-3\n", ""];
+        yield return ["s05-stmt-none-first-then-some-then-var", """
+            WriteLine(F(3)); WriteLine(F(0));
+            static int F(int n)
+            {
+                switch (Mk(n))
+                {
+                    case NoneType: return 0;
+                    case Some<Vec<int>>(var v): return Take(v);
+                    case var x: return x.IsSome ? 1 : 2;
+                }
+            }
+            static Option<Vec<int>> Mk(int n) { if (n == 0) return None; Vec<int> v = [n, n + 1]; return Some(v); }
+            static int Take(Vec<int> v) => v.Count;
+            """, "2\n0\n", ""];
+        yield return ["s07-stmt-pair-then-not-none", """
+            WriteLine(F(3)); WriteLine(F(0));
+            static int F(int n)
+            {
+                switch (Mk(n))
+                {
+                    case Some<Vec<int>>(var v): return Take(v);
+                    case NoneType: return 0;
+                    case not NoneType: return 5;
+                }
+                return 6;
+            }
+            static Option<Vec<int>> Mk(int n) { if (n == 0) return None; Vec<int> v = [n, n + 1]; return Some(v); }
+            static int Take(Vec<int> v) => v.Count;
+            """, "2\n0\n", "CS0162"];
+        yield return ["d08-rvalue-complement-then-retest-stmt", """
+            switch (Mk(3))
+            {
+                case Some<Vec<int>>(var v): WriteLine(Take(v)); break;
+                case NoneType: WriteLine(0); break;
+                case var x: WriteLine(x.IsSome ? 1 : 2); break;
+            }
+            static Option<Vec<int>> Mk(int n) { if (n == 0) return None; Vec<int> v = [n, n + 1]; return Some(v); }
+            static int Take(Vec<int> v) => v.Count;
+            """, "2\n", ""];
+        yield return ["z08-class-payload-owned", """
+            WriteLine(F(2)); WriteLine(F(0)); WriteLine(F(9));
+            static int F(int n) => MkB(n) switch { Some<Bag>(var b) when b.V.Count > 5 => -1, Some<Bag>(var b2) => TakeB(b2), NoneType => 0 };
+            static Option<Bag> MkB(int n) { if (n == 0) return None; Vec<int> v = []; for (int i = 0; i < n; i++) v.Add(i); return Some(new Bag(v)); }
+            static int TakeB(Bag b) => b.V.Count;
+            public sealed class Bag(Vec<int> v) { public Vec<int> V = v; }
+            """, "2\n0\n-1\n", ""];
+        yield return ["z09-method-chain-temp", """
+            if (new Maker(3).Make() is Some<Vec<int>>(var v)) WriteLine(Take(v));
+            WriteLine(new Maker(0).Make() switch { Some<Vec<int>>(var w) => Take(w), NoneType => -1 });
+            static int Take(Vec<int> v) => v.Count;
+            public sealed class Maker(int n) { public int N = n; public Option<Vec<int>> Make() { if (N <= 0) return None; Vec<int> v = [N]; return Some(v); } }
+            """, "1\n-1\n", ""];
+    }
+
+    [Theory]
+    [MemberData(nameof(RvalueOwnershipAccepts))]
+    public async Task RvalueOwnership_AcceptsWithNativeParity(string shape, string source, string expected, string csharpWarning)
+    {
+        var result = await Round12RuleWitness.AcceptAsync(source, expected, csharpWarning: csharpWarning.Length == 0 ? null : csharpWarning);
+        Assert.True(result.Managed.Exit == 0, $"{shape}: managed exit {result.Managed.Exit}");
+    }
+
+    public static IEnumerable<object[]> RvalueMovesRejected()
+    {
+        yield return ["s02-expr-pair-then-var", """
+            WriteLine(F(3)); WriteLine(F(0));
+            static int F(int n) => Mk(n) switch { Some<Vec<int>>(var v) => Take(v), NoneType => 0, var x => x.IsSome ? 1 : 2 };
+            static Option<Vec<int>> Mk(int n) { if (n == 0) return None; Vec<int> v = [n, n + 1]; return Some(v); }
+            static int Take(Vec<int> v) => v.Count;
+            """];
+        yield return ["d07-rvalue-complement-then-retest-expr", """
+            WriteLine(Mk(3) switch { Some<Vec<int>>(var v) => Take(v), NoneType => 0, var x => x.IsSome ? 1 : 2 });
+            static Option<Vec<int>> Mk(int n) { if (n == 0) return None; Vec<int> v = [n, n + 1]; return Some(v); }
+            static int Take(Vec<int> v) => v.Count;
+            """];
+        yield return ["z03-field-of-temp-class-move", """
+            if (MkH(3).O is Some<Vec<int>>(var v)) WriteLine(Take(v));
+            static Holder MkH(int n) => new Holder(Mk(n));
+            static Option<Vec<int>> Mk(int n) { if (n <= 0) return None; Vec<int> v = [n, n + 1]; return Some(v); }
+            static int Take(Vec<int> v) => v.Count;
+            public sealed class Holder(Option<Vec<int>> o) { public Option<Vec<int>> O = o; }
+            """];
+        yield return ["z04-field-of-temp-struct-move", """
+            if (MkS(3).O is Some<Vec<int>>(var v)) WriteLine(Take(v));
+            WriteLine(MkS(0).O switch { Some<Vec<int>>(var w) => Take(w), NoneType => -1 });
+            static SHolder MkS(int n) => new SHolder(Mk(n));
+            static Option<Vec<int>> Mk(int n) { if (n <= 0) return None; Vec<int> v = [n, n + 1]; return Some(v); }
+            static int Take(Vec<int> v) => v.Count;
+            struct SHolder(Option<Vec<int>> o) { public Option<Vec<int>> O = o; }
+            """];
+    }
+
+    [Theory]
+    [MemberData(nameof(RvalueMovesRejected))]
+    public async Task RvalueMove_IsExactlyVib005OnRoslyn(string shape, string source)
+    {
+        var actual = await Round12RuleWitness.CheckAllAsync(source, requireNoWarnings: true);
+        Assert.True(actual.Analyzer is ["VIB005"] && actual.Stage0 is ["VIB005"],
+            $"{shape}: Analyzer [{string.Join(",", actual.Analyzer)}], Stage-0 [{string.Join(",", actual.Stage0)}]");
+    }
 
     private static string Complement(string family, bool statement, bool exhaustive, bool retest)
     {

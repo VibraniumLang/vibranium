@@ -77,6 +77,8 @@ internal sealed partial class CfgMirLowerer(
         public bool NeedsOldValueRead;
         public int UpdateOldValueLocalId = -1;
         public int PatternUseCount;
+        public bool HoldsMovedPlace;
+        public int? MovedPlaceLocalId;
     }
 
     private readonly Dictionary<CaptureId, CaptureInfo> _captures = new();
@@ -650,6 +652,7 @@ internal sealed partial class CfgMirLowerer(
         var usedWithUserDefinedAddAssign = new HashSet<CaptureId>();
         var usedAsScalarCompoundOrIncDecTarget = new HashSet<CaptureId>();
         var usedAsOutArg = new HashSet<CaptureId>();
+        var movedReceiverOfCall = new HashSet<CaptureId>();
 
         foreach (var block in cfg.Blocks)
         {
@@ -778,6 +781,10 @@ internal sealed partial class CfgMirLowerer(
                                 {
                                     usedMutablyAsPlace.Add(invFcr.Id);
                                 }
+                            }
+                            else if (ReadsReceiverAfterArguments(invOp))
+                            {
+                                movedReceiverOfCall.Add(invFcr.Id);
                             }
                             break;
 
@@ -1084,19 +1091,14 @@ internal sealed partial class CfgMirLowerer(
             if (defs.Count == 1 && !isCloneCaptureForWithExpr && !preferEagerValueTemp)
             {
                 bool canBindRefToType =
-                    !_module.IsViewLike(firstValMirType) &&
+                    (!_module.IsViewLike(firstValMirType) || (firstValMirType is MirType.SpanType && !IsInConditionalRefReassignment(firstVal))) &&
                     !(firstValMirType is MirType.StructType capSt &&
                       (capSt.IsRefStruct || (_module.Structs.TryGetValue(capSt.Name, out var capSdef) && capSdef.IsRefStruct)));
 
                 if (IsSideEffectFreePlaceExpression(firstVal))
                 {
                     bool isPureStackSlot = IsPureStackValuePlaceWithoutDerefOrHeap(firstVal);
-                    bool isPatternBindLocal =
-                        unwrappedFirst is ILocalReferenceOperation patLr &&
-                        _localMap.TryGetValue(patLr.Local, out int patLid) &&
-                        _locals[patLid].IsPatternBinding;
                     bool skipEagerRefBind =
-                        isPatternBindLocal ||
                         (initViaCaptureRef.Contains(capId) && isPureStackSlot) ||
                         (usedAsOutArg.Contains(capId) && isPureStackSlot) ||
                         (usedAsDirectSimpleAssignTarget.Contains(capId) && isPureStackSlot) ||
@@ -1104,7 +1106,8 @@ internal sealed partial class CfgMirLowerer(
 
                     if (usedOutsideIsPatternAsPlace.Contains(capId) && canBindRefToType && !skipEagerRefBind)
                     {
-                        bool reserveMut = usedMutablyAsPlace.Contains(capId);
+                        bool reserveMut = usedMutablyAsPlace.Contains(capId) ||
+                            (firstValMirType is MirType.SpanType { IsReadOnly: false } && !IsObviouslySharedReceiver(firstVal));
                         int rLoc = CreateTempRefLocal(firstValMirType, reserveMut, span, "__cap_rsv");
                         _captures[capId] = new CaptureInfo
                         {
@@ -1127,7 +1130,8 @@ internal sealed partial class CfgMirLowerer(
                     continue;
                 }
 
-                if (canBindRefToType && IsRefProducedOrProjectedPlaceExpression(unwrappedFirst, defsByCapture))
+                if (canBindRefToType &&
+                    (IsRefProducedOrProjectedPlaceExpression(unwrappedFirst, defsByCapture) || IsPlaceThroughRefAssignment(unwrappedFirst)))
                 {
                     bool canBeMut = !IsReadOnlyRefProducedOrProjectedPlace(unwrappedFirst, defsByCapture);
                     bool reserveMut = usedMutablyAsPlace.Contains(capId) && canBeMut;
@@ -1174,6 +1178,7 @@ internal sealed partial class CfgMirLowerer(
                 PrimaryLocalId = tempLoc,
                 MirType = valMirType,
                 PatternUseCount = patternUsesByCapture.TryGetValue(capId, out int patUseCnt) ? patUseCnt : 0,
+                HoldsMovedPlace = defs.Count == 1 && movedReceiverOfCall.Contains(capId) && CanLowerAsDirectPlace(firstVal),
             };
         }
 
@@ -1660,9 +1665,17 @@ internal sealed partial class CfgMirLowerer(
                 VibraniumSymbolHelpers.IsVibraniumCoreType(owner, "Err"));
     }
 
+    // The Option and Result members that read their receiver after their arguments (F14; D1-W once D1 has moved it).
+    private static bool ReadsReceiverAfterArguments(IInvocationOperation invOp) => invOp.TargetMethod.Name is "UnwrapOr" or "Expect";
+
     private bool IsConsumingByValueReceiverInvocation(IInvocationOperation invOp)
     {
         var owner = SubstituteType(invOp.TargetMethod.ContainingType);
+        // F14: UnwrapOr and Expect read a Copy receiver in place, after their arguments.
+        if (ReadsReceiverAfterArguments(invOp) && _module.IsCopy(MapMirType(owner)))
+        {
+            return false;
+        }
         if (VibraniumSymbolHelpers.IsVibraniumCoreType(owner, "Option") &&
             invOp.TargetMethod.Name is "Unwrap" or "Expect" or "UnwrapOr" or "UnwrapOrDefault" or "IsNone")
         {
@@ -1964,6 +1977,10 @@ internal sealed partial class CfgMirLowerer(
                 if (switchSyntax is not null)
                 {
                     matchPlace = RecoverSwitchMatchPlace(value, rv, firstStatement);
+                }
+                if (info.HoldsMovedPlace && rv is MirRvalue.Use use)
+                {
+                    rv = use with { Operand = HoldMovedPlace(use.Operand, out info.MovedPlaceLocalId) };
                 }
                 _currentStmts.Add(new MirStatement.Assign(MirPlace.Local(info.PrimaryLocalId), rv, span));
                 break;
@@ -2357,6 +2374,8 @@ internal sealed partial class CfgMirLowerer(
                 ControlFlowBranch effectiveNoneBranch;
                 ControlFlowBranch? collapsedAfterBothBranch = null;
                 bool collapsed = false;
+                ILocalSymbol? noneWrapperSym = isSomeArm ? null : wrapperLocalSym;
+                if (!isSomeArm) wrapperLocalSym = null;
 
                 if (isSomeArm)
                 {
@@ -2364,9 +2383,10 @@ internal sealed partial class CfgMirLowerer(
                     effectiveNoneBranch = falseBranch;
 
                     if (!HasSwitchCaseWhenGuard(isPat) &&
-                        TryCollapseComplementaryOptionArm(cfg, isPat.Value, falseBranch, expectSome: false, arm1HasExtraSub: extraSubpattern is not null, innerType, span, out var collapsedNoneBranch, out _, out _, out _, out var afterBoth))
+                        TryCollapseComplementaryOptionArm(cfg, isPat.Value, falseBranch, expectSome: false, arm1HasExtraSub: extraSubpattern is not null, innerType, span, out var collapsedNoneBranch, out _, out var collapsedNoneWrapper, out _, out var afterBoth))
                     {
                         effectiveNoneBranch = collapsedNoneBranch;
+                        noneWrapperSym = collapsedNoneWrapper;
                         collapsedAfterBothBranch = afterBoth;
                         collapsed = true;
                     }
@@ -2436,6 +2456,11 @@ internal sealed partial class CfgMirLowerer(
                             span),
                         span,
                         orderedBlockIds);
+                }
+
+                if (noneWrapperSym is not null)
+                {
+                    noneTarget = PrependStatementViaTrampoline(noneTarget, NoneDesignationAssign(noneWrapperSym, span, null), span, orderedBlockIds);
                 }
 
                 if (extraSubpattern is not null)
@@ -2953,7 +2978,7 @@ internal sealed partial class CfgMirLowerer(
                   c.Kind == CaptureKind.ValueTemp &&
                   c.PatternUseCount > 1 &&
                   !_module.IsLinearResource(scrutMirType) &&
-                  scrutMirType is not (MirType.OptionRefType or MirType.OptionMutType))),
+                  scrutMirType is not MirType.OptionRefType)),
             _ => false,
         };
 
@@ -2997,6 +3022,12 @@ internal sealed partial class CfgMirLowerer(
         if (VibraniumSymbolHelpers.IsVibraniumCoreType(matchedType, "NoneType"))
         {
             isSomeArm = false;
+            wrapperLocalSym = pattern switch
+            {
+                IDeclarationPatternOperation noneDecl => noneDecl.DeclaredSymbol as ILocalSymbol,
+                IRecursivePatternOperation noneRec => noneRec.DeclaredSymbol as ILocalSymbol,
+                _ => null,
+            };
             someBindingLocalId = allocateUnusedSome ? CreatePatternLocal(innerType, span, "__some_unused") : -1;
             return true;
         }
@@ -3027,6 +3058,13 @@ internal sealed partial class CfgMirLowerer(
 
         return false;
     }
+
+    // A NoneType designation holds the unit value.
+    private MirStatement NoneDesignationAssign(ILocalSymbol sym, VibraniumSpan span, bool? isPatternBindingOverride) =>
+        new MirStatement.Assign(
+            MirPlace.Local(GetOrCreateLocalId(sym, isPatternBindingOverride)),
+            new MirRvalue.Use(new MirOperand.Const(new MirConstant.ZeroDefault(MirType.NoneUnit), MirType.NoneUnit, span)),
+            span);
 
     private bool TryExtractResultArm(
         IPatternOperation pattern,
@@ -3774,6 +3812,11 @@ internal sealed partial class CfgMirLowerer(
                             span),
                         span,
                         orderedBlockIds);
+                }
+
+                if (!isSomeArm && wrapperLocalSym is not null)
+                {
+                    noneTarget = PrependStatementViaTrampoline(noneTarget, NoneDesignationAssign(wrapperLocalSym, span, null), span, orderedBlockIds);
                 }
 
                 if (isSomeArm && extraSubpattern is not null)

@@ -98,6 +98,7 @@ Vibranium v0.2 fails closed: any C# feature outside the verified subset is rejec
 | Standalone label | `label: WriteLine(2);` | `Labeled statements are not supported in Vibranium v0.2 ('goto' is not supported).` |
 | Scoped `foreach` iteration variable | `foreach (scoped ReadOnlySpan<byte> line in "text".Lines()) { ... }` | `'scoped' iteration variables are not supported in Vibranium v0.2; omit 'scoped' from the 'foreach' variable.` |
 | Named positional element in a union-case pattern | `Some<int>(value: 7)` | `Named positional elements in union-case patterns are not supported in Vibranium v0.2; drop the element name.` |
+| Collection-expression `with(...)` element | `Vec<int> v = [with(), 1, 2];` | `Collection-expression 'with(...)' arguments are not supported in Vibranium v0.2; create the collection, then add its elements.` |
 
 ---
 

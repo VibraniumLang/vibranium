@@ -308,4 +308,41 @@ public sealed class Round12FieldInitializerCutTests
             Directory.Delete(directory, recursive: true);
         }
     }
+
+    [Fact]
+    public async Task PlainFieldInitializers_AcceptWithNativeParity()
+    {
+        var result = await Round12RuleWitness.AcceptAsync("""
+            var c = new C(3);
+            WriteLine(c.A + c.B);
+            WriteLine(c.Name);
+            WriteLine(c.O.UnwrapOr(0));
+            WriteLine(c.V.Count);
+            WriteLine(c.Neg);
+            WriteLine(c.Inner.N);
+            WriteLine(c.Call);
+            var s = new S(4);
+            WriteLine(s.Q);
+            class C(int p)
+            {
+                public int A = p * 2 + 1;
+                public int B = H.Twice(p);
+                public string Name = "c";
+                public Option<int> O = Some(p);
+                public Vec<int> V = [1, 2, p];
+                public bool Neg = !H.False();
+                public D Inner = new D(p);
+                public int Call = H.Log("init");
+            }
+            class D(int n) { public int N = n; }
+            struct S(int q) { public int Q = q + 1; }
+            static class H
+            {
+                public static int Twice(int x) => x * 2;
+                public static bool False() => false;
+                public static int Log(string s) { WriteLine(s); return 1; }
+            }
+            """, "init\n13\nc\n3\n3\nTrue\n3\n1\n5\n");
+        Assert.Equal(0, result.Managed.Exit);
+    }
 }

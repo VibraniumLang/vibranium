@@ -137,6 +137,10 @@ internal sealed partial class SyntaxAndSymbolGatekeeper(
             SubsetDeclarationCuts.ListPatternMessage,
         SyntaxKind.LabeledStatement => "Labeled statements are not supported in Vibranium v0.2 ('goto' is not supported).",
         SyntaxKind.SpreadElement => "Spread elements are not supported in Vibranium v0.2; add each element explicitly.",
+        SyntaxKind.WithElement =>
+            "Collection-expression 'with(...)' arguments are not supported in Vibranium v0.2; create the collection, then add its elements.",
+        SyntaxKind.TupleType or SyntaxKind.TupleExpression =>
+            "Tuples are not supported in Vibranium v0.2; use a struct with named fields.",
         SyntaxKind.TypeOfExpression => "'typeof(...)' is not supported in Vibranium v0.2.",
         _ => $"Unsupported construct '{kind}' in Vibranium v0.2.",
     };

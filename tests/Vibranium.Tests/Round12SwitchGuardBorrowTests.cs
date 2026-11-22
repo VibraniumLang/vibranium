@@ -663,6 +663,308 @@ public sealed class Round12SwitchGuardBorrowTests
             ref int e = ref x[0];
             WriteLine(e switch { 4 when (x = ref v2).Count == 0 => 1, 7 => 2, _ => 3 });
             """];
+        yield return ["a13-refloc-view-asref-clear-referent", "VIB003", """
+            Option<int> o1 = Some(4);
+            ref Option<int> x = ref o1;
+            WriteLine(x.AsRef() switch { Some<int>(4) when Clear(ref o1) => 1, Some<int>(4) => 9, _ => 3 });
+            static bool Clear(ref Option<int> r) { r = None; return false; }
+            """];
+        yield return ["b13-asref-copy-guard-set-then-payload-via-view", "VIB003", """
+            Option<int> o1 = Some(4);
+            WriteLine(o1.AsRef() switch { Some<int> when Set7(ref o1) => 1, var w => w switch { Some<int>(var n) => n, _ => 0 } });
+            static bool Set7(ref Option<int> r) { r = Some(7); return false; }
+            """];
+        yield return ["b13-asref-copy-set-whole-bind", "VIB003", """
+            Option<int> o1 = Some(4);
+            WriteLine(o1.AsRef() switch { Some<int> when Clear(ref o1) => 1, var w => w.IsSome ? 2 : 3 });
+            static bool Clear(ref Option<int> r) { r = None; return false; }
+            """];
+        yield return ["b13-asref-copy-whole-bind-stmt", "VIB003", """
+            Option<int> o1 = Some(4);
+            switch (o1.AsRef())
+            {
+                case Some<int> when Clear(ref o1): WriteLine(1); break;
+                case var w: WriteLine(w.IsSome ? 2 : 3); break;
+            }
+            static bool Clear(ref Option<int> r) { r = None; return false; }
+            """];
+        yield return ["b13-asref-direct-clear-copy", "VIB003", """
+            Option<int> o1 = Some(4);
+            WriteLine(o1.AsRef() switch { Some<int>(4) when Clear(ref o1) => 1, Some<int>(4) => 9, _ => 3 });
+            static bool Clear(ref Option<int> r) { r = None; return false; }
+            """];
+        yield return ["b13-asref-refloc-copy-whole-bind", "VIB003", """
+            Option<int> o1 = Some(4);
+            ref Option<int> x = ref o1;
+            WriteLine(x.AsRef() switch { Some<int> when Clear(ref o1) => 1, var w => w.IsSome ? 2 : 3 });
+            static bool Clear(ref Option<int> r) { r = None; return false; }
+            """];
+        yield return ["b13-call-view-copy-whole-bind", "VIB003", """
+            Option<int> o1 = Some(4);
+            WriteLine(View(in o1) switch { Some<int> when Clear(ref o1) => 1, var w => w.IsSome ? 2 : 3 });
+            static OptionRef<int> View(in Option<int> o) => o.AsRef();
+            static bool Clear(ref Option<int> r) { r = None; return false; }
+            """];
+        yield return ["b13-q03-copy-twin-repoint-kill-referent", "VIB003", """
+            Option<int> o1 = Some(9);
+            Option<int> o2 = Some(2);
+            ref Option<int> x = ref o1;
+            WriteLine(x.AsRef() switch { Some<int> when (x = ref o2).IsSome == false || Kill(ref o1) => 1, var w => w.IsSome ? 2 : 3 });
+            static bool Kill(ref Option<int> o) { o = None; return false; }
+            """];
+        yield return ["p2-2-rvalue-asref-tagonly-clear", "VIB003", """
+            Option<Box> o1 = Some(new Box(9));
+            WriteLine(o1.AsRef() switch
+            {
+                Some<Box> when Clear(ref o1) => 1,
+                Some<Box> => 9,
+                _ => 0
+            });
+            static bool Clear(ref Option<Box> r) { r = None; return false; }
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["x26_rvalue_asref_int_guard_then_bind", "VIB003", """
+            Option<int> o1 = Some(4);
+            WriteLine(o1.AsRef() switch
+            {
+                Some<int>(4) when Set7(ref o1) => 1,
+                Some<int>(var n) => n,
+                _ => 0
+            });
+            static bool Set7(ref Option<int> r) { r = Some(7); return false; }
+            """];
+        yield return ["p2-1-mut-refret-guard-reads-owner", "VIB003", """
+            Vec<int> v1 = [4];
+            WriteLine(At(ref v1, 0) switch { 4 when v1.Count == 0 => 1, 4 => 9, _ => 3 });
+            static ref int At(ref Vec<int> v, int i) => ref v[i];
+            """];
+        yield return ["p2-1-unwrapmut-guard-reads-owner", "VIB003", """
+            Option<int> o = Some(4);
+            WriteLine(o.UnwrapMut() switch { 4 when o.IsSome => 1, 4 => 9, _ => 3 });
+            """];
+        yield return ["r1b-at-index-set-then-bind", "VIB003", """
+            Vec<int> v1 = [4];
+            WriteLine(At(ref v1, 0) switch { 4 when Set7(ref v1) => 1, var n => n });
+            static ref int At(ref Vec<int> v, int i) => ref v[i];
+            static bool Set7(ref Vec<int> v) { v[0] = 7; return false; }
+            """];
+        yield return ["r1b-unwrapmut-set7-then-bind", "VIB003", """
+            Option<int> o = Some(4);
+            WriteLine(o.UnwrapMut() switch { 4 when Set7(ref o) => 1, var n => n });
+            static bool Set7(ref Option<int> r) { r = Some(7); return false; }
+            """];
+        yield return ["r1b-asmut-clear-tagonly", "VIB003", """
+            Option<Box> o1 = Some(new Box(4));
+            WriteLine(o1.AsMut() switch { Some<Box> when Clear(ref o1) => 1, Some<Box> => 9, _ => 0 });
+            static bool Clear(ref Option<Box> r) { r = None; return false; }
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["r1b-call-viewmut-clear-tagonly", "VIB003", """
+            Option<Box> o1 = Some(new Box(4));
+            WriteLine(ViewMut(ref o1) switch { Some<Box> when Clear(ref o1) => 1, Some<Box> => 9, _ => 0 });
+            static OptionMut<Box> ViewMut(ref Option<Box> o) => o.AsMut();
+            static bool Clear(ref Option<Box> r) { r = None; return false; }
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["b13-asref-noncopy-whole-bind-uaf", "VIB003", """
+            Option<Box> o1 = Some(new Box(4));
+            WriteLine(o1.AsRef() switch { Some<Box> when Clear(ref o1) => 1, var w => w switch { Some<Box>(var b) => b.V, _ => 3 } });
+            static bool Clear(ref Option<Box> r) { r = None; return false; }
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["e-cur-place-tag-guard-then-whole-bind", "", """
+            Option<Box> o = Some(new Box(3));
+            var m = o.AsMut();
+            int k = 1;
+            WriteLine(m switch { Some<Box> when k > 5 => 1, var w => w.IsSome ? 2 : 3 });
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["e-cur-place-whole-bind-noguard", "VIB001", """
+            Option<Box> o = Some(new Box(3));
+            var m = o.AsMut();
+            WriteLine(m switch { Some<Box> => 1, var w => w.IsSome ? 2 : 3 });
+            WriteLine(m switch { NoneType => 1, var w => w.IsSome ? 2 : 3 });
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["c09-rvalue-cursor-guard-binding-payload-replaced", "VIB003", """
+            Option<Box> o = Some(new Box(9));
+            WriteLine(o.AsMut() switch { Some<Box>(var b) when Kill(ref o) => b.V, Some<Box>(var c) => c.V + 1, _ => 0 });
+            static bool Kill(ref Option<Box> o) { o = None; return false; }
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["c11-rvalue-cursor-guard-moves-binding", "VIB005", """
+            Option<Box> o = Some(new Box(9));
+            WriteLine(o.AsMut() switch { Some<Box>(var b) when Eat(b) < 0 => 1, Some<Box>(var c) => c.V, _ => 0 });
+            static int Eat(Box b) => b.V;
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["adv_n69_01_tagonly_guard_kills_owner_then_bind", "VIB003", """
+            Option<Box> o = Some(new Box(9));
+            WriteLine(o.AsMut() switch { Some<Box> when Kill(ref o) => 1, Some<Box>(var c) => c.V, _ => 0 });
+            static bool Kill(ref Option<Box> o) { o = None; return false; }
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["adv_n69_02_tagonly_guard_reads_owner_then_bind", "VIB003", """
+            Option<Box> o = Some(new Box(9));
+            WriteLine(o.AsMut() switch { Some<Box> when Peek(in o) => 1, Some<Box>(var c) => c.V, _ => 0 });
+            static bool Peek(in Option<Box> o) => !o.IsSome;
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["adv_n69_07_place_cursor_guarded_bind_still_rejected", "VIB003", """
+            Option<Box> o = Some(new Box(9));
+            var m = o.AsMut();
+            int k = 1;
+            WriteLine(m switch { Some<Box>(var b) when k > 5 => b.V, Some<Box>(var c) => c.V + 1, _ => 0 });
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["adv_n69_04_string_payload_two_arms", "VIB000", """
+            Option<string> o = Some("hello");
+            int k = 1;
+            WriteLine(o.AsMut() switch { Some<string>(var s) when k > 5 => s.Length, Some<string>(var t) => t.Length + 1, _ => 0 });
+            """];
+        yield return ["adv_n69_05_linear_payload_two_arms", "VIB006", """
+            using System;
+            Option<Res> o = Some(new Res(9));
+            int k = 1;
+            WriteLine(o.AsMut() switch { Some<Res>(var r) when k > 5 => r.V, Some<Res>(var r2) => r2.V + 1, _ => 0 });
+            using var owned = o.Unwrap();
+            WriteLine(owned.V);
+            public sealed class Res(int v) : IDisposable
+            {
+                public int V = v;
+                public void Dispose() { WriteLine(77); }
+            }
+            """];
+        yield return ["adv_n69_08_slot_repoint_tagonly_asmut_two_arms", "VIB000,VIB003", """
+            Option<Box> o1 = Some(new Box(9));
+            Option<Box> o2 = Some(new Box(2));
+            ref Option<Box> x = ref o1;
+            int k = 1;
+            WriteLine(x.AsMut() switch { Some<Box> when Rebind(ref x, ref o2) && k > 5 => 0, Some<Box>(var c) => c.V, _ => -1 });
+            WriteLine(x.AsRef() switch { Some<Box>(var d) => d.V, _ => -2 });
+            static bool Rebind(ref Option<Box> s, ref Option<Box> n) { s = ref n; return true; }
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["c05-cursor-param-guarded-binding", "VIB003", """
+            Option<Box> o = Some(new Box(9));
+            WriteLine(F(o.AsMut(), 1));
+            static int F(OptionMut<Box> m, int k) => m switch { Some<Box>(var b) when k > 0 => b.V, _ => 0 };
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["n69x-03-rvalue-cursor-guard-moves-owner", "VIB003", """
+            Option<Box> o = Some(new Box(9));
+            int k = Id(1);
+            WriteLine(o.AsMut() switch { Some<Box>(var b) when Eat(o) > 5 => b.V, Some<Box>(var c) => c.V + 1, _ => 0 });
+            static int Id(int x) => x;
+            static int Eat(Option<Box> x) => 1;
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["o16-slot-via-asspan-index-noncopy-elem", "VIB003", """
+            Vec<Option<int>> v1 = [Some(4)];
+            Vec<Option<int>> v2 = [Some(7)];
+            ref Vec<Option<int>> x = ref v1;
+            switch (x.AsSpan()[0])
+            {
+                case Some<int>(4) when (x = ref v2).Count == 0 || Grow(ref v1): WriteLine(1); break;
+                case Some<int>(var n): WriteLine(n); break;
+                default: WriteLine(0); break;
+            }
+            static bool Grow(ref Vec<Option<int>> v) { for (int i = 0; i < 64; i++) v.Add(None); v[0] = Some(5); return false; }
+            """];
+        yield return ["o03-asspan-index-guard-grows-vec", "VIB003", """
+            Vec<Option<int>> v = [Some(4)];
+            switch (v.AsSpan()[0])
+            {
+                case Some<int>(4) when Grow(ref v): WriteLine(1); break;
+                case Some<int>(var n): WriteLine(n); break;
+                default: WriteLine(0); break;
+            }
+            static bool Grow(ref Vec<Option<int>> v) { for (int i = 0; i < 64; i++) v.Add(None); v[0] = Some(5); return false; }
+            """];
+        yield return ["o02-slot-via-byvalue-span-arg", "VIB003", """
+            Vec<int> v1 = [4];
+            Vec<int> v2 = [7];
+            ref Vec<int> x = ref v1;
+            WriteLine(At(x.AsSpan(), 0) switch { 4 when (x = ref v2).Count == 0 => 1, 7 => 2, 4 => 9, _ => 3 });
+            WriteLine(x.Count);
+            static ref int At(Span<int> s, int i) => ref s[i];
+            """];
+        yield return ["q03-slot-via-asref-cursor-repoint-kill-referent", "VIB003", """
+            Option<Box> o1 = Some(new Box(9));
+            Option<Box> o2 = Some(new Box(2));
+            ref Option<Box> x = ref o1;
+            WriteLine(x.AsRef() switch { Some<Box> when (x = ref o2).IsSome == false || Kill(ref o1) => 1, Some<Box>(var b) => b.V, _ => 0 });
+            static bool Kill(ref Option<Box> o) { o = None; return false; }
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["q02-slot-via-asmut-cursor-repoint", "VIB003", """
+            Option<Box> o1 = Some(new Box(9));
+            Option<Box> o2 = Some(new Box(2));
+            ref Option<Box> x = ref o1;
+            WriteLine(x.AsMut() switch { Some<Box>(var b) when (x = ref o2).IsSome == false => b.V, _ => 0 });
+            WriteLine(x.AsRef() switch { Some<Box>(var c) => c.V, _ => 0 });
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["qv-01-index-path-frozen", "VIB003", """
+            Vec<int> a = [4];
+            Vec<int> b = [0];
+            ref Vec<int> x = ref a;
+            WriteLine(x[0] switch { 4 when (x = ref b).Count == 0 => 1, 4 => 2, _ => 3 });
+            """];
+        yield return ["qv-02-unwrapmut-path-frozen", "VIB003", """
+            Option<Box> a = Some(new Box(4));
+            Option<Box> b = Some(new Box(0));
+            ref Option<Box> x = ref a;
+            WriteLine(x.UnwrapMut().V switch { 4 when !(x = ref b).IsSome => 1, 4 => 2, _ => 3 });
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["qv-03-refcall-path-frozen", "VIB003", """
+            int a = 4;
+            int b = 0;
+            ref int x = ref a;
+            WriteLine(At(ref x) switch { 4 when (x = ref b) == 0 => 1, 4 => 2, _ => 3 });
+            static ref int At(ref int p) => ref p;
+            """];
+        yield return ["k06-b09-fixed-copy-binding-generic", "VIB004", """
+            WriteLine(G<int>(Some(4)));
+            static bool Touch<T>(ref T t) => false;
+            static int G<T>(Option<T> o)
+            {
+                switch (o)
+                {
+                    case Some<T>(var t) when Touch(ref t): return 1;
+                    case Some<T>: return 2;
+                    default: return 3;
+                }
+            }
+            """];
+        yield return ["adv_n69_06_negated_pattern_then_bind", "", """
+            Option<Box> o = Some(new Box(9));
+            int k = 1;
+            WriteLine(o.AsMut() switch { not Some<Box> when k > 5 => 1, Some<Box>(var c) => c.V + 1, _ => 0 });
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["n69x-01-rvalue-cursor-bind-then-take", "", """
+            Option<Box> o = Some(new Box(9));
+            int k = Id(1);
+            WriteLine(o.AsMut() switch { Some<Box>(var b) when k > 5 => b.V, NoneType => 0, var m => m.Take().IsSome ? 1 : 2 });
+            WriteLine(o.IsSome);
+            static int Id(int x) => x;
+            public sealed class Box(int v) { public int V = v; }
+            """];
+        yield return ["k08-copy-binding-generic-unmanaged", "", """
+            WriteLine(G<int>(Some(4)) + G<long>(None) * 10);
+            static bool Touch<T>(ref T t) where T : unmanaged => false;
+            static int G<T>(Option<T> o) where T : unmanaged
+            {
+                switch (o)
+                {
+                    case Some<T>(var t) when Touch(ref t): return 1;
+                    case Some<T>: return 2;
+                    default: return 3;
+                }
+            }
+            """];
     }
 
     // The fixed probe matrix checks the CLI and native parity as well; older self verdicts
@@ -682,7 +984,7 @@ public sealed class Round12SwitchGuardBorrowTests
             public sealed class R(int id) : IDisposable { public int Id = id; public void Dispose() { WriteLine(-Id); } }
             """, "VIB000,VIB006");
 
-    private static async Task AssertRoslynIdsAsync(string shape, string source, string ids)
+    internal static async Task AssertRoslynIdsAsync(string shape, string source, string ids)
     {
         string dir = Path.Combine(Path.GetTempPath(), $"vibranium-switch-guard-{Guid.NewGuid():N}");
         Directory.CreateDirectory(dir);
@@ -1005,6 +1307,152 @@ public sealed class Round12SwitchGuardBorrowTests
             }
             static bool Grow(ref Vec<int> w) { w.Add(5); return false; }
             """, "32032032\n" };
+        yield return ["acur-rvalue-guard-bind-ok", """
+            Option<Box> o = Some(new Box(3));
+            int k = 1;
+            WriteLine(o.AsMut() switch { Some<Box>(var b) when b.V > k => b.V * 2, Some<Box>(var c) => c.V, _ => 0 });
+            WriteLine(o.AsMut() switch { Some<Box>(var b) when b.V > 50 => b.V * 2, Some<Box>(var c) => c.V + 100, _ => 0 });
+            public sealed class Box(int v) { public int V = v; }
+            """, "6\n103\n"];
+        yield return ["j01-rvalue-cursor-guard-reads-k-two-arms", """
+            Option<Box> o = Some(new Box(9));
+            int k = 1;
+            WriteLine(o.AsMut() switch { Some<Box>(var b) when k > 5 => b.V, Some<Box>(var c) => c.V + 1, _ => 0 });
+            public sealed class Box(int v) { public int V = v; }
+            """, "10\n"];
+        yield return ["j02-rvalue-cursor-tagonly-guard-then-bind", """
+            Option<Box> o = Some(new Box(9));
+            int k = 1;
+            WriteLine(o.AsMut() switch { Some<Box> when k > 5 => 1, Some<Box>(var c) => c.V + 1, _ => 0 });
+            public sealed class Box(int v) { public int V = v; }
+            """, "10\n"];
+        yield return ["j03-rvalue-cursor-guard-reads-k-two-arms-stmt", """
+            Option<Box> o = Some(new Box(9));
+            int k = 1;
+            switch (o.AsMut())
+            {
+                case Some<Box>(var b) when k > 5: WriteLine(b.V); break;
+                case Some<Box>(var c): WriteLine(c.V + 1); break;
+                default: WriteLine(0); break;
+            }
+            public sealed class Box(int v) { public int V = v; }
+            """, "10\n"];
+        yield return ["j09-rvalue-cursor-guarded-none-then-bind", """
+            Option<Box> o = Some(new Box(9));
+            int k = 1;
+            WriteLine(o.AsMut() switch { NoneType when k > 5 => 1, Some<Box>(var c) => c.V + 1, _ => 0 });
+            public sealed class Box(int v) { public int V = v; }
+            """, "10\n"];
+        yield return ["j10-rvalue-cursor-from-helper-two-arms", """
+            Option<Box> o = Some(new Box(9));
+            int k = 1;
+            WriteLine(Cur(ref o) switch { Some<Box>(var b) when k > 5 => b.V, Some<Box>(var c) => c.V + 1, _ => 0 });
+            static OptionMut<Box> Cur(ref Option<Box> x) => x.AsMut();
+            public sealed class Box(int v) { public int V = v; }
+            """, "10\n"];
+        yield return ["j05-rvalue-cursor-guard-payload-write-then-bind", """
+            Option<Box> o = Some(new Box(9));
+            WriteLine(o.AsMut() switch { Some<Box>(var b) when (b.V = b.V + 5) < 0 => 1, Some<Box>(var c) => c.V, _ => 0 });
+            WriteLine(o.AsRef() switch { Some<Box>(var x) => x.V, _ => -1 });
+            public sealed class Box(int v) { public int V = v; }
+            """, "14\n14\n"];
+        yield return ["c10-rvalue-cursor-guard-fails-next-arm", """
+            Option<Box> o = Some(new Box(9));
+            WriteLine(o.AsMut() switch { Some<Box>(var b) when (b.V = b.V + 5) < 0 => 1, Some<Box>(var c) => c.V, _ => 0 });
+            WriteLine(o.Unwrap().V);
+            public sealed class Box(int v) { public int V = v; }
+            """, "14\n14\n"];
+        yield return ["adv_n69_03_three_arms_two_writes_then_bind", """
+            Option<Box> o = Some(new Box(9));
+            WriteLine(o.AsMut() switch
+            {
+                Some<Box>(var b) when (b.V = b.V + 5) < 0 => 1,
+                Some<Box>(var c) when (c.V = c.V * 2) < 0 => 2,
+                Some<Box>(var d) => d.V,
+                _ => 0
+            });
+            WriteLine(o.Unwrap().V);
+            public sealed class Box(int v) { public int V = v; }
+            """, "28\n28\n"];
+        yield return ["adv_n69_09a_one_arm_tagonly_guard_kills_owner_wildcard", """
+            Option<Box> o = Some(new Box(9));
+            WriteLine(o.AsMut() switch { Some<Box> when Kill(ref o) => 1, _ => 0 });
+            WriteLine(o.IsSome);
+            static bool Kill(ref Option<Box> o) { o = None; return false; }
+            public sealed class Box(int v) { public int V = v; }
+            """, "0\nFalse\n"];
+        yield return ["adv_n69_09b_two_arm_last_tagonly_guard_kills_owner_wildcard", """
+            Option<Box> o = Some(new Box(9));
+            int k = 1;
+            WriteLine(o.AsMut() switch { Some<Box>(var b) when k > 5 => b.V, Some<Box> when Kill(ref o) => 1, _ => 0 });
+            WriteLine(o.IsSome);
+            static bool Kill(ref Option<Box> o) { o = None; return false; }
+            public sealed class Box(int v) { public int V = v; }
+            """, "0\nFalse\n"];
+        yield return ["j04-rvalue-cursor-guard-payload-write-then-discard", """
+            Option<Box> o = Some(new Box(9));
+            WriteLine(o.AsMut() switch { Some<Box>(var b) when (b.V = b.V + 5) < 0 => 1, _ => 0 });
+            WriteLine(o.AsRef() switch { Some<Box>(var x) => x.V, _ => -1 });
+            public sealed class Box(int v) { public int V = v; }
+            """, "0\n14\n"];
+        yield return ["j06-rvalue-optref-cursor-two-arms", """
+            Option<Box> o = Some(new Box(9));
+            int k = 1;
+            WriteLine(o.AsRef() switch { Some<Box>(var b) when k > 5 => b.V, Some<Box>(var c) => c.V + 1, _ => 0 });
+            public sealed class Box(int v) { public int V = v; }
+            """, "10\n"];
+        yield return ["j07-rvalue-cursor-unguarded-two-arms", """
+            Option<Box> o = Some(new Box(9));
+            WriteLine(o.AsMut() switch { Some<Box>(var b) => b.V, NoneType => 0 });
+            public sealed class Box(int v) { public int V = v; }
+            """, "9\n"];
+        yield return ["j11-rvalue-cursor-three-arms-unguarded", """
+            Option<Box> o = Some(new Box(9));
+            WriteLine(o.AsMut() switch { NoneType => 0, Some<Box>(var c) => c.V + 1 });
+            public sealed class Box(int v) { public int V = v; }
+            """, "10\n"];
+        yield return ["j12-place-cursor-control-two-arms", """
+            Option<Box> o = Some(new Box(9));
+            var m = o.AsMut();
+            int k = 1;
+            WriteLine(m switch { Some<Box> when k > 5 => 1, Some<Box>(var c) => c.V + 1, _ => 0 });
+            public sealed class Box(int v) { public int V = v; }
+            """, "10\n"];
+        yield return ["j13-rvalue-option-noncopy-two-arms", """
+            int k = 1;
+            WriteLine(Mk() switch { Some<Box>(var b) when k > 5 => b.V, Some<Box>(var c) => c.V + 1, _ => 0 });
+            static Option<Box> Mk() => Some(new Box(9));
+            public sealed class Box(int v) { public int V = v; }
+            """, "10\n"];
+        yield return ["o01-slot-via-asspan-index", """
+            Vec<int> v1 = [4];
+            Vec<int> v2 = [7];
+            ref Vec<int> x = ref v1;
+            WriteLine(x.AsSpan()[0] switch { 4 when (x = ref v2).Count == 0 => 1, 7 => 2, 4 => 9, _ => 3 });
+            WriteLine(x.Count);
+            """, "9\n1\n"];
+        yield return ["o15-slot-via-slice-index", """
+            Vec<int> v1 = [4];
+            Vec<int> v2 = [7];
+            ref Vec<int> x = ref v1;
+            WriteLine(x.Slice(0, 1)[0] switch { 4 when (x = ref v2).Count == 0 => 1, 7 => 2, 4 => 9, _ => 3 });
+            WriteLine(x.Count);
+            """, "9\n1\n"];
+        yield return ["o11-optref-rvalue-of-ref-local-repoint", """
+            Option<int> o1 = Some(4);
+            Option<int> o2 = Some(7);
+            ref Option<int> x = ref o1;
+            WriteLine(x.AsRef() switch { Some<int>(4) when (x = ref o2).IsEmpty => 1, Some<int>(7) => 2, Some<int>(4) => 9, _ => 3 });
+            WriteLine(x.IsSome);
+            """, "9\nTrue\n"];
+        yield return ["q01-slot-via-asref-cursor-repoint", """
+            Option<Box> o1 = Some(new Box(9));
+            Option<Box> o2 = Some(new Box(2));
+            ref Option<Box> x = ref o1;
+            WriteLine(x.AsRef() switch { Some<Box> when (x = ref o2).IsSome == false => 1, Some<Box>(var b) => b.V, _ => 0 });
+            WriteLine(x.AsRef() switch { Some<Box>(var c) => c.V, _ => 0 });
+            public sealed class Box(int v) { public int V = v; }
+            """, "9\n2\n"];
     }
 
     public static IEnumerable<object[]> RoslynOnlyAcceptedSelectors()

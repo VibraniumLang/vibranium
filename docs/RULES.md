@@ -429,12 +429,17 @@ Units and quotes are normalised the same way: backticks and `*` are removed and 
 ### R1-sub-tuples — tuples are banned: literals, tuple types and deconstruction
 - Quote (§1-subset): Tuples: tuple literals, tuple types, and deconstruction declarations and assignments
 - Expect: VIB000
-- Reject shape: `var (a, b) = (new Vec<int>(), 1);`, `var (a, b) = (1, 2);` and a tuple literal `var t = (1, 2);`.
-- Accept shape: the same values in separate locals.
+- Reject shape: `var (a, b) = (new Vec<int>(), 1);`, `var (a, b) = (1, 2);`, a tuple literal `var t = (1, 2);`, and a tuple type in any position such as `struct S { public (int, int) T; public byte W; }`.
+- Accept shape: the same values in separate locals or a struct with named fields; parenthesized patterns and positional union patterns stay accepted.
 - Reject: `Vibranium.Tests.Round12RuleWitnessSubsetTests.R1_SubTuples_Reject_NoncopyDeconstruction` [analyzer, stage0, self]
 - Reject: `Vibranium.Tests.Round12RuleWitnessSubsetTests.R1_SubTuples_Reject_CopyDeconstruction` [analyzer, stage0, self]
 - Reject: `Vibranium.Tests.Round12RuleWitnessSubsetTests.R1_SubTuples_Reject_TupleLiteral` [analyzer, stage0, self]
+- Reject: `Vibranium.Tests.Round12TupleGateTests.TupleTypesRejectWithExactVib000` [analyzer, stage0]
+- Reject: `Vibranium.Tests.Round12TupleGateTests.TupleTypeRejectedByAllFrontends` [analyzer, stage0, self]
+- Reject: `Vibranium.Tests.Round12TupleGateTests.TupleLocalsReportVib000Present` [analyzer, stage0]
+- Reject: `Vibranium.Tests.Round12TupleGateTests.TupleExpressionsAndDeconstructionsStayVib000` [analyzer, stage0]
 - Accept: `Vibranium.Tests.Round12RuleWitnessSubsetTests.R1_SubTuples_Accept` [analyzer, stage0, self]
+- Accept: `Vibranium.Tests.Round12TupleGateTests.AcceptedControlsRemainAccepted` [analyzer, stage0]
 - Note: Decision F9.
 
 ### R1-sub-property-noncopy — a by-value property getter returning a !Copy field is an illegal field move
@@ -785,6 +790,18 @@ Units and quotes are normalised the same way: backticks and `*` are removed and 
 - Accept: `Vibranium.Tests.RoslynSubsetGateTests.OrdinaryForeachIterationVariablesRemainSupported` [analyzer, stage0]
 - Accept: `Vibranium.Tests.RoslynSubsetGateTests.OrdinaryForeachRemainsSupportedBySelf` [self]
 
+### R1-sub-with-element — collection-expression with(...) arguments are banned
+- Quote (§1-subset): Collection-expression with(...) element
+- Quote (§1-subset): Collection-expression 'with(...)' arguments are not supported in Vibranium v0.2; create the collection, then add its elements.
+- Expect: VIB000
+- Reject shape: `Vec<int> v = [with(), 1, 2];` and `Vec<int> v = [with()];`.
+- Accept shape: a plain collection expression `Vec<int> v = [1, 2];` or creating `Vec<int> v = [];` and calling `v.Add(...)`.
+- Reject: `Vibranium.Tests.Round12TupleGateTests.WithElementRejectsWithExactVib000` [analyzer, stage0]
+- Reject: `Vibranium.Tests.Round12TupleGateTests.WithElementReportsOncePerFileAtFirstOccurrence` [analyzer, stage0]
+- Reject: `Vibranium.Tests.Round12TupleGateTests.WithElementRejectedByAllFrontends` [analyzer, stage0, self]
+- Accept: `Vibranium.Tests.Round12TupleGateTests.WithElementAcceptControl` [analyzer, stage0, self]
+- Note: Closure matrix row 18; proposed wording, main decides.
+
 ### R1-sub-closure-matrix — diagnostic index for the closed subset
 - Kind: prose
 - Quote (§1-subset): `'<keyword>' is not supported in Vibranium.`
@@ -804,7 +821,8 @@ Units and quotes are normalised the same way: backticks and `*` are removed and 
 - Quote (§1-subset): `Labeled statements are not supported in Vibranium v0.2 ('goto' is not supported).`
 - Quote (§1-subset): `'scoped' iteration variables are not supported in Vibranium v0.2; omit 'scoped' from the 'foreach' variable.`
 - Quote (§1-subset): `Named positional elements in union-case patterns are not supported in Vibranium v0.2; drop the element name.`
-- Reason: This reference table catalogs the frontend cuts and their messages; its last row records the independently implemented and tested roslyn-followup-2b union-pattern restriction.
+- Quote (§1-subset): `Collection-expression 'with(...)' arguments are not supported in Vibranium v0.2; create the collection, then add its elements.`
+- Reason: This reference table catalogs the frontend cuts and their messages; row 17 records the independently implemented and tested roslyn-followup-2b union-pattern restriction and row 18 records the roslyn-tuple-gate collection-expression `with(...)` closure.
 
 ### R1-sub-one-per-file — each cut reports one VIB000 per file at its first occurrence
 - Quote (§1-subset): Each cut above reports one VIB000 per source file, at its first occurrence.
