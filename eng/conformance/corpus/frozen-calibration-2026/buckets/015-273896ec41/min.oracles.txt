@@ -1,0 +1,14 @@
+validity: valid
+tags: arg.out arith.int assign.compound assign.simple bcl.tryparse local.decl local.underscore local.underscore-read local.uninit localfunc.static out.underscore pattern.type-discard switch.no-default switch.sel.int switch.stmt
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libm.so.6 libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[25|0|] err=[]
+self-O0 run: exit=0 out=[0|0|] err=[]
+stage0-O0 run: exit=0 out=[25|0|] err=[]
+DISAGREEMENT: link-contract | self-O0 | libm.so.6 | dt_needed beyond libc
+DISAGREEMENT: output-mismatch | self | stdout | self-O0

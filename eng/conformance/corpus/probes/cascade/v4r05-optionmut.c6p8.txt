@@ -1,0 +1,12 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Option<Node> o = Some(new Node(1)); Option<Node> p = Some(new Node(2)); OptionMut<Node> m = o.AsMut(); bool b = (m = p.AsMut()).IsSome; WriteLine(b); WriteLine(m.IsSome); sealed class Node(int v) { public int V = v; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@1:109 Cannot read 'p' while exclusively borrowed by 'm'. ; VIB001@1:161 Use of moved value 'm'.
+stage0 check: REJECT VIB003@1:109 Cannot read 'p' while exclusively borrowed by 'm'. ; VIB001@1:161 Use of moved value 'm'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001,VIB003 | cannot read 'x' while exclusively borrowed by 'x'.
+

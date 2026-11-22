@@ -1,0 +1,1 @@
+WriteLine(F(0));WriteLine(F(1));static bool F(scoped int x)=>x is 0;

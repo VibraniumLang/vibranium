@@ -1,0 +1,33 @@
+{
+  "signature": "invalid-accepted | self | CS8518 | ",
+  "category": "known:N6",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS8518",
+  "msg": "",
+  "minTags": [
+    "coll.empty",
+    "coll.local-init",
+    "coll.vec",
+    "local.decl",
+    "localfunc.static",
+    "loop.foreach",
+    "loop.foreach-vec",
+    "pattern.combinator",
+    "pattern.is",
+    "pattern.relational",
+    "span.arg-rospan",
+    "span.from-vec",
+    "span.vec-slice-call",
+    "stmt.if"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 22133,
+  "plan": "SpanSlice\u003ELoop\u003ESpanSlice",
+  "mutations": [],
+  "reduceTests": 133,
+  "sizeBefore": 76,
+  "sizeAfter": 38,
+  "firstSeconds": 3171.5
+}

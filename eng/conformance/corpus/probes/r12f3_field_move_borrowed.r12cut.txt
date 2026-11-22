@@ -1,0 +1,6 @@
+Combined cut source (Round-12 cuts, frozen manifest 9ba44361), release-6 tool, run --exec:
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@2:115 Cannot move 'h.Items' while borrowed by 's'.
+stage0 check: REJECT VIB003@2:115 Cannot move 'h.Items' while borrowed by 's'.
+self check: exit=1 out=[] err=[Program.cs(2,116): error VIB003: Cannot move value while borrowed.|Program.cs(2,116): error VIB005: Cannot move non-Copy value out of a field, indexed element, or borrowed place.|]

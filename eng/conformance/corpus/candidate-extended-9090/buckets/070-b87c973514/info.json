@@ -1,0 +1,28 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB001} self-only:{VIB003} | ",
+  "category": "known:N8",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{VIB001} self-only:{VIB003}",
+  "msg": "",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "coll.empty",
+    "coll.local-init",
+    "coll.span",
+    "local.decl",
+    "loop.foreach",
+    "method.static",
+    "type.class"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 19802,
+  "plan": "Loop\u003EOptionSlot",
+  "mutations": [],
+  "reduceTests": 55,
+  "sizeBefore": 64,
+  "sizeAfter": 26,
+  "firstSeconds": 2705.5
+}

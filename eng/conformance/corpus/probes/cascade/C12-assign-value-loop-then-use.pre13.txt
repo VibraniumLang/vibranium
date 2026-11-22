@@ -1,0 +1,19 @@
+Vec<int> a = [1, 2];
+Vec<int> b = [3, 4, 5];
+Span<int> s = a.AsSpan();
+int n = 0;
+for (int i = 0; i < 2; i++)
+{
+    n += (s = b.AsSpan()).Length;
+}
+WriteLine(n);
+WriteLine(s.Length);
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@10:11 Use of moved value 's'.
+stage0 check: REJECT VIB001@10:11 Use of moved value 's'.
+self check: exit=1 out=[] err=[Program.cs(10,11): error VIB001: Use of moved value.|]
+

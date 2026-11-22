@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.float-to-int-cast arith.int assign.compound expr.cast expr.compare expr.conditional func.expr-body local.decl method.static type.class union.consume union.ctor view.assign-value-then-use view.elision-this
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@14:111 Cannot read 'b' while exclusively borrowed by 's'. ; VIB003@14:115 Cannot read 'b' while exclusively borrowed by 's'. ; VIB001@14:150 Use of moved value 's'.
+stage0 check: REJECT VIB003@14:111 Cannot read 'b' while exclusively borrowed by 's'. ; VIB003@14:115 Cannot read 'b' while exclusively borrowed by 's'. ; VIB001@14:150 Use of moved value 's'.
+self check: exit=1 out=[] err=[Program.cs(14,150): error VIB001: Use of moved value.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB003} self-only:{} | 

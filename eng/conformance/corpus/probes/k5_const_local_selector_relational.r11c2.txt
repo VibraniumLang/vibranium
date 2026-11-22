@@ -1,0 +1,33 @@
+WriteLine(F());
+static int F()
+{
+    const int k = 7;
+    int r = 0;
+    switch (k)
+    {
+        case < 0: SO s; s.A = 1; WriteLine(s.A); r = 1; break;
+        case >= 0: r = 2; break;
+    }
+    return r;
+}
+public enum E { A = 1, B = 2, C = 7 }
+public struct SO(int a, int b, Vec<int> n)
+{
+    public int A = a;
+    public int B = b;
+    public Vec<int> V = n;
+}
+
+validity: warn-only
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@8:19 Unreachable code detected
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[2|] err=[]
+self-O0 run: exit=0 out=[2|] err=[]
+stage0-O0 run: exit=0 out=[2|] err=[]
+

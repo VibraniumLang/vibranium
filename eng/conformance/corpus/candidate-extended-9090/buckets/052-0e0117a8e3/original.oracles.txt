@@ -1,0 +1,8 @@
+validity: invalid
+tags: arith.int assign.compound class.primary-ctor expr.cast expr.conditional local.decl localfunc.static optref.asref-pattern optref.switch optslot.issome optslot.local pattern.combinator pattern.is pattern.relational pattern.var stmt.if stmt.if-else type.class
+sdk-roslyn errors: CS8518@18:23 An expression of type 'int' can never match the provided pattern.
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS8518@18:23 An expression of type 'int' can never match the provided pattern.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS8518 | 

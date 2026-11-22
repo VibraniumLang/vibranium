@@ -1,0 +1,13 @@
+validity: valid
+tags: std.append-nonseekable
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[Other|] err=[]
+self-O0 run: exit=0 out=[ok|] err=[appended|]
+stage0-O0 run: exit=0 out=[ok|] err=[appended|]
+DISAGREEMENT: output-mismatch | stage0+self | stdout+stderr | stage0-O0,self-O0

@@ -1,0 +1,22 @@
+{
+  "signature": "analyzer-vs-stage0 | analyzer\u002Bstage0 | analyzer:{} stage0:{VIB007} | ",
+  "category": "known:O11-13",
+  "kind": "analyzer-vs-stage0",
+  "frontends": "analyzer\u002Bstage0",
+  "ids": "analyzer:{} stage0:{VIB007}",
+  "msg": "",
+  "minTags": [
+    "cond.temp-escapes-statement",
+    "gen.file-name-g-cs",
+    "type.class"
+  ],
+  "seed": "8181",
+  "profile": "activation",
+  "index": 41,
+  "plan": "CondTemp\u003EPanic\u003ECondTemp",
+  "mutations": [],
+  "reduceTests": 24,
+  "sizeBefore": 57,
+  "sizeAfter": 12,
+  "firstSeconds": 49
+}

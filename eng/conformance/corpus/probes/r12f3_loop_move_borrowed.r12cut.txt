@@ -1,0 +1,6 @@
+Combined cut source (Round-12 cuts, frozen manifest 9ba44361), release-6 tool, run --exec:
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@3:161 Cannot move 'v' while borrowed by 's'.
+stage0 check: REJECT VIB003@3:161 Cannot move 'v' while borrowed by 's'.
+self check: exit=1 out=[] err=[Program.cs(3,161): error VIB001: Use of moved value.|Program.cs(3,161): error VIB003: Cannot move value while borrowed.|]

@@ -1,0 +1,14 @@
+Candidate 6 (c6-pre1), release-7 tool, run --exec:
+ReadOnlySpan<int> x = [5, 6, 7];
+G(ref x);
+WriteLine(x[1]);
+static void G(ref ReadOnlySpan<int> p) { p = [1, 2]; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB004@2:3 Cannot pass shared borrow as mutable reference or receiver. ; VIB000@4:37 Parameter 'p' cannot pass borrowed view 'ReadOnlySpan' by ref or out in Vibranium.
+stage0 check: REJECT VIB004@2:3 Cannot pass shared borrow as mutable reference or receiver. ; VIB000@4:37 Parameter 'p' cannot pass borrowed view 'ReadOnlySpan' by ref or out in Vibranium.
+self check: exit=1 out=[] err=[Program.cs(2,3): error VIB004: Cannot pass shared borrow as mutable reference or receiver.|Program.cs(4,19): error VIB000: Parameter cannot pass borrowed view by ref or out in Vibranium.|]
+

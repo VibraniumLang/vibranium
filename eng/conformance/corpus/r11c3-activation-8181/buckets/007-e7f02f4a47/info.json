@@ -1,0 +1,23 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB003} | ",
+  "category": "known:O11-6",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{} self-only:{VIB003}",
+  "msg": "",
+  "minTags": [
+    "cond.temp-escapes-statement",
+    "local.decl",
+    "localfunc.static",
+    "view.elision-this"
+  ],
+  "seed": "8181",
+  "profile": "activation",
+  "index": 27,
+  "plan": "CondTemp\u003EViewReturn",
+  "mutations": [],
+  "reduceTests": 24,
+  "sizeBefore": 39,
+  "sizeAfter": 28,
+  "firstSeconds": 35.8
+}

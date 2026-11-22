@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.bitwise arith.int assign.compound coll.arg coll.elem-byte coll.rospan expr.cast expr.compare expr.conditional expr.index func.expr-body local.decl localfunc.static method.instance method.static type.class type.field uswitch.default uswitch.expr uswitch.expr-whole-union-arm uswitch.nonunion-label uswitch.not-case uswitch.option uswitch.payload-owner uswitch.place
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(22,94): error VIB005: Cannot move non-Copy value out of a field, indexed element, or borrowed place.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB005 | cannot move non-copy value out of a field, indexed element, or borrowed place.

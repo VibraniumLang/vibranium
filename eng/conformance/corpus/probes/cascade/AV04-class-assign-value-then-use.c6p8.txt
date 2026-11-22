@@ -1,0 +1,16 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Node x = new Node(1);
+int k = (x = new Node(2)).V;
+WriteLine(k);
+WriteLine(x.V);
+
+sealed class Node(int v) { public int V = v; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@4:11 Use of moved value 'x'.
+stage0 check: REJECT VIB001@4:11 Use of moved value 'x'.
+self check: exit=1 out=[] err=[Program.cs(4,12): error VIB001: Use of moved value.|]
+

@@ -1,0 +1,24 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+int k = 3;
+Vec<int> a = [1, 2];
+Vec<int> b = [3, 4, 5];
+Span<int> t = b.AsSpan();
+Span<int> s = a.AsSpan();
+if (k > 1)
+{
+    t = s;
+}
+else
+{
+    b[0] = 7;
+}
+WriteLine(t[0]);
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@12:5 Cannot borrow 'b' immutably while borrowed by 't'. ; VIB003@12:5 Cannot mutate 'b' while borrowed by 't'.
+stage0 check: REJECT VIB003@12:5 Cannot borrow 'b' immutably while borrowed by 't'. ; VIB003@12:5 Cannot mutate 'b' while borrowed by 't'.
+self check: exit=1 out=[] err=[Program.cs(12,6): error VIB003: Borrow conflicts with an active borrow.|Program.cs(12,10): error VIB003: Cannot mutate through reference while borrowed by another live reference.|]
+

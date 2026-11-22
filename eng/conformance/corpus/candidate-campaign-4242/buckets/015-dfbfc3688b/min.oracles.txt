@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound assign.field assign.simple const.local expr.compare func.expr-body local.decl local.uninit localfunc.nested localfunc.static pattern.relational struct.fieldwise-init struct.local switch.expr switch.expr-no-discard switch.guard switch.sel.int type.field type.struct
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(8,31): error VIB000: Switch expression must be exhaustive (include a '_' or 'var' catch-all arm) in Vibranium.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | switch expression must be exhaustive (include a 'x' or 'x' catch-all arm) in vibranium.

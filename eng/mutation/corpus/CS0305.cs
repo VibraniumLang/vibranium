@@ -1,0 +1,1 @@
+WriteLine(F(Some(4)));WriteLine(F(None));static int F(Option<int> o)=>o switch{Some<int, int>(var v)=>v,NoneType=>0};

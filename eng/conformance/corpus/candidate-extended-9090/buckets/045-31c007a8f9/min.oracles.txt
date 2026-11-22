@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound func.expr-body local.decl localfunc.static span.foreach-ref span.from-vec span.range span.slice-local span.vec-range utf8.nm-view-local
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@8:18 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@8:31 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@8:35 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@9:15 Use of moved value 's3'. ; VIB000@10:9 Closed UTF-8 foreach view 'Utf8Lines' cannot be stored in local variable 'l1_lines'; iterate it directly in 'foreach'. ; VIB000@10:20 Closed UTF-8 foreach view 'Utf8Lines' is only permitted as a method return value or direct 'foreach' collection.
+stage0 check: REJECT VIB003@8:18 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@8:31 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@8:35 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@9:15 Use of moved value 's3'. ; VIB000@10:9 Closed UTF-8 foreach view 'Utf8Lines' cannot be stored in local variable 'l1_lines'; iterate it directly in 'foreach'. ; VIB000@10:20 Closed UTF-8 foreach view 'Utf8Lines' is only permitted as a method return value or direct 'foreach' collection.
+self check: exit=1 out=[] err=[Program.cs(10,9): error VIB000: 'Utf8Lines' and 'Utf8ArgEnumerator' can only be used directly in 'foreach' or returned from a method.|Program.cs(10,38): error VIB000: 'Lines()' view can only be iterated directly in 'foreach' or returned from a view helper.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001,VIB003} self-only:{} | 

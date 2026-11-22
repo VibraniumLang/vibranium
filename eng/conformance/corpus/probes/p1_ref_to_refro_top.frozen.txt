@@ -1,0 +1,6 @@
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(2,10): error VIB000: Unsupported, unresolved, or inapplicable method call in Vibranium.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | unsupported, unresolved, or inapplicable method call in vibranium.

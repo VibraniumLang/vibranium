@@ -1,0 +1,60 @@
+# Other CS IDs for the invalid-program mutation oracle (docs/MUTATION.md): a severity class, not a waiver list.
+# Accepting a C#-invalid program is a defect, these IDs included. A self accept under one of them is P2 and is listed
+# under Known issues: acceptance is not expected to break memory or type safety, ownership/linearity or a Std/Core
+# invariant (duplicate or forbidden modifiers, duplicate members, unused-symbol warnings and the like). Warning IDs
+# here only matter for warning-only parity input (blanket-promoted warnings), which is reported and never gated.
+# Format: ID<TAB>likely self component<TAB>why it is not safety-relevant.
+CS0017	binder	more than one entry point: self picks one of two well-typed entry points
+CS0082	binder	user method whose name and parameters are reserved by an accessor (set_P beside property P): a duplicate member, as CS0111; either body is well-typed
+CS0101	binder	duplicate type declaration: name resolution picks one declaration; duplicate members are not safety-relevant
+CS0102	binder	duplicate member (field, property, nested type): other (duplicate member)
+CS0106	parser	modifier C# forbids on that item (readonly class, static struct, readonly class method): ignoring it leaves the C#-valid program without the modifier, and self's own checks still run
+CS0107	parser	two protection modifiers on one user member: only changes the visibility of the user's own declaration; Std/Core internals are not affected
+CS0111	binder	duplicate method signature: other (duplicate member); either body is well-typed
+CS0112	parser	static member marked override/virtual/abstract: inheritance is banned (VIB000), the modifier has no meaning
+CS0121	lowerer	ambiguous call between applicable candidates (usually duplicate members): every candidate is applicable and well-typed
+CS0162	lowerer	unreachable code (warning): C# defines the code as never executed; self's native builds of such programs ran cleanly (asan.md)
+CS0168	binder	local declared but never used (warning): no runtime effect
+CS0169	binder	unused private field (warning, blanket TWAE): no runtime effect
+CS0219	binder	local assigned but never used (warning, blanket TWAE): no runtime effect
+CS0229	binder	ambiguity between duplicate members: consequence of a duplicate member (other); every candidate is well-typed
+CS0238	parser	sealed on a non-override member: inheritance is banned, sealed has no meaning
+CS0273	parser	accessor modifier that is not more restrictive than its property: only the visibility of the user's own declaration, as CS0107
+CS0274	parser	accessibility modifiers on both accessors: only the visibility of the user's own declaration, as CS0107
+CS0276	binder	accessor modifier on a property with one accessor: only the visibility of the user's own property
+CS0414	binder	private field assigned but never read (warning, blanket TWAE): no runtime effect
+CS0441	parser	class both static and sealed: redundant modifiers, no meaning beyond static
+CS0464	lowerer	comparison of a value type with null is always false (warning): a constant comparison, no null value is created
+CS0472	lowerer	value type compared with null is always false (warning): as CS0464
+CS0500	binder	abstract method with a body: the body is well-typed; abstract has no meaning without inheritance (banned)
+CS0504	parser	const marked static: a const is already static, the modifier is redundant
+CS0621	binder	private virtual/abstract member: inheritance is banned, the modifier has no meaning
+CS0628	binder	new protected member in a sealed type (warning): visibility of the user's own member
+CS0649.zero-safe	checker	field never assigned whose type is zero-safe (primitives, enums, Option<T> = None, Copy structs of zero-safe fields): the default is a valid Vibranium value (main's CS0649 decision; Stage0 accepts it). A warning: warning-only parity input unless a genuine error is present
+CS0652	lowerer	comparison with a constant outside the operand's range (warning, blanket TWAE): the comparison is a well-defined constant
+CS0666	binder	protected member in a struct: visibility of the user's own member (Std/Core are not affected)
+CS0675	lowerer	bitwise-or on a sign-extended operand (warning): well-defined arithmetic
+CS0708	binder	instance member declared in a static class: a static class has no instances, so the member is unreachable
+CS0710	binder	instance constructor in a static class: unreachable without an instance (CS0712 is safety-relevant)
+CS0714	binder	static class implementing an interface: a static class has no instances, so no resource exists
+CS0720	binder	indexer in a static class: unreachable without an instance
+CS0822	parser	implicitly typed const: same meaning as a const of the initializer's type
+CS1004	parser	duplicate modifier: same meaning as one modifier
+CS1057	binder	protected member in a static class: visibility of the user's own member
+CS1066	binder	warning (a default value that has no effect); only the blanket TreatWarningsAsErrors promotes it, so warning-only parity input, never gated
+CS1107	parser	the same parameter modifier twice (ref ref): same meaning as once
+CS1527	parser	top-level type declared private/protected: single-assembly program, visibility has no runtime meaning
+CS1585	parser	member modifier after the member type: modifier order only
+CS1737	parser	optional parameter before a required one: only the declaration order is wrong; needs C12 (optional parameters), cut in v0.2
+CS5001	binder	no entry point: 'check' accepts a library; 'build' and 'run' already require an entry point (VIB000)
+CS8120	lowerer	switch case already handled: an unreachable section, no runtime effect
+CS8321	binder	local function declared but never used (warning, blanket TWAE): no runtime effect
+CS8510	lowerer	switch-expression arm already handled: an unreachable arm, no runtime effect
+CS8657	parser	static member marked readonly: readonly has no meaning without an instance
+CS8863	binder	parameter list on more than one partial declaration: a duplicate declaration (other, like duplicate members)
+CS8958	binder	parameterless struct constructor that is not public: a declaration-form rule; self still checks access at each new S() (CS0122 is rejected) and the constructor runs as written
+CS9048	parser	scoped on a by-value non-ref-struct parameter: scoped only narrows lifetimes, it has no meaning there
+CS9113	binder	primary-constructor parameter never read (warning, blanket TWAE): no runtime effect
+CS9190	parser	readonly written before ref: modifier order only
+CS9349	parser	scoped written after in/out/ref/readonly: modifier order only
+CS9350	parser	scoped written before this: modifier order only

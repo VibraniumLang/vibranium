@@ -1,0 +1,17 @@
+validity: valid
+tags: arith.int assign.compound ca.borrow-then-move ca.form-instance ca.loan-ref-proj ca.loan-ref-readonly ca.move-bare ca.owner-holder ca.rel-ext local.decl local.var localfunc.static
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[0|] err=[]
+self-O0 run: exit=139 out=[] err=[]
+self-O3-asan run: exit=0 out=[0|] err=[]
+stage0-O0 run: exit=139 out=[] err=[]
+stage0-O3-asan run: exit=1 out=[] err=[=================================================================|==2202326==ERROR: AddressSanitizer: heap-use-after-free on address 0x503000000040 at pc 0x64c95317221a bp 0x7ffcf98abf90 sp 0x7ffcf98abf88|READ of size 8 at 0x503000000040 thread T0|    #0 0x64c953172219 in vib_fn_Program__LT_Main_GT___string____151_Ca4_int__95822b8f (stage0-O3-asan.bin+0x106219) (BuildId: 27e6d163edfaee21ed4f220372793da971779fa1)|    #1 0x64c953170bdb in vib_fn_Program__LT_Main_GT___string____0de59ea2 (stage0-O3-asan.bin+0x104bdb) (BuildI...]
+DISAGREEMENT: spec-accepted | analyzer+stage0+self | ca.borrow-then-move | expected ca.borrow-then-move:VIB003
+DISAGREEMENT: sanitizer | stage0-O3-asan | heap-use-after-free on | 
+DISAGREEMENT: output-mismatch | stage0+self | exit+stdout | stage0-O0,self-O0

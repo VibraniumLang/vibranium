@@ -1,0 +1,29 @@
+{
+  "signature": "invalid-accepted | self | CS0266 | ",
+  "category": "known:N7",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS0266",
+  "msg": "",
+  "minTags": [
+    "arith.int",
+    "arith.rem-float",
+    "assign.compound",
+    "local.decl",
+    "local.var",
+    "localfunc.static",
+    "pattern.discard",
+    "switch.expr",
+    "switch.sel-unparenthesized",
+    "switch.sel.float"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 2630,
+  "plan": "Utf8View\u003ESwitchExpr",
+  "mutations": [],
+  "reduceTests": 44,
+  "sizeBefore": 70,
+  "sizeAfter": 32,
+  "firstSeconds": 521.4
+}

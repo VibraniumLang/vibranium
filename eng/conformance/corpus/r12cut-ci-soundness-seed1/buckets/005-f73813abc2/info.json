@@ -1,0 +1,33 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB001} | ",
+  "category": "new:R12-F3",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{} self-only:{VIB001}",
+  "msg": "",
+  "minTags": [
+    "arg.in",
+    "arith.int",
+    "assign.compound",
+    "coll.empty",
+    "coll.local-init",
+    "coll.vec",
+    "expr.index",
+    "local.decl",
+    "localfunc.static",
+    "param.in",
+    "snd.inval-sink",
+    "snd.place-after-loop",
+    "snd.producer-view-helper",
+    "snd.use-read"
+  ],
+  "seed": "1",
+  "profile": "soundness",
+  "index": 154,
+  "plan": "RefParams\u003ESndView",
+  "mutations": [],
+  "reduceTests": 43,
+  "sizeBefore": 59,
+  "sizeAfter": 44,
+  "firstSeconds": 79.3
+}

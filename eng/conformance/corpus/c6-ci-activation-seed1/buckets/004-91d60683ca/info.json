@@ -1,0 +1,22 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB003} | ",
+  "category": "new:N16",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{} self-only:{VIB003}",
+  "msg": "",
+  "minTags": [
+    "type.class",
+    "view.param-stack-escape",
+    "view.param-stack-scope-exit"
+  ],
+  "seed": "1",
+  "profile": "activation",
+  "index": 163,
+  "plan": "ViewReturn\u003EArith",
+  "mutations": [],
+  "reduceTests": 9,
+  "sizeBefore": 49,
+  "sizeAfter": 9,
+  "firstSeconds": 59.4
+}

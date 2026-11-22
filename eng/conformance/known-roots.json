@@ -1,0 +1,1484 @@
+[
+  {
+    "id": "R12-CUTS",
+    "title": "cuts C10–C20 (user-approved 2026-11-17) and C21 (decided 2026-11-18): a program with a C10–C21 form (the tool's own scan) is accepted, rejected without VIB000, or rejected without exactly one VIB000 with the cut's message at its anchor",
+    "status": "fixed",
+    "kinds": [
+      "banned-accepted",
+      "banned-wrong-id",
+      "cut-anchor"
+    ],
+    "frontends": null,
+    "ids": null,
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "cut.ref-readonly-param",
+      "cut.underscore-decl",
+      "cut.optional-param",
+      "cut.named-arg-order",
+      "cut.this-assign",
+      "cut.conditional-ref",
+      "cut.nested-collection",
+      "cut.native-int",
+      "cut.switch-section-decl",
+      "cut.constant-condition",
+      "cut.relational-and-pattern",
+      "cut.base-ctor-call"
+    ]
+  },
+  {
+    "id": "N16",
+    "title": "N16 (found by release-7 while making seeded bug S3 observable): a collection expression assigned to a by-value view parameter that is then returned (`p = [1, 2]; return p;`, also on one branch, `[]` or `p[1..]`); the Analyzer and Stage-0 report only VIB007, self reports VIB003 and VIB007 as SPEC §3.7 states; fixed on the Roslyn side in candidate 6 (manifest pre5)",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "^stage0-only:\\{\\} self-only:\\{VIB003\\}$",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "view.param-stack-escape",
+      "view.param-stack-scope-exit"
+    ]
+  },
+  {
+    "id": "N16",
+    "title": "N16 through the expectation oracle: the Analyzer and Stage-0 lack the SPEC §3.7 VIB003 for a collection expression assigned to a by-value view parameter that is returned",
+    "status": "fixed",
+    "kinds": [
+      "spec-wrong-id"
+    ],
+    "frontends": null,
+    "ids": "^view\\.param-stack-scope-exit>analyzer:\\S+ view\\.param-stack-scope-exit>stage0:\\S+$",
+    "msg": null,
+    "tagsAll": [
+      "view.param-stack-scope-exit"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "N17",
+    "title": "N17 (assignment-value cascade, found by /roslyn-n16 by hand; generator shapes from release-7.1): on the Roslyn side a moved `!Copy` view keeps its borrow and an overwritten view's old borrows still count, so the Analyzer and Stage-0 add VIB003 to the use of a moved source ({VIB001, VIB003}; self {VIB001}) and reject with VIB003 a view reassigned in a loop by a plain move, a call or an assignment value, which self accepts. Decided (A+): self is right; fix: roslyn-assign-value-cascade. Fixed in candidate 6 pre9 (kept as a regression detector)",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "^stage0-only:\\{VIB003\\} self-only:\\{\\}$",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "view.move-use-source",
+      "view.move-conditional-use-source",
+      "view.assign-value-then-use",
+      "view.loop-moved-source-used"
+    ]
+  },
+  {
+    "id": "N17",
+    "title": "N17 through the loop shapes: the Analyzer and Stage-0 reject (VIB003) a view reassigned in a loop that self accepts",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^self-accepts$",
+    "ids": "^stage0:VIB003$",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "view.loop-reassign-move",
+      "view.loop-reassign-call",
+      "view.loop-assign-value-receiver",
+      "view.loop-assign-value-argument",
+      "view.loop-rebind-old-owner-mutated"
+    ]
+  },
+  {
+    "id": "N17",
+    "title": "N17 through the expectation oracle: the Analyzer and Stage-0 lack the decided VIB001 (they report VIB003) for a view moved by an assignment value and used again, as at the top of the next loop iteration",
+    "status": "fixed",
+    "kinds": [
+      "spec-wrong-id"
+    ],
+    "frontends": null,
+    "ids": "(view\\.loop-moved-source-used|view\\.assign-value-then-use)>(analyzer|stage0):",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "view.loop-moved-source-used",
+      "view.assign-value-then-use"
+    ]
+  },
+  {
+    "id": "N18",
+    "title": "N18 (self V4): in vib-self the value of an assignment to a `!Copy` view used as a receiver, argument or chain does not move the destination, so a later use is accepted; SPEC §3.2 item 1 gives VIB001 (the Analyzer and Stage-0 report VIB001, plus N17's VIB003 until that fix). Fix: self-fix V4. Fixed in candidate 6 pre9 (kept as a regression detector)",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^self-accepts$",
+    "ids": "^stage0:VIB001(,VIB003)?$",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "view.assign-value-then-use",
+      "view.loop-moved-source-used"
+    ]
+  },
+  {
+    "id": "N18",
+    "title": "N18 through the expectation oracle: self lacks the decided VIB001 for a view moved by an assignment value and used again (it reports only another scenario's ID, or VIB003 at the top of the next loop iteration)",
+    "status": "fixed",
+    "kinds": [
+      "spec-wrong-id"
+    ],
+    "frontends": null,
+    "ids": "(view\\.loop-moved-source-used|view\\.assign-value-then-use)>self:",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "view.loop-moved-source-used",
+      "view.assign-value-then-use"
+    ]
+  },
+  {
+    "id": "N18",
+    "title": "N18 when another scenario makes self reject too: the Analyzer and Stage-0 report the decided VIB001 for a use after an assignment-value move, self does not",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "^stage0-only:\\{VIB001(,VIB003)?\\} self-only:\\{\\}$",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "view.assign-value-then-use",
+      "view.loop-moved-source-used"
+    ]
+  },
+  {
+    "id": "N19",
+    "title": "N19 (P0, self V5; found by /self-fix, generator shapes from release-7.1): in a switch statement over `Option<T>`/`Result<T, E>`, vib-self silently drops every case label that is not a union case (`Some/None/Ok/Err(..)`), `_`/default or a designation-free `var`/type pattern: `case not NoneType when ..:`, `case Some<T> or NoneType when ..:`, `case not Err<int>:`, `case not Some<T>:`, `case var w when ..:`. Managed and Stage-0 agree; self native prints another value, panics (\"index out of bounds\", exit 101, when an exhaustive switch reaches its `unreachable` block) or loops. Fix: self-fix-v (V5). Candidate 6 pre9 (self-fix-v) fixes the wrong values, panics and loops; a residual of the static predicates stays open: self reports a false VIB001 on a later use of an owned `!Copy` `Option`/`Result` place after a switch statement whose labels are all whole-union labels plus `default:` (corpus/probes/union-switch r01-r12). Fixed in candidate 6 pre13 (self-fix-w removed the residual); kept as a regression detector",
+    "status": "fixed",
+    "kinds": [
+      "output-mismatch",
+      "run-timeout",
+      "sanitizer"
+    ],
+    "frontends": "^self(-O[03](-asan)?)?$",
+    "ids": null,
+    "msg": null,
+    "tagsAll": [
+      "uswitch.stmt-nonunion-label"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "N19",
+    "title": "N19 through the self checker: self rejects a valid switch over `Option`/`Result` with a whole-union label or arm that Stage-0 and the Analyzer accept: a guarded or final `var w` (self VIB000/VIB001 with CS0165/CS0170 on its own lowering), and in switch expressions a whole-union arm (`not NoneType when ..`, `Some<T> or NoneType when ..`) before the payload arm (self VIB001: the arm moved the payload) or on a place (`o switch { not Some<T> => .. }`, self VIB005). Fix: self-fix-v (V5)",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^stage0-accepts$",
+    "ids": "^self:",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "uswitch.stmt-nonunion-label",
+      "uswitch.expr-whole-union-arm"
+    ]
+  },
+  {
+    "id": "N19",
+    "title": "N19 when another scenario makes Stage-0 reject too: self adds VIB000/VIB001/VIB005 on a switch over `Option`/`Result` with a whole-union label or arm",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "^stage0-only:\\{[^}]*\\} self-only:\\{[^}]*VIB00[015][^}]*\\}$",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "uswitch.stmt-nonunion-label",
+      "uswitch.expr-whole-union-arm"
+    ]
+  },
+  {
+    "id": "N20",
+    "title": "N20 (fixed in candidate 6 pre13 by roslyn-linear-switch and self-fix; decided 2026-11-18 as a ban, narrowed the same day): in a switch statement or expression over a LINEAR union with an rvalue or `Move(o)` scrutinee, an arm that tests a variant (`Some<R>(...)`, `NoneType`, `Ok<R>(...)`, `Err<E>(...)`) may not carry a `when` guard, a variant may be tested by at most one arm, and `not`/`or` patterns are not allowed: each is exactly {VIB006} on all three frontends (`var u` over the whole union and a guarded discard arm stay valid; a place scrutinee keeps what all three report). On candidate 6 pre9 the Analyzer and Stage-0 add VIB001 \"Use of moved value 'temporary value'\" at the scrutinee, and self accepts the guarded and repeated-variant forms (it gives {VIB006} for the `not` forms). Fixes: roslyn-linear-switch (drops the extra VIB001) and self-fix (rejects the guarded and repeated-variant forms). The matrix rows `decided.linear-switch-*` (exact {VIB006}) name this root, so with it fixed a violation is a plain violation; the generator emits linear payloads only in the allowed forms (exec controls); probes in corpus/probes/linear-switch",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^self-accepts$",
+    "ids": "^stage0:(VIB001,)?VIB006$",
+    "msg": null,
+    "tagsAll": [
+      "uswitch.payload-linear"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "N20",
+    "title": "N20 when self rejects too: Stage-0 adds VIB001 ('temporary value') to the decided VIB006, self gives {VIB006}",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "^stage0-only:\\{VIB001\\} self-only:\\{\\}$",
+    "msg": null,
+    "tagsAll": [
+      "uswitch.payload-linear"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O11-13",
+    "title": "Analyzer: a `// <auto-generated/>` header or `*.g.cs` file name silences the Analyzer (Stage-0/self still report)",
+    "status": "fixed",
+    "kinds": [
+      "analyzer-vs-stage0"
+    ],
+    "frontends": null,
+    "ids": "^analyzer:\\{\\}",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "gen.auto-generated-header",
+      "gen.file-name-g-cs"
+    ]
+  },
+  {
+    "id": "O11-13",
+    "title": "O11-13 on a banned or cut construct: only the Analyzer accepts",
+    "status": "fixed",
+    "kinds": [
+      "banned-accepted"
+    ],
+    "frontends": "^analyzer$",
+    "ids": null,
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "gen.auto-generated-header",
+      "gen.file-name-g-cs"
+    ]
+  },
+  {
+    "id": "O11-1",
+    "title": "call activation: an earlier argument/receiver/target loan is not live while a later operand of the same call moves the owner; every frontend accepts (expected VIB003)",
+    "status": "fixed",
+    "kinds": [
+      "spec-accepted",
+      "output-mismatch",
+      "sanitizer",
+      "run-timeout",
+      "managed-crash"
+    ],
+    "frontends": null,
+    "ids": null,
+    "msg": null,
+    "tagsAll": [
+      "ca.borrow-then-move"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O11-1",
+    "title": "O11-1 on the Analyzer/Stage-0 side: Stage-0 accepts a borrow-then-move call that self rejects",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^stage0-accepts$",
+    "ids": "^self:[^ ]*VIB003",
+    "msg": null,
+    "tagsAll": [
+      "ca.borrow-then-move"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O11-1",
+    "title": "O11-1 seen as a pre-model ID: every frontend rejects a borrow-then-move call, but not with VIB003 (a bare field move is VIB005, `Eat(out x, x)` is VIB001, or the conflict is missed next to another error); the call-activation model makes it VIB003",
+    "status": "fixed",
+    "kinds": [
+      "spec-wrong-id"
+    ],
+    "frontends": null,
+    "ids": "ca\\.borrow-then-move>",
+    "msg": null,
+    "tagsAll": [
+      "ca.borrow-then-move"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O11-2",
+    "title": "self: bare move of a two-phase-reserved base (`b.Absorb(b)`, `b += b`, `ref r = ref v; r = Move(v)`, `ref`/`out` arguments, assignment targets) accepted (Stage-0 VIB003)",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^self-accepts$",
+    "ids": "^stage0:[^ ]*VIB003",
+    "msg": null,
+    "tagsAll": [
+      "ca.borrow-then-move"
+    ],
+    "tagsAny": [
+      "ca.loan-mut-recv",
+      "ca.loan-ref",
+      "ca.loan-out",
+      "ca.loan-target",
+      "ca.loan-this-ref"
+    ]
+  },
+  {
+    "id": "O11-1",
+    "title": "O11-1 on the self side: self accepts a borrow-then-move call that Stage-0 rejects with VIB003 (`Eat(in x, Move(x))`, `x.R(Move(x))` on a readonly struct, `new W(in x, Move(x))`, linear `Use(in r, Move(r))`)",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^self-accepts$",
+    "ids": "^stage0:[^ ]*VIB003",
+    "msg": null,
+    "tagsAll": [
+      "ca.borrow-then-move"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O11-1",
+    "title": "O11-1 in an ID set: one frontend reports the VIB003 of a borrow-then-move call and the other only a pre-model ID (VIB005 for a moved field projection)",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "(stage0|self)-only:\\{[^}]*VIB003",
+    "msg": null,
+    "tagsAll": [
+      "ca.borrow-then-move"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O11-3",
+    "title": "self: returned view parameters not checked against `[return: LifetimeOf]`/elision (Stage-0 VIB007/VIB003)",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject",
+      "output-mismatch",
+      "sanitizer"
+    ],
+    "frontends": "^(self-accepts|self(-O[03](-asan)?)?)$",
+    "ids": null,
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "view.lifetimeof-violated",
+      "view.elision-this-violated",
+      "view.elision-ambiguous",
+      "view.use-after-mutate"
+    ]
+  },
+  {
+    "id": "O11-3",
+    "title": "O11-3 in an ID set: self lacks the VIB007 of a returned view parameter (LifetimeOf/elision) when the program has another error",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "stage0-only:\\{[^}]*VIB007",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "view.lifetimeof-violated",
+      "view.elision-this-violated",
+      "view.elision-ambiguous",
+      "view.use-after-mutate"
+    ]
+  },
+  {
+    "id": "O11-3",
+    "title": "O11-3 through the expectation oracle: every frontend rejects, but self without the VIB007/VIB003 of a returned view parameter",
+    "status": "fixed",
+    "kinds": [
+      "spec-wrong-id"
+    ],
+    "frontends": null,
+    "ids": "view\\.(lifetimeof-violated|elision-this-violated|elision-ambiguous|use-after-mutate)>self:",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "view.lifetimeof-violated",
+      "view.elision-this-violated",
+      "view.elision-ambiguous",
+      "view.use-after-mutate"
+    ]
+  },
+  {
+    "id": "O11-4",
+    "title": "self: constant out-of-range or special float -> nint/nuint folded to 0 instead of the runtime saturating conversion",
+    "status": "fixed",
+    "kinds": [
+      "output-mismatch"
+    ],
+    "frontends": "^self(-O[03](-asan)?)?$",
+    "ids": null,
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "arith.float-nint-const-oob",
+      "arith.float-nint-const-special"
+    ]
+  },
+  {
+    "id": "O11-5",
+    "title": "Analyzer+Stage-0 false VIB003: a span returned from a call on Span<T> is treated as a fresh borrow of the owner, not a reborrow of the parent",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^self-accepts$",
+    "ids": "^stage0:[^ ]*VIB003",
+    "msg": null,
+    "tagsAll": [
+      "view.reborrow-parent-after"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O11-6",
+    "title": "self false VIB003: a call temporary in a conditional arm is scoped too narrowly",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^stage0-accepts$",
+    "ids": "^self:[^ ]*VIB003",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "cond.temp-arm-arg",
+      "cond.temp-both-arms"
+    ]
+  },
+  {
+    "id": "O11-6",
+    "title": "O11-6 seen in an ID set: self adds VIB003 for a call temporary in a conditional arm (next to another error, or to the VIB007 of a conditional stored in a local)",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "self-only:\\{[^}]*VIB003",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "cond.temp-arm-arg",
+      "cond.temp-both-arms",
+      "cond.temp-escapes-statement"
+    ]
+  },
+  {
+    "id": "O11-7",
+    "title": "Analyzer+Stage-0 reject nint/nuint MinValue/MaxValue (SPEC §5.3 names them; self accepts)",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^self-accepts$",
+    "ids": null,
+    "msg": null,
+    "tagsAll": [
+      "arith.nint-bounds"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O11-7",
+    "title": "O11-7 in an ID set: Stage-0 adds VIB000 for nint/nuint MinValue/MaxValue",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "stage0-only:\\{[^}]*VIB000",
+    "msg": null,
+    "tagsAll": [
+      "arith.nint-bounds"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O11-8a",
+    "title": "declaration boundary: file-local types, user partial types/methods, constructor chaining `: this(...)` not rejected alike (C6, C7, C9)",
+    "status": "fixed",
+    "kinds": [
+      "banned-accepted",
+      "banned-wrong-id",
+      "analyzer-vs-stage0",
+      "output-mismatch",
+      "native-build-failure",
+      "frontend-crash"
+    ],
+    "frontends": null,
+    "ids": null,
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "cut.file-type",
+      "cut.partial",
+      "cut.ctor-chaining"
+    ]
+  },
+  {
+    "id": "O11-8b",
+    "title": "declaration boundary: type nested in a generic type (C8; self \"Unknown type name\")",
+    "status": "fixed",
+    "kinds": [
+      "banned-accepted",
+      "banned-wrong-id",
+      "analyzer-vs-stage0",
+      "output-mismatch",
+      "native-build-failure",
+      "frontend-crash"
+    ],
+    "frontends": null,
+    "ids": null,
+    "msg": null,
+    "tagsAll": [
+      "cut.nested-in-generic"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O11-9",
+    "title": "preprocessor: conditional compilation directives not rejected alike; native defines no symbols (C5)",
+    "status": "fixed",
+    "kinds": [
+      "banned-accepted",
+      "banned-wrong-id",
+      "analyzer-vs-stage0",
+      "output-mismatch"
+    ],
+    "frontends": null,
+    "ids": null,
+    "msg": null,
+    "tagsAll": [
+      "cut.preprocessor"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O11-10",
+    "title": "self ID set {VIB001,VIB003} vs Stage-0 {VIB003} for a receiver moved in its own index argument",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "self-only:\\{[^}]*VIB001",
+    "msg": null,
+    "tagsAll": [
+      "ca.form-indexer-get"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O11-10",
+    "title": "O11-10 in a call: self adds VIB001 at an earlier `in` argument when a later argument consumes the same owner (`new W(in x, x.Unwrap())`; Stage-0 VIB003 only)",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "^stage0-only:\\{\\} self-only:\\{VIB001\\}$",
+    "msg": null,
+    "tagsAll": [
+      "ca.borrow-then-move",
+      "ca.move-consume"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O11-11",
+    "title": "Analyzer+Stage-0 add VIB001 (internal `__this_N` name) to the VIB008 of an instance call on `this` in a constructor (before or after field init)",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "stage0-only:\\{[^}]*VIB001",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "decl.this-call-before-init",
+      "decl.this-call-after-init"
+    ]
+  },
+  {
+    "id": "O11-12",
+    "title": "Std: File.AppendAllText/OpenAppend on a non-seekable target fails on .NET (Seek to end) and succeeds natively",
+    "status": "fixed",
+    "kinds": [
+      "output-mismatch"
+    ],
+    "frontends": null,
+    "ids": null,
+    "msg": null,
+    "tagsAll": [
+      "std.append-nonseekable"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O1",
+    "title": "named `out _` ignores an in-scope variable `_` (self wrong output / accepts field form)",
+    "status": "fixed",
+    "kinds": [
+      "output-mismatch",
+      "accept-reject"
+    ],
+    "frontends": "^(self|self-accepts)$",
+    "ids": null,
+    "msg": null,
+    "tagsAll": [
+      "out.underscore"
+    ],
+    "tagsAny": [
+      "local.underscore",
+      "param.underscore",
+      "field.underscore"
+    ]
+  },
+  {
+    "id": "O1",
+    "title": "O1 seen through another error: Stage0 VIB004 for `out _` writing a field `_` (self treats it as a discard)",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "stage0-only:\\{[^}]*VIB004",
+    "msg": null,
+    "tagsAll": [
+      "out.underscore"
+    ],
+    "tagsAny": [
+      "field.underscore",
+      "local.underscore",
+      "param.underscore"
+    ]
+  },
+  {
+    "id": "O1",
+    "title": "O1: self reads the in-scope `_` as unassigned after `out _` wrote it (false VIB001)",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^stage0-accepts$",
+    "ids": "VIB001",
+    "msg": null,
+    "tagsAll": [
+      "out.underscore"
+    ],
+    "tagsAny": [
+      "local.underscore",
+      "param.underscore",
+      "field.underscore"
+    ]
+  },
+  {
+    "id": "O2a",
+    "title": "switch-section expression variables scoped to the section in self (accepts CS0128)",
+    "status": "fixed",
+    "kinds": [
+      "invalid-accepted"
+    ],
+    "frontends": "self",
+    "ids": "CS0128",
+    "msg": null,
+    "tagsAll": [
+      "switch.stmt"
+    ],
+    "tagsAny": [
+      "out.var",
+      "out.typed",
+      "pattern.decl",
+      "pattern.var",
+      "pattern.is",
+      "switch.cross-section-dup"
+    ]
+  },
+  {
+    "id": "N14",
+    "title": "self cannot resolve a union-pattern variable (`Err<int>(var e)`, `Some<int>(var v)`) declared in one label of a multi-label switch section whose other label has a `when false` guard (VIB000 'Unresolved or captured identifier'); Roslyn treats the `when false` label as never matching, so the variable is definitely assigned, and Stage-0 accepts. Int patterns work",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^stage0-accepts$",
+    "ids": "VIB000",
+    "msg": "unresolved or captured identifier",
+    "tagsAll": [
+      "switch.guard-false",
+      "pattern.union"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O2b",
+    "title": "switch-section expression variable used across sections: self false VIB000",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^stage0-accepts$",
+    "ids": "VIB000",
+    "msg": "unresolved",
+    "tagsAll": [
+      "switch.stmt"
+    ],
+    "tagsAny": [
+      "out.var",
+      "out.typed",
+      "pattern.decl",
+      "pattern.var",
+      "switch.cross-section-var"
+    ]
+  },
+  {
+    "id": "O3",
+    "title": "class const by simple name inside a static local function in a class method: self false VIB000",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^stage0-accepts$",
+    "ids": "VIB000",
+    "msg": null,
+    "tagsAll": [
+      "const.class",
+      "localfunc.static"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O4",
+    "title": "embedded declaration statement accepted by self (CS1023)",
+    "status": "fixed",
+    "kinds": [
+      "invalid-accepted"
+    ],
+    "frontends": "self",
+    "ids": "CS1023",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": []
+  },
+  {
+    "id": "O5",
+    "title": "Option/Result switch statements treated as exhaustive by self (accepts CS0161/CS0165/CS0163)",
+    "status": "fixed",
+    "kinds": [
+      "invalid-accepted"
+    ],
+    "frontends": "self",
+    "ids": "CS0161|CS0165|CS0163",
+    "msg": null,
+    "tagsAll": [
+      "switch.stmt"
+    ],
+    "tagsAny": [
+      "switch.sel.option",
+      "switch.sel.result"
+    ]
+  },
+  {
+    "id": "N8",
+    "title": "reading a `Span<T>` local inside `foreach (var|ref var e in span)`: Stage-0 reports VIB001 (treats foreach as a move), self VIB003; SPEC §3.2 says foreach reborrows (shared for `var`, so reading is allowed; exclusive for `ref var`, so VIB003)",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "stage0-only:\\{[^}]*VIB001[^}]*\\} self-only:\\{[^}]*VIB003",
+    "msg": null,
+    "tagsAll": [
+      "coll.span"
+    ],
+    "tagsAny": [
+      "loop.foreach",
+      "loop.foreach-ref"
+    ]
+  },
+  {
+    "id": "N8",
+    "title": "N8 seen as Stage-0 VIB001 (span moved by foreach, then used after the loop) where self accepts",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^self-accepts$",
+    "ids": "VIB001",
+    "msg": null,
+    "tagsAll": [
+      "coll.span"
+    ],
+    "tagsAny": [
+      "loop.foreach",
+      "loop.foreach-ref"
+    ]
+  },
+  {
+    "id": "N8",
+    "title": "N8 (extended profile): Stage-0 treats `foreach (var|ref var e in span)` as a move; self accepts or reports VIB003",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^self-accepts$",
+    "ids": "VIB001",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "span.foreach",
+      "span.foreach-ref"
+    ]
+  },
+  {
+    "id": "N8",
+    "title": "N8 (extended profile): Stage-0 VIB001 where self reports VIB003 inside a span foreach",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "stage0-only:\\{[^}]*VIB001[^}]*\\}",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "span.foreach",
+      "span.foreach-ref"
+    ]
+  },
+  {
+    "id": "N8",
+    "title": "N8 (extended profile): Stage-0 adds VIB003 on the owning Vec at `foreach (ref var e in span)` when the span is used after the loop",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "stage0-only:\\{[^}]*VIB003[^}]*\\} self-only:\\{\\}",
+    "msg": null,
+    "tagsAll": [
+      "span.foreach-ref"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "N8",
+    "title": "N8 seen as self-only VIB003 for a read of the span inside `foreach (var e in span)` (Stage-0's VIB001 hidden by another VIB001)",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "stage0-only:\\{\\} self-only:\\{VIB003\\}",
+    "msg": null,
+    "tagsAll": [
+      "coll.span"
+    ],
+    "tagsAny": [
+      "loop.foreach",
+      "loop.foreach-ref"
+    ]
+  },
+  {
+    "id": "N13",
+    "title": "Stage-0/Analyzer run flow checks (use after move VIB001, overlap VIB002/VIB003, definite assignment VIB001 after the switch) on a `default:` section that Roslyn proves unreachable (earlier value cases cover the input, CS0162); self (after its N11 fix) does not. Decided: flow checks follow Roslyn reachability, so Stage-0/Analyzer change. All frontends already skip `when false` sections, code after `return`, `if (false)` and code after Panic",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^self-accepts$",
+    "ids": "VIB00[123]",
+    "msg": null,
+    "tagsAll": [
+      "switch.default"
+    ],
+    "tagsAny": [
+      "pattern.relational",
+      "switch.sel.bool"
+    ]
+  },
+  {
+    "id": "O6",
+    "title": "Stage0/Analyzer false VIB001 after exhaustive bool/relational switch statement",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject",
+      "analyzer-vs-stage0"
+    ],
+    "frontends": "self-accepts|analyzer",
+    "ids": "VIB001",
+    "msg": null,
+    "tagsAll": [
+      "switch.stmt"
+    ],
+    "tagsAny": [
+      "switch.sel.bool",
+      "pattern.relational"
+    ]
+  },
+  {
+    "id": "O6",
+    "title": "O6 seen through another error: Stage0-only VIB001 after an exhaustive bool/relational switch statement",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "stage0-only:\\{[^}]*VIB001",
+    "msg": null,
+    "tagsAll": [
+      "switch.stmt"
+    ],
+    "tagsAny": [
+      "switch.sel.bool",
+      "pattern.relational"
+    ]
+  },
+  {
+    "id": "O7",
+    "title": "self false VIB001 on fieldwise-initialized plain struct",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^stage0-accepts$",
+    "ids": "VIB001",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "struct.fieldwise-init",
+      "struct.out-fieldwise"
+    ]
+  },
+  {
+    "id": "O7",
+    "title": "O7 seen through another error: self-only VIB001 on a fieldwise-initialized plain struct",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "self-only:\\{[^}]*VIB001",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "struct.fieldwise-init",
+      "struct.out-fieldwise"
+    ]
+  },
+  {
+    "id": "O8",
+    "title": "conditional collection-expression argument not target-typed by self overload resolution",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^stage0-accepts$",
+    "ids": "VIB000",
+    "msg": "overload",
+    "tagsAll": [
+      "coll.conditional"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "O9",
+    "title": "self accepts rvalue arguments to ref readonly (CS9193) / explicit in (CS8156)",
+    "status": "fixed",
+    "kinds": [
+      "invalid-accepted"
+    ],
+    "frontends": "self",
+    "ids": "CS9193|CS8156",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": []
+  },
+  {
+    "id": "O10",
+    "title": "self does not diagnose subsumed/impossible patterns (CS8510/CS8120)",
+    "status": "fixed",
+    "kinds": [
+      "invalid-accepted"
+    ],
+    "frontends": "self",
+    "ids": "CS8510|CS8120",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": []
+  },
+  {
+    "id": "O11",
+    "title": "static local function directly in a switch section (v0.2 cut, implemented on the candidate: every frontend rejects with VIB000)",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject",
+      "banned-accepted"
+    ],
+    "frontends": null,
+    "ids": null,
+    "msg": null,
+    "tagsAll": [
+      "cut.localfunc-in-switch-section"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "A1",
+    "title": "dynamic float/double `%` breaks the libc-only link contract: Stage0 `vib build` fails with undefined fmod/fmodf",
+    "status": "fixed",
+    "kinds": [
+      "native-build-failure"
+    ],
+    "frontends": "^stage0",
+    "ids": null,
+    "msg": "undefined reference to fmodf?",
+    "tagsAll": [],
+    "tagsAny": [
+      "arith.rem-float",
+      "arith.rem-double"
+    ]
+  },
+  {
+    "id": "A1-self",
+    "title": "A1 (same group): self `build` links every program against libm (DT_NEEDED libm.so.6 beyond the libc-only contract)",
+    "status": "fixed",
+    "kinds": [
+      "link-contract"
+    ],
+    "frontends": "^self",
+    "ids": "libm",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": []
+  },
+  {
+    "id": "A2",
+    "title": "constant enum collection returned as ReadOnlySpan after Panic: self false VIB007",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^stage0-accepts$",
+    "ids": "VIB007",
+    "msg": null,
+    "tagsAll": [
+      "coll.elem-enum"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "A3",
+    "title": "`c ? [x] : [y]` parsed as null-conditional `?[` by self (false VIB008/VIB000)",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^stage0-accepts$",
+    "ids": "VIB008",
+    "msg": null,
+    "tagsAll": [
+      "coll.conditional-unparenthesized"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "A3",
+    "title": "A3 seen through another error: self parses `c?[x]:[y]` as null-conditional and stops",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch",
+      "banned-wrong-id"
+    ],
+    "frontends": null,
+    "ids": "self[^ ]*VIB008",
+    "msg": null,
+    "tagsAll": [
+      "coll.conditional-unparenthesized"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "N1",
+    "title": "self rejects a `ref` argument for a `ref readonly` or `in` parameter (no applicable overload); on the candidate only the `in` form (warning-only CS9191) remains",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^stage0-accepts$",
+    "ids": "VIB000",
+    "msg": "no applicable .*overload|unsupported, unresolved, or inapplicable method call",
+    "tagsAll": [
+      "arg.ref"
+    ],
+    "tagsAny": [
+      "param.ref-readonly",
+      "param.in"
+    ]
+  },
+  {
+    "id": "N1",
+    "title": "N1 seen through another error (self-only VIB000)",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "self-only:\\{[^}]*VIB000",
+    "msg": null,
+    "tagsAll": [
+      "arg.ref"
+    ],
+    "tagsAny": [
+      "param.ref-readonly",
+      "param.in"
+    ]
+  },
+  {
+    "id": "N2",
+    "title": "self treats a constant-true guard (`when true`, or a folded constant such as `when 0.0 >= 0.0`) as a real guard (false 'switch expression must be exhaustive' / 'not all code paths return')",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^stage0-accepts$",
+    "ids": "VIB000",
+    "msg": "must be exhaustive|not all code paths return",
+    "tagsAll": [],
+    "tagsAny": [
+      "switch.guard-true",
+      "switch.guard-const",
+      "switch.guard"
+    ]
+  },
+  {
+    "id": "N2",
+    "title": "N2 seen through another error: self-only VIB000 on a switch with a constant-true guard",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "self-only:\\{[^}]*VIB000",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "switch.guard-true",
+      "switch.guard-const"
+    ]
+  },
+  {
+    "id": "N3",
+    "title": "Stage0 native compound assignment `x += <rhs writing x via out/ref>` reads x after the rhs (managed/self read it first)",
+    "status": "fixed",
+    "kinds": [
+      "output-mismatch"
+    ],
+    "frontends": "^stage0$",
+    "ids": null,
+    "msg": null,
+    "tagsAll": [
+      "assign.compound"
+    ],
+    "tagsAny": [
+      "arg.out",
+      "arg.ref"
+    ]
+  },
+  {
+    "id": "N4",
+    "title": "self parses `(nint)-2` as a cast; C# parses a binary minus on the type name (CS0119)",
+    "status": "fixed",
+    "kinds": [
+      "invalid-accepted"
+    ],
+    "frontends": "self",
+    "ids": "CS0119",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": []
+  },
+  {
+    "id": "N4",
+    "title": "N4 where Roslyn reports CS0075 (\"To cast a negative value, you must enclose the value in parentheses\") for `(nint)-2`",
+    "status": "fixed",
+    "kinds": [
+      "invalid-accepted"
+    ],
+    "frontends": "^self$",
+    "ids": "^CS0075(,|$)",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": []
+  },
+  {
+    "id": "N5",
+    "title": "self skips checks inside a switch-expression arm it deems unreachable (`_` after complete Ok/Err) and accepts a non-exhaustive nested switch (CS8846/CS8509); possibly O5-family",
+    "status": "fixed",
+    "kinds": [
+      "invalid-accepted"
+    ],
+    "frontends": "self",
+    "ids": "^(CS8846|CS8509|CS8524)$",
+    "msg": null,
+    "tagsAll": [
+      "switch.expr"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "N5",
+    "title": "N5 (candidate campaign): self also skips definite assignment inside the `_` arm after complete Some/None or Ok/Err arms and accepts CS0165",
+    "status": "fixed",
+    "kinds": [
+      "invalid-accepted"
+    ],
+    "frontends": "^self$",
+    "ids": "^CS0165$",
+    "msg": null,
+    "tagsAll": [
+      "switch.expr",
+      "pattern.union",
+      "pattern.discard"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "CUT2",
+    "title": "piecewise init of a not-yet-initialized struct with owned fields (v0.2 cut, implemented on the candidate: every frontend rejects with VIB000)",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject",
+      "banned-accepted",
+      "banned-wrong-id",
+      "sanitizer",
+      "output-mismatch"
+    ],
+    "frontends": null,
+    "ids": null,
+    "msg": null,
+    "tagsAll": [
+      "cut.struct-piecewise-owned"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "N6",
+    "title": "self accepts a pattern that can never match (CS8518, e.g. `x is > 0 and < 0`); residual of the O10 family",
+    "status": "fixed",
+    "kinds": [
+      "invalid-accepted"
+    ],
+    "frontends": "^self$",
+    "ids": "^CS8518$",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": []
+  },
+  {
+    "id": "N7",
+    "title": "self parses `a % b switch { … }` as `(a % b) switch { … }`; C# binds `switch` tighter than binary operators",
+    "status": "fixed",
+    "kinds": [
+      "invalid-accepted",
+      "output-mismatch"
+    ],
+    "frontends": "^self(-O[03](-asan)?)?$",
+    "ids": null,
+    "msg": null,
+    "tagsAll": [
+      "switch.sel-unparenthesized"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "N7",
+    "title": "N7 in runs recorded before the `switch.sel-unparenthesized` tag existed: self accepts a float `%`/`-` selector expression whose C# type is wrong (CS0266/CS1503)",
+    "status": "fixed",
+    "kinds": [
+      "invalid-accepted"
+    ],
+    "frontends": "^self$",
+    "ids": "^(CS0266|CS1503|CS0029|CS8422)(,(CS0266|CS1503|CS0029|CS8422))*$",
+    "msg": null,
+    "tagsAll": [
+      "switch.expr",
+      "switch.sel.float"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "N9",
+    "title": "self ignores an always-true constant `is` pattern (`0 is > -1 and var q`) in definite assignment and reports VIB001; the program is warning-only (CS8793)",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^stage0-accepts$",
+    "ids": "VIB001",
+    "msg": "definitely assigned",
+    "tagsAll": [
+      "pattern.is",
+      "pattern.var"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "N10",
+    "title": "self accepts a non-constant `case` label or pattern (`case k:` with a non-const local `k`; CS9135/CS0150)",
+    "status": "fixed",
+    "kinds": [
+      "invalid-accepted"
+    ],
+    "frontends": "^self$",
+    "ids": "^(CS9135|CS0150)(,|$)",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": []
+  },
+  {
+    "id": "N11",
+    "title": "self reports a reachable end point (VIB000, CS0163/CS8070) for a switch section that Roslyn proves unreachable: a `default:` section without `break` after cases that already cover the input (`case >= 0` on ushort, `>= 0`/`< 0` on int, `true`/`false` on bool); Roslyn only warns CS0162, and Stage-0/Analyzer accept",
+    "status": "fixed",
+    "kinds": [
+      "accept-reject"
+    ],
+    "frontends": "^stage0-accepts$",
+    "ids": "VIB000",
+    "msg": "switch section endpoints must not be reachable",
+    "tagsAll": [
+      "switch.default"
+    ],
+    "tagsAny": []
+  },
+  {
+    "id": "N11",
+    "title": "N11 seen through another error (self-only VIB000) on a switch statement with an exhaustive relational/bool section set and a `default:` without `break`",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "self-only:\\{[^}]*VIB000",
+    "msg": null,
+    "tagsAll": [
+      "switch.default",
+      "switch.section-no-terminator"
+    ],
+    "tagsAny": [
+      "pattern.relational",
+      "switch.sel.bool"
+    ]
+  },
+  {
+    "id": "N12",
+    "title": "self accepts a `ref` argument whose operand is a readonly variable (a `ref readonly` local, or an `in`/`ref readonly` parameter) for a `ref readonly` parameter (CS1510/CS8329); for a `ref` parameter self rejects with VIB004",
+    "status": "fixed",
+    "kinds": [
+      "invalid-accepted"
+    ],
+    "frontends": "^self$",
+    "ids": "^(CS1510|CS8329)(,|$)",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": []
+  },
+  {
+    "id": "R12-F3",
+    "title": "F3-clarified (decided for candidate 6): after a borrow-rejected move (VIB003) in a loop, self adds VIB001 at the same position; Stage-0 and the Analyzer report only VIB003 (a rejected move does not consume its source)",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "^stage0-only:\\{\\} self-only:\\{VIB001\\}$",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "snd.inval-move",
+      "snd.inval-sink",
+      "snd.inval-sink-explicit"
+    ]
+  },
+  {
+    "id": "R12-F3",
+    "title": "R12-F3 in the default/extended/activation profiles: self-only VIB001 in a loop (check that Stage-0's VIB003 is at the same position)",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "^stage0-only:\\{\\} self-only:\\{VIB001\\}$",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "loop.for",
+      "loop.while",
+      "loop.do",
+      "loop.foreach",
+      "loop.foreach-ref",
+      "loop.foreach-vec",
+      "loop.continue"
+    ]
+  },
+  {
+    "id": "R12-F3",
+    "title": "F3-clarified (decided for candidate 6): a borrow-rejected move out of a field must report {VIB003, VIB005}; Stage-0 and the Analyzer dropped the VIB005 (self keeps it)",
+    "status": "fixed",
+    "kinds": [
+      "id-mismatch"
+    ],
+    "frontends": null,
+    "ids": "^stage0-only:\\{\\} self-only:\\{VIB005\\}$",
+    "msg": null,
+    "tagsAll": [],
+    "tagsAny": [
+      "snd.inval-field-move",
+      "type.field",
+      "struct.owned-field"
+    ]
+  },
+  {
+    "id": "R12-F3",
+    "title": "R12-F3 through the soundness expectation (release-7): a borrow-rejected move of a field out of a class lacks VIB005 in the Analyzer and Stage-0 (F3-clarified: exactly {VIB003, VIB005})",
+    "status": "fixed",
+    "kinds": [
+      "spec-wrong-id"
+    ],
+    "frontends": null,
+    "ids": "^snd\\.expect-field-move>analyzer:\\S+ snd\\.expect-field-move>stage0:\\S+$",
+    "msg": null,
+    "tagsAll": [
+      "snd.expect-field-move"
+    ],
+    "tagsAny": []
+  }
+]

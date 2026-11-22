@@ -1,0 +1,8 @@
+validity: warn-only
+tags: local.decl localfunc.static pattern.relational span.from-coll span.nm-moved switch.default switch.section-no-terminator switch.sel.int switch.stmt
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@9:18 Unreachable code detected
+analyzer: VIB001@9:74 Use of moved value 's3'.
+stage0 check: REJECT VIB001@9:74 Use of moved value 's3'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001 | use of moved value 'x'.

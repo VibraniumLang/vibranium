@@ -1,0 +1,14 @@
+WriteLine(F(1));
+static int F(int x)
+{
+    return x is > 0 or <= 0 ? 1 : 2;
+}
+
+validity: invalid
+tags: 
+sdk-roslyn errors: CS8794@4:12 An expression of type 'int' always matches the provided pattern.
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@4:12 C# warning CS8794 is not permitted in Vibranium: An expression of type 'int' always matches the provided pattern.
+stage0 check: REJECT CS8794@4:12 An expression of type 'int' always matches the provided pattern.
+self check: exit=1 out=[] err=[Program.cs(4,12): error VIB000: C# warning CS8794 is not permitted in Vibranium: An expression of this type always matches the provided pattern.|]
+

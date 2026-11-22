@@ -1,0 +1,19 @@
+Vec<int> a = [1, 2];
+Vec<int> b = [3, 4, 5];
+Span<int> t = b.AsSpan();
+for (int i = 0; i < 3; i++)
+{
+    WriteLine(t[0]);
+    b[0] = i;
+    if (i == 0) continue;
+    t = a.AsSpan();
+}
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@7:5 Cannot borrow 'b' immutably while borrowed by 't'. ; VIB003@7:5 Cannot mutate 'b' while borrowed by 't'.
+stage0 check: REJECT VIB003@7:5 Cannot borrow 'b' immutably while borrowed by 't'. ; VIB003@7:5 Cannot mutate 'b' while borrowed by 't'.
+self check: exit=1 out=[] err=[Program.cs(7,6): error VIB003: Borrow conflicts with an active borrow.|Program.cs(7,10): error VIB003: Cannot mutate through reference while borrowed by another live reference.|]
+

@@ -1,0 +1,8 @@
+validity: invalid
+tags: arith.int assign.compound coll.local-init coll.vec expr.cast local.decl local.var localfunc.static loop.foreach loop.foreach-vec pattern.combinator pattern.is pattern.relational span.arg-rospan span.foreach span.foreach-ref span.from-vec span.length span.range span.range-from-end span.read span.slice-local span.to-rospan span.vec-after-borrow span.vec-slice-call span.write-after-shared span.write-through-slice stmt.if-else
+sdk-roslyn errors: CS8518@17:13 An expression of type 'int' can never match the provided pattern.
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@8:18 Cannot borrow 'v2' mutably while borrowed by 's1'. ; VIB003@8:31 Cannot read 'v2' while exclusively borrowed by 's1'. ; VIB003@8:35 Cannot borrow 'v2' immutably while borrowed by 's1'. ; VIB001@9:30 Use of moved value 's1'. ; VIB003@15:22 Cannot borrow 'v7' mutably while borrowed by 's6'. ; VIB003@15:35 Cannot read 'v7' while exclusively borrowed by 's6'. ; VIB003@15:39 Cannot borrow 'v7' immutably while borrowed by 's6'. ; VIB001@16:19 Use of moved value 's6'. ; VIB001@32:23 Use of moved value 's1'. ; VIB001@34:5 Use of moved value 's1'. ; VIB001@35:20 Use of moved value 's1'.
+stage0 check: REJECT CS8518@17:13 An expression of type 'int' can never match the provided pattern.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS8518 | 

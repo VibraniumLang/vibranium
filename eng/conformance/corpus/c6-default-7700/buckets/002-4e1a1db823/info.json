@@ -1,0 +1,30 @@
+{
+  "signature": "run-timeout | self-O0 |  | ",
+  "category": "new",
+  "kind": "run-timeout",
+  "frontends": "self-O0",
+  "ids": "",
+  "msg": "",
+  "minTags": [
+    "arith.div-int",
+    "arith.int",
+    "arith.rem-int",
+    "assign.compound",
+    "expr.cast",
+    "expr.compare",
+    "local.decl",
+    "localfunc.static",
+    "loop.while",
+    "pattern.is",
+    "pattern.var"
+  ],
+  "seed": "7700",
+  "profile": "default",
+  "index": 16039,
+  "plan": "Loop\u003EPatternVar",
+  "mutations": [],
+  "reduceTests": 74,
+  "sizeBefore": 66,
+  "sizeAfter": 52,
+  "firstSeconds": 3299.9
+}

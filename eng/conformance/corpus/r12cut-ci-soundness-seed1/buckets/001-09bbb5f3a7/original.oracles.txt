@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int arith.rem-int assign.compound expr.cast expr.compare expr.conditional func.expr-body local.decl localfunc.nested localfunc.static pattern.discard pattern.union snd.inval-sink-explicit snd.place-loop snd.producer-vec-range snd.use-read switch.expr switch.expr-no-discard switch.sel.option union.ctor
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@17:161 Cannot move 'v' while borrowed by 's'.
+stage0 check: REJECT VIB003@17:161 Cannot move 'v' while borrowed by 's'.
+self check: exit=1 out=[] err=[Program.cs(17,161): error VIB001: Use of moved value.|Program.cs(17,161): error VIB003: Cannot move value while borrowed.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{} self-only:{VIB001} | 

@@ -1,0 +1,8 @@
+validity: invalid
+tags: arith.bitwise arith.int expr.cast expr.compare expr.logical local.decl local.var localfunc.static pattern.is pattern.relational span.arg-span span.from-coll span.from-vec span.index-from-end span.length span.range span.read span.slice-call span.slice-local span.to-rospan span.vec-after-borrow span.vec-slice-call span.write-after-shared stmt.if
+sdk-roslyn errors: CS0119@30:21 'nint' is a type, which is not valid in the given context ; CS0119@30:21 'nint' is a type, which is not valid in the given context
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS0119@30:21 'nint' is a type, which is not valid in the given context ; CS0119@30:21 'nint' is a type, which is not valid in the given context
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS0119 | 

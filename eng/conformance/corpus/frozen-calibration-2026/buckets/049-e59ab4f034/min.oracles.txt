@@ -1,0 +1,8 @@
+validity: valid
+tags: banned.null banned.nullable local.decl method.static type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB008@7:9 Nullable type 'int?' is banned in Vibranium; use Option<T>. ; VIB000@7:29 Conversion from 'int' to 'int?' is not supported in Vibranium. ; VIB000@7:35 Expression 'Literal' is not supported in Vibranium. ; VIB008@7:35 Null literals are banned in Vibranium; use Option<T> (Some/None).
+stage0 check: REJECT VIB008@7:9 Nullable type 'int?' is banned in Vibranium; use Option<T>. ; VIB000@7:29 Conversion from 'int' to 'int?' is not supported in Vibranium. ; VIB000@7:35 Expression 'Literal' is not supported in Vibranium. ; VIB008@7:35 Null literals are banned in Vibranium; use Option<T> (Some/None).
+self check: exit=1 out=[] err=[Program.cs(7,12): error VIB008: Nullable '?' type is banned in Vibranium; use Option<T>.|Program.cs(7,35): error VIB008: Null literals are banned in Vibranium; use Option<T> (Some/None).|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB000} self-only:{} | 

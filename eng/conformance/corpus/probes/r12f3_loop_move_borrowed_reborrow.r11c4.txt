@@ -1,0 +1,6 @@
+Round-11 candidate 4 (release-6 tool), run --exec:
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@4:182 Use of moved value 'v'. ; VIB003@4:182 Cannot move 'v' while borrowed by 's'.
+stage0 check: REJECT VIB001@4:182 Use of moved value 'v'. ; VIB003@4:182 Cannot move 'v' while borrowed by 's'.
+self check: exit=1 out=[] err=[Program.cs(4,182): error VIB001: Use of moved value.|Program.cs(4,182): error VIB003: Cannot move value while borrowed.|]

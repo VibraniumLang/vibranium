@@ -1,0 +1,33 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB003} | ",
+  "category": "new:N16",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{} self-only:{VIB003}",
+  "msg": "",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "func.expr-body",
+    "local.decl",
+    "local.uninit",
+    "localfunc.static",
+    "param.in",
+    "struct.fieldwise-init",
+    "struct.local",
+    "type.struct",
+    "view.param-stack-escape",
+    "view.param-stack-scope-exit"
+  ],
+  "seed": "7701",
+  "profile": "activation",
+  "index": 218,
+  "plan": "StructInit\u003EViewReturn",
+  "mutations": [
+    "drop-init"
+  ],
+  "reduceTests": 46,
+  "sizeBefore": 60,
+  "sizeAfter": 36,
+  "firstSeconds": 57.3
+}

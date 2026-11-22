@@ -1,0 +1,8 @@
+validity: invalid
+tags: func.expr-body local.decl local.underscore local.underscore-read local.var localfunc.static pattern.discard pattern.relational pattern.union pattern.var switch.expr switch.expr-no-discard switch.guard-false switch.sel.int switch.sel.result union.ctor
+sdk-roslyn errors: CS8846@7:84 The switch expression does not handle all possible values of its input type (it is not exhaustive). For example, the pattern '0L' is not covered. However, a pattern with a 'when' clause might successfully match this value.
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS8846@7:84 The switch expression does not handle all possible values of its input type (it is not exhaustive). For example, the pattern '0L' is not covered. However, a pattern with a 'when' clause might successfully match this value.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS8846 | 

@@ -1,0 +1,13 @@
+validity: valid
+tags: arg.ref arith.int arith.long assign.compound class.primary-ctor expr.cast expr.compare expr.conditional local.decl local.var localfunc.static optmut.local optmut.replace optmut.take optref.asref-pattern optref.param optslot.local param.ref pattern.relational stmt.if-else switch.no-default switch.sel.int switch.stmt type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[598|-1|598|2164|-1|2164|] err=[]
+self-O0 run: exit=0 out=[598|-1|598|2164|-1|2164|] err=[]
+stage0-O0 run: exit=0 out=[600|-1|600|2166|-1|2166|] err=[]
+DISAGREEMENT: output-mismatch | stage0 | stdout | stage0-O0

@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound assign.simple expr.compare expr.logical local.decl method.static pattern.combinator pattern.is pattern.relational pattern.var span.foreach-ref span.from-coll span.index-from-end span.read span.slice-call span.to-rospan span.write-after-shared stmt.if type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@12:35 Use of moved value 's1'. ; VIB001@14:27 Use of moved value 's1'. ; VIB001@16:9 Use of moved value 's1'.
+stage0 check: REJECT VIB001@12:35 Use of moved value 's1'. ; VIB001@14:27 Use of moved value 's1'. ; VIB001@16:9 Use of moved value 's1'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001 | use of moved value 'x'.

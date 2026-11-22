@@ -1,0 +1,29 @@
+{
+  "signature": "accept-reject | self-accepts | stage0:VIB003 | cannot move \u0027x\u0027 while borrowed by \u0027x\u0027.",
+  "category": "known:O11-1",
+  "kind": "accept-reject",
+  "frontends": "self-accepts",
+  "ids": "stage0:VIB003",
+  "msg": "cannot move \u0027x\u0027 while borrowed by \u0027x\u0027.",
+  "minTags": [
+    "assign.simple",
+    "ca.borrow-then-move",
+    "ca.form-instance",
+    "ca.loan-view",
+    "ca.move-explicit",
+    "ca.owner-vec",
+    "ca.rel-same",
+    "local.decl",
+    "local.uninit",
+    "localfunc.static"
+  ],
+  "seed": "8181",
+  "profile": "activation",
+  "index": 322,
+  "plan": "CaCall\u003ESwitchExpr",
+  "mutations": [],
+  "reduceTests": 39,
+  "sizeBefore": 56,
+  "sizeAfter": 31,
+  "firstSeconds": 387.1
+}

@@ -1,0 +1,21 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB003} self-only:{} | ",
+  "category": "new:N17",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{VIB003} self-only:{}",
+  "msg": "",
+  "minTags": [
+    "type.class",
+    "view.move-use-source"
+  ],
+  "seed": "1",
+  "profile": "activation",
+  "index": 8,
+  "plan": "OptionResult\u003EViewMove",
+  "mutations": [],
+  "reduceTests": 10,
+  "sizeBefore": 61,
+  "sizeAfter": 9,
+  "firstSeconds": 20.5
+}

@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int arith.long assign.compound coll.conditional coll.conditional-unparenthesized coll.elem-char coll.local-init coll.rospan expr.cast expr.compare expr.conditional expr.index local.decl method.static span.arg-rospan span.foreach-ref span.from-coll span.nm-parent-while-live span.read span.slice-local span.to-rospan span.write-after-shared type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@10:27 Use of moved value 's1'. ; VIB001@12:9 Use of moved value 's1'. ; VIB001@13:23 Use of moved value 's1'. ; VIB001@14:35 Use of moved value 's1'. ; VIB001@18:19 Use of moved value 's1'. ; VIB001@19:9 Use of moved value 's1'. ; VIB003@19:9 Cannot borrow 's1' immutably while borrowed by 't2_w'. ; VIB003@19:9 Cannot mutate 's1' while borrowed by 't2_w'.
+stage0 check: REJECT VIB001@10:27 Use of moved value 's1'. ; VIB001@12:9 Use of moved value 's1'. ; VIB001@13:23 Use of moved value 's1'. ; VIB001@14:35 Use of moved value 's1'. ; VIB001@18:19 Use of moved value 's1'. ; VIB001@19:9 Use of moved value 's1'. ; VIB003@19:9 Cannot borrow 's1' immutably while borrowed by 't2_w'. ; VIB003@19:9 Cannot mutate 's1' while borrowed by 't2_w'.
+self check: exit=1 out=[] err=[Program.cs(19,11): error VIB003: Borrow conflicts with an active borrow.|Program.cs(19,15): error VIB003: Cannot mutate through reference while borrowed by another live reference.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{} | 

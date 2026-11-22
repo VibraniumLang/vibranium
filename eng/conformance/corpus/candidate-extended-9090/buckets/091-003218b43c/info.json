@@ -1,0 +1,31 @@
+{
+  "signature": "managed-crash | managed | exit134 | stack overflow.",
+  "category": "new",
+  "kind": "managed-crash",
+  "frontends": "managed",
+  "ids": "exit134",
+  "msg": "stack overflow.",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "expr.compare",
+    "func.expr-body",
+    "local.decl",
+    "localfunc.nested",
+    "localfunc.static",
+    "loop.do",
+    "utf8.foreach",
+    "utf8.line-ops",
+    "utf8.span-lines",
+    "utf8.span-local"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 28263,
+  "plan": "Loop\u003EUtf8View\u003ELocalFunc",
+  "mutations": [],
+  "reduceTests": 68,
+  "sizeBefore": 69,
+  "sizeAfter": 45,
+  "firstSeconds": 4070.3
+}

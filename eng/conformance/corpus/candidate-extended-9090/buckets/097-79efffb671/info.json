@@ -1,0 +1,27 @@
+{
+  "signature": "invalid-accepted | self | CS8518 | ",
+  "category": "known:N6",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS8518",
+  "msg": "",
+  "minTags": [
+    "local.decl",
+    "local.underscore",
+    "local.underscore-read",
+    "local.var",
+    "localfunc.static",
+    "pattern.combinator",
+    "pattern.is",
+    "pattern.relational"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 33296,
+  "plan": "MutReceiver\u003EUnderscore\u003ESwitchStmt",
+  "mutations": [],
+  "reduceTests": 98,
+  "sizeBefore": 99,
+  "sizeAfter": 35,
+  "firstSeconds": 4618.3
+}

@@ -1,0 +1,15 @@
+WriteLine(F(0));
+static int F(int x)
+{
+    if (x is > -1 and var q) { }
+    return q;
+}
+
+validity: invalid
+tags: 
+sdk-roslyn errors: CS0165@5:12 Use of unassigned local variable 'q'
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS0165@5:12 Use of unassigned local variable 'q'
+self check: exit=1 out=[] err=[Program.cs(5,12): error VIB001: C# requires this variable or struct field to be definitely assigned before it is read (CS0165/CS0170).|]
+

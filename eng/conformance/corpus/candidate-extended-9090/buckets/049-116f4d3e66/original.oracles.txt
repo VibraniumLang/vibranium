@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arg.ref arith.int assign.compound class.primary-ctor expr.conditional expr.logical func.expr-body local.decl local.var method.instance method.static mut.drain mut.field-foreach mut.in-param-shared mut.local mut.local-call param.in stmt.nested-block type.class type.field type.resource using.var
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS9191@15:27 The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(15,22): error VIB000: No applicable method overload on enclosing type in Vibranium.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | no applicable method overload on enclosing type in vibranium.

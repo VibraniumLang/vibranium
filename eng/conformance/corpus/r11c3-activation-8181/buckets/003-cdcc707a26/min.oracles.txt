@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound cut.preprocessor func.expr-body local.decl localfunc.nested localfunc.static
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: banned-accepted | analyzer+stage0+self | cut.preprocessor | 

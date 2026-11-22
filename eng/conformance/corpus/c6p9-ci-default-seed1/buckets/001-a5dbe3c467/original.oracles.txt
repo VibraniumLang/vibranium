@@ -1,0 +1,8 @@
+validity: valid
+tags: arg.out arith.rem-int assign.simple assign.underscore bcl.tryparse local.decl local.underscore-read localfunc.static out.underscore uswitch.default uswitch.nonunion-label uswitch.not-case uswitch.option uswitch.payload-owner uswitch.place uswitch.stmt uswitch.stmt-nonunion-label
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(13,148): error VIB001: Use of moved value.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB001 | use of moved value.

@@ -1,0 +1,8 @@
+validity: valid
+tags: type.class view.assign-value-then-use
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@4:111 Cannot read 'b' while exclusively borrowed by 's'. ; VIB003@4:115 Cannot read 'b' while exclusively borrowed by 's'. ; VIB001@4:150 Use of moved value 's'.
+stage0 check: REJECT VIB003@4:111 Cannot read 'b' while exclusively borrowed by 's'. ; VIB003@4:115 Cannot read 'b' while exclusively borrowed by 's'. ; VIB001@4:150 Use of moved value 's'.
+self check: exit=1 out=[] err=[Program.cs(4,150): error VIB001: Use of moved value.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB003} self-only:{} | 

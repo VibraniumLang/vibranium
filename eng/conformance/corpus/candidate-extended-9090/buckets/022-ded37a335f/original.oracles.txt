@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int local.decl localfunc.static span.arg-span span.foreach-ref span.from-coll span.read span.to-rospan span.write-after-shared stmt.nested-block utf8.foreach utf8.span-lines utf8.span-local
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@14:27 Use of moved value 's4'. ; VIB001@16:9 Use of moved value 's4'.
+stage0 check: REJECT VIB001@14:27 Use of moved value 's4'. ; VIB001@16:9 Use of moved value 's4'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001 | use of moved value 'x'.

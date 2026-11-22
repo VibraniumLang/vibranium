@@ -1,0 +1,8 @@
+validity: valid
+tags: local.decl localfunc.static span.foreach-ref span.from-coll span.nm-overlap
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@7:18 Use of moved value 's1'. ; VIB001@7:22 Use of moved value 's1'. ; VIB002@7:22 Overlapping borrows in a single call where at least one borrow is exclusive.
+stage0 check: REJECT VIB001@7:18 Use of moved value 's1'. ; VIB001@7:22 Use of moved value 's1'. ; VIB002@7:22 Overlapping borrows in a single call where at least one borrow is exclusive.
+self check: exit=1 out=[] err=[Program.cs(7,22): error VIB002: Overlapping borrows in a single call where at least one borrow is exclusive.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{} | 

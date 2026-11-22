@@ -1,0 +1,8 @@
+validity: valid
+tags: arg.out arith.div-long arith.int arith.long arith.shift bcl.tryparse expr.compare expr.conditional local.decl local.underscore local.underscore-read local.var method.static out.underscore pattern.union pattern.var switch.guard-false switch.no-default switch.section-local switch.section-no-terminator switch.sel.result switch.stmt type.class union.ctor
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(13,31): error VIB000: Unresolved or captured identifier in Vibranium.|Program.cs(13,41): error VIB000: Unresolved or captured identifier in Vibranium.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | unresolved or captured identifier in vibranium.

@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arith.int assign.compound assign.field assign.simple class.primary-ctor coll.local-init coll.span expr.compare expr.conditional expr.logical local.decl local.uninit local.var localfunc.static loop.continue loop.foreach optmut.chain-set optref.asref-pattern optref.chain optslot.local optslot.nm-place-write optslot.take stmt.if struct.fieldwise-init struct.local type.class type.field type.struct
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@22:9 Unreachable code detected
+analyzer: VIB001@19:16 Use of moved value 'v6'. ; VIB004@24:36 Cannot take a mutable reference through a shared borrow.
+stage0 check: REJECT VIB001@19:16 Use of moved value 'v6'. ; VIB004@24:36 Cannot take a mutable reference through a shared borrow.
+self check: exit=1 out=[] err=[Program.cs(19,16): error VIB003: Borrow conflicts with an active borrow.|Program.cs(24,41): error VIB004: Cannot take a mutable reference through a shared borrow.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{VIB003} | 

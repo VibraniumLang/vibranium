@@ -1,0 +1,60 @@
+probe	expectation	shape
+n20-c-opt-rv-stmt-plain	accept	control: plain arms
+n20-c-opt-rv-stmt-none-first-default	accept	control: NoneType, Some, default
+n20-c-opt-rv-expr-plain-discard	accept	control: Some arm plus _
+n20-b-opt-rv-stmt-some-guard-repeat	VIB006	guard + repeated Some
+n20-b-opt-rv-stmt-none-guard-repeat	VIB006	guarded NoneType + repeated NoneType
+n20-b-opt-rv-stmt-none-guard-default	VIB006	guarded NoneType + default
+n20-b-opt-rv-expr-some-guard-repeat	VIB006	expression: guard + repeated Some
+n20-b-opt-rv-expr-discard-guard	accept	expression: guarded _ arm (valid: narrowed ban)
+n20-b-opt-rv-stmt-not-none	VIB006	not NoneType
+n20-b-opt-rv-stmt-not-some	VIB006	not Some<R>
+n20-b-opt-rv-stmt-or	VIB006	NoneType or Some<R>
+n20-b-opt-rv-stmt-var	accept	var over the union (valid: narrowed ban)
+n20-b-opt-rv-expr-not-none	VIB006	expression: not NoneType
+n20-b-opt-rv-expr-var	accept	expression: var over the union (valid: narrowed ban)
+n20-q-opt-rv-stmt-type-variant	equal	type pattern Some<R> s over a variant (no payload binding)
+n20-c-opt-pl-stmt-plain	equal	control: plain arms
+n20-c-opt-pl-stmt-none-first-default	equal	control: NoneType, Some, default
+n20-c-opt-pl-expr-plain-discard	equal	control: Some arm plus _
+n20-b-opt-pl-stmt-some-guard-repeat	equal	guard + repeated Some
+n20-b-opt-pl-stmt-none-guard-repeat	equal	guarded NoneType + repeated NoneType
+n20-b-opt-pl-stmt-none-guard-default	equal	guarded NoneType + default
+n20-b-opt-pl-expr-some-guard-repeat	equal	expression: guard + repeated Some
+n20-b-opt-pl-expr-discard-guard	equal	expression: guarded _ arm (valid: narrowed ban)
+n20-b-opt-pl-stmt-not-none	equal	not NoneType
+n20-b-opt-pl-stmt-not-some	equal	not Some<R>
+n20-b-opt-pl-stmt-or	equal	NoneType or Some<R>
+n20-b-opt-pl-stmt-var	accept	var over the union (valid: narrowed ban)
+n20-b-opt-pl-expr-not-none	equal	expression: not NoneType
+n20-b-opt-pl-expr-var	accept	expression: var over the union (valid: narrowed ban)
+n20-q-opt-pl-stmt-type-variant	equal	type pattern Some<R> s over a variant (no payload binding)
+n20-c-opt-mv-stmt-plain	accept	control: plain arms
+n20-c-opt-mv-stmt-none-first-default	accept	control: NoneType, Some, default
+n20-c-opt-mv-expr-plain-discard	accept	control: Some arm plus _
+n20-b-opt-mv-stmt-some-guard-repeat	VIB006	guard + repeated Some
+n20-b-opt-mv-stmt-none-guard-repeat	VIB006	guarded NoneType + repeated NoneType
+n20-b-opt-mv-stmt-none-guard-default	VIB006	guarded NoneType + default
+n20-b-opt-mv-expr-some-guard-repeat	VIB006	expression: guard + repeated Some
+n20-b-opt-mv-expr-discard-guard	accept	expression: guarded _ arm (valid: narrowed ban)
+n20-b-opt-mv-stmt-not-none	VIB006	not NoneType
+n20-b-opt-mv-stmt-not-some	VIB006	not Some<R>
+n20-b-opt-mv-stmt-or	VIB006	NoneType or Some<R>
+n20-b-opt-mv-stmt-var	accept	var over the union (valid: narrowed ban)
+n20-b-opt-mv-expr-not-none	VIB006	expression: not NoneType
+n20-b-opt-mv-expr-var	accept	expression: var over the union (valid: narrowed ban)
+n20-q-opt-mv-stmt-type-variant	equal	type pattern Some<R> s over a variant (no payload binding)
+n20-c-res-rv-stmt-plain	accept	control: plain Ok/Err arms
+n20-c-res-rv-expr-plain-default	accept	control: Ok arm plus _
+n20-b-res-rv-stmt-err-guard-default	VIB006	guarded Err + default
+n20-b-res-rv-stmt-ok-guard-repeat	VIB006	guarded Ok + repeated Ok
+n20-b-res-rv-stmt-not-ok	VIB006	not Ok<R>
+n20-b-res-rv-stmt-var	accept	var over the union (valid: narrowed ban)
+n20-b-res-rv-expr-err-guard	VIB006	expression: guarded Err + repeated Err
+n20-c-res-pl-stmt-plain	equal	control: plain Ok/Err arms
+n20-c-res-pl-expr-plain-default	equal	control: Ok arm plus _
+n20-b-res-pl-stmt-err-guard-default	equal	guarded Err + default
+n20-b-res-pl-stmt-ok-guard-repeat	equal	guarded Ok + repeated Ok
+n20-b-res-pl-stmt-not-ok	equal	not Ok<R>
+n20-b-res-pl-stmt-var	accept	var over the union (valid: narrowed ban)
+n20-b-res-pl-expr-err-guard	equal	expression: guarded Err + repeated Err

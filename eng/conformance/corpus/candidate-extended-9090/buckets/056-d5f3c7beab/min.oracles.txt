@@ -1,0 +1,8 @@
+validity: invalid
+tags: local.decl method.static pattern.named-const switch.default switch.section-no-terminator switch.sel.int switch.stmt type.class
+sdk-roslyn errors: CS9135@10:18 A constant value of type 'long' is expected
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS9135@10:18 A constant value of type 'long' is expected
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS9135 | 

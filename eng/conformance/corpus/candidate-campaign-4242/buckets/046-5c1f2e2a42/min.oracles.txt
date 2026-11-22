@@ -1,0 +1,8 @@
+validity: invalid
+tags: expr.cast func.expr-body local.decl local.underscore local.underscore-read localfunc.static pattern.discard pattern.union switch.expr switch.sel.option union.ctor
+sdk-roslyn errors: CS0165@5:70 Use of unassigned local variable '_'
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS0165@5:70 Use of unassigned local variable '_'
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS0165 | 

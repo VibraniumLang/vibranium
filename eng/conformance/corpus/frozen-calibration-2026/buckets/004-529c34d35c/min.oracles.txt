@@ -1,0 +1,8 @@
+validity: invalid
+tags: arith.int assign.compound func.expr-body local.decl localfunc.static pattern.relational switch.default switch.guard-false switch.section-no-terminator switch.sel.unsigned switch.stmt
+sdk-roslyn errors: CS8120@8:14 The switch case is unreachable. It has already been handled by a previous case or it is impossible to match.
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS8120@8:14 The switch case is unreachable. It has already been handled by a previous case or it is impossible to match.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS8120 | 

@@ -1,0 +1,8 @@
+validity: valid
+tags: arg.out arith.int assign.compound expr.compare expr.conditional func.expr-body gen.file-name-g-cs local.decl method.static out.var stmt.if type.class union.ctor union.guard view.move-owner-between view.move-use-source
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@16:119 Cannot read 'b' while exclusively borrowed by 's'. ; VIB003@16:129 Cannot borrow 'b' immutably while borrowed by 's'. ; VIB003@16:129 Cannot mutate 'b' while borrowed by 's'. ; VIB001@16:144 Use of moved value 's'. ; VIB001@17:119 Use of moved value 's'. ; VIB003@17:119 Cannot borrow 'b' immutably while borrowed by 't'.
+stage0 check: REJECT VIB003@16:119 Cannot read 'b' while exclusively borrowed by 's'. ; VIB003@16:129 Cannot borrow 'b' immutably while borrowed by 's'. ; VIB003@16:129 Cannot mutate 'b' while borrowed by 's'. ; VIB001@16:144 Use of moved value 's'. ; VIB001@17:119 Use of moved value 's'. ; VIB003@17:119 Cannot borrow 'b' immutably while borrowed by 't'.
+self check: exit=1 out=[] err=[Program.g.cs(16,145): error VIB001: Use of moved value.|Program.g.cs(17,120): error VIB001: Use of moved value.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB003} self-only:{} | 

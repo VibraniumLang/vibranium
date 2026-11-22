@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arith.int arith.rem-int assign.compound assign.simple coll.local-init coll.span expr.cast expr.compare expr.logical local.decl localfunc.nested localfunc.static loop.foreach stmt.if stmt.if-else stmt.nested-block utf8.foreach utf8.line-ops utf8.span-lines utf8.span-local
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@23:21 Unreachable code detected
+analyzer: VIB001@27:31 Use of moved value 'v5'.
+stage0 check: REJECT VIB001@27:31 Use of moved value 'v5'.
+self check: exit=1 out=[] err=[Program.cs(27,31): error VIB003: Borrow conflicts with an active borrow.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{VIB003} | 

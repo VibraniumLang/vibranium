@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int arith.shift assign.compound class.primary-ctor expr.cast func.expr-body local.decl local.underscore local.var localfunc.static method.instance span.arg-span span.foreach-ref span.from-vec span.index-oob-panic span.read span.vec-after-borrow span.vec-range type.field type.resource using.var
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@9:18 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@9:31 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@9:35 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@10:5 Use of moved value 's3'. ; VIB001@11:12 Use of moved value 's3'. ; VIB001@12:11 Use of moved value 's3'. ; VIB001@13:12 Use of moved value 's3'. ; VIB001@14:31 Use of moved value 's3'. ; VIB001@26:12 Use of moved value 'x'.
+stage0 check: REJECT VIB003@9:18 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@9:31 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@9:35 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@10:5 Use of moved value 's3'. ; VIB001@11:12 Use of moved value 's3'. ; VIB001@12:11 Use of moved value 's3'. ; VIB001@13:12 Use of moved value 's3'. ; VIB001@14:31 Use of moved value 's3'. ; VIB001@26:12 Use of moved value 'x'.
+self check: exit=1 out=[] err=[Program.cs(26,13): error VIB001: Use of moved value.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB003} self-only:{} | 

@@ -1,0 +1,29 @@
+{
+  "signature": "spec-wrong-id | ca.move-then-use\u002Bview.param-stack-escape\u002Bview.param-stack-scope-exit | view.param-stack-scope-exit\u003Eanalyzer:VIB001,VIB007 view.param-stack-scope-exit\u003Estage0:VIB001,VIB007 | expected ca.move-then-use:VIB001 view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "category": "new:N16",
+  "kind": "spec-wrong-id",
+  "frontends": "ca.move-then-use\u002Bview.param-stack-escape\u002Bview.param-stack-scope-exit",
+  "ids": "view.param-stack-scope-exit\u003Eanalyzer:VIB001,VIB007 view.param-stack-scope-exit\u003Estage0:VIB001,VIB007",
+  "msg": "expected ca.move-then-use:VIB001 view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "minTags": [
+    "ca.form-static",
+    "ca.loan-in",
+    "ca.loan-ref-proj",
+    "ca.move-bare",
+    "ca.move-then-use",
+    "ca.owner-holder",
+    "ca.rel-ext",
+    "type.class",
+    "view.param-stack-escape",
+    "view.param-stack-scope-exit"
+  ],
+  "seed": "7701",
+  "profile": "activation",
+  "index": 7275,
+  "plan": "ViewReturn\u003ECaCall",
+  "mutations": [],
+  "reduceTests": 14,
+  "sizeBefore": 41,
+  "sizeAfter": 14,
+  "firstSeconds": 734.1
+}

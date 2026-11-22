@@ -1,0 +1,13 @@
+validity: valid
+tags: arg.out arith.int assign.compound assign.simple expr.compare expr.conditional local.decl localfunc.static out.existing-local param.out
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[0|] err=[]
+self-O0 run: exit=0 out=[0|] err=[]
+stage0-O0 run: exit=0 out=[4|] err=[]
+DISAGREEMENT: output-mismatch | stage0 | stdout | stage0-O0

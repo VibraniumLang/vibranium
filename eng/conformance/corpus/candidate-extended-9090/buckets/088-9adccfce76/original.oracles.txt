@@ -1,0 +1,8 @@
+validity: invalid
+tags: arith.int arith.rem-int assign.compound expr.cast expr.compare local.decl method.static span.arg-rospan span.from-vec span.index-from-end span.vec-after-borrow span.vec-range stmt.if type.class
+sdk-roslyn errors: CS0075@19:15 To cast a negative value, you must enclose the value in parentheses.
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS0075@19:15 To cast a negative value, you must enclose the value in parentheses.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS0075 | 

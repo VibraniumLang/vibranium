@@ -1,0 +1,8 @@
+validity: invalid
+tags: arg.ref arith.int arith.rem-double assign.compound local.decl localfunc.static param.ref pattern.discard switch.expr switch.sel.float
+sdk-roslyn errors: CS0266@6:14 Cannot implicitly convert type 'double' to 'int'. An explicit conversion exists (are you missing a cast?)
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS0266@6:14 Cannot implicitly convert type 'double' to 'int'. An explicit conversion exists (are you missing a cast?)
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS0266 | 

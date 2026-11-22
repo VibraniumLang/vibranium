@@ -1,0 +1,24 @@
+{
+  "signature": "spec-wrong-id | view.elision-ambiguous\u002Bview.param-stack-escape\u002Bview.param-stack-scope-exit | view.param-stack-scope-exit\u003Eanalyzer:VIB007 view.param-stack-scope-exit\u003Estage0:VIB007 | expected view.elision-ambiguous:VIB007 view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "category": "new:N16",
+  "kind": "spec-wrong-id",
+  "frontends": "view.elision-ambiguous\u002Bview.param-stack-escape\u002Bview.param-stack-scope-exit",
+  "ids": "view.param-stack-scope-exit\u003Eanalyzer:VIB007 view.param-stack-scope-exit\u003Estage0:VIB007",
+  "msg": "expected view.elision-ambiguous:VIB007 view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "minTags": [
+    "local.decl",
+    "localfunc.static",
+    "view.elision-ambiguous",
+    "view.param-stack-escape",
+    "view.param-stack-scope-exit"
+  ],
+  "seed": "7701",
+  "profile": "activation",
+  "index": 1121,
+  "plan": "ViewReturn\u003EViewReturn",
+  "mutations": [],
+  "reduceTests": 24,
+  "sizeBefore": 39,
+  "sizeAfter": 28,
+  "firstSeconds": 149.5
+}

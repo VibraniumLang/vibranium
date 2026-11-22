@@ -1,0 +1,30 @@
+{
+  "signature": "accept-reject | stage0-accepts | self:VIB001 | use of moved value.",
+  "category": "known:N19",
+  "kind": "accept-reject",
+  "frontends": "stage0-accepts",
+  "ids": "self:VIB001",
+  "msg": "use of moved value.",
+  "minTags": [
+    "cond.temp-both-arms",
+    "local.decl",
+    "localfunc.static",
+    "uswitch.default",
+    "uswitch.nonunion-label",
+    "uswitch.not-case",
+    "uswitch.option",
+    "uswitch.payload-owner",
+    "uswitch.place",
+    "uswitch.stmt",
+    "uswitch.stmt-nonunion-label"
+  ],
+  "seed": "1",
+  "profile": "activation",
+  "index": 61,
+  "plan": "StdAppend\u003ECondTemp\u003EUnionSwitch",
+  "mutations": [],
+  "reduceTests": 25,
+  "sizeBefore": 40,
+  "sizeAfter": 28,
+  "firstSeconds": 41.3
+}

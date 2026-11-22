@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arith.int assign.compound const.local expr.cast expr.compare expr.conditional func.expr-body local.decl localfunc.nested localfunc.static pattern.discard pattern.union switch.expr switch.guard switch.sel.option union.ctor uswitch.case-guard uswitch.exhaustive uswitch.expr uswitch.expr-whole-union-arm uswitch.guard uswitch.nonunion-label uswitch.not-case uswitch.option uswitch.payload-owner uswitch.place
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0219@8:12 The variable 'x4' is assigned but its value is never used
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(18,83): error VIB005: Cannot move non-Copy value out of a field, indexed element, or borrowed place.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB005 | cannot move non-copy value out of a field, indexed element, or borrowed place.

@@ -1,0 +1,14 @@
+R r = new R(1);
+R q = r;
+WriteLine(r.Id);
+q.Dispose();
+sealed class R(int id) : IDisposable { public int Id = id; public void Dispose() { WriteLine(-Id); } }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB006@1:1 Linear IDisposable resource 'q' must be bound with 'using var' or moved/disposed on all paths. ; VIB001@3:11 Use of moved value 'r'. ; VIB006@4:1 Manual '.Dispose()' calls are banned in Vibranium; dispose linear IDisposable resources deterministically via 'using var' or move them by value.
+stage0 check: REJECT VIB006@1:1 Linear IDisposable resource 'q' must be bound with 'using var' or moved/disposed on all paths. ; VIB001@3:11 Use of moved value 'r'. ; VIB006@4:1 Manual '.Dispose()' calls are banned in Vibranium; dispose linear IDisposable resources deterministically via 'using var' or move them by value.
+self check: exit=1 out=[] err=[Program.cs(1,1): error VIB006: Linear IDisposable resource must be bound with 'using var' or moved/disposed on all paths.|Program.cs(3,12): error VIB001: Use of moved value.|Program.cs(4,10): error VIB006: Manual '.Dispose()' calls are banned in Vibranium; dispose linear IDisposable resources deterministically via 'using var' or move them by value.|]
+

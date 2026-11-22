@@ -1,0 +1,30 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB008} self-only:{} | ",
+  "category": "new-low",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{VIB008} self-only:{}",
+  "msg": "",
+  "minTags": [
+    "arg.ref",
+    "arith.int",
+    "assign.compound",
+    "banned.struct-idisposable",
+    "local.decl",
+    "local.uninit",
+    "localfunc.static",
+    "param.ref",
+    "struct.fieldwise-init",
+    "struct.local",
+    "type.struct",
+    "using.var"
+  ],
+  "seed": "2026",
+  "index": 942,
+  "plan": "Banned\u003ERefParams",
+  "mutations": [],
+  "reduceTests": 55,
+  "sizeBefore": 76,
+  "sizeAfter": 40,
+  "firstSeconds": 582.1
+}

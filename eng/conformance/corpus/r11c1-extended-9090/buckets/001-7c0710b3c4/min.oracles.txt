@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arith.int assign.compound assign.simple class.primary-ctor local.decl local.uninit localfunc.static optmut.nm-overlap optslot.local pattern.relational switch.default switch.section-no-terminator switch.sel.unsigned switch.stmt type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@11:13 Unreachable code detected
+analyzer: VIB002@12:38 Overlapping borrows in a single call where at least one borrow is exclusive. ; VIB003@12:38 Cannot borrow 'o4' mutably while borrowed by '__tmp_5'.
+stage0 check: REJECT VIB002@12:38 Overlapping borrows in a single call where at least one borrow is exclusive. ; VIB003@12:38 Cannot borrow 'o4' mutably while borrowed by '__tmp_5'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB002,VIB003 | overlapping borrows in a single call where at least one borrow is exclusive.

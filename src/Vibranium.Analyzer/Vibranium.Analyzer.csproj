@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>15.0</LangVersion>
+    <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
+    <IsRoslynComponent>true</IsRoslynComponent>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <RootNamespace>Vibranium.Analyzer</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.12.0" PrivateAssets="all" />
+    <ProjectReference Include="..\Vibranium.Compiler.Core\Vibranium.Compiler.Core.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\Vibranium.Analysis\Vibranium.Analysis.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\Vibranium.Frontend.Roslyn\Vibranium.Frontend.Roslyn.csproj" PrivateAssets="all" />
+  </ItemGroup>
+  <Target Name="AddProjectReferenceDllsToAnalyzer" BeforeTargets="GetTargetPath" DependsOnTargets="ResolveProjectReferences">
+    <ItemGroup>
+      <TargetPathWithTargetPlatformMoniker Include="@(_ResolvedProjectReferencePaths)" IncludeRuntimeDependency="false" />
+    </ItemGroup>
+  </Target>
+</Project>

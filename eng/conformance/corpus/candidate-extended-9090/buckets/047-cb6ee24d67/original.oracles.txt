@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.float-to-int-cast arith.int assign.compound class.primary-ctor expr.cast expr.conditional local.decl local.var localfunc.static optmut.chain-set optmut.local optmut.replace optref.asref-pattern optref.chain optslot.local optslot.take pattern.relational span.arg-span span.from-vec span.index-from-end span.nm-overlap span.read span.vec-after-borrow span.vec-slice-call switch.expr switch.expr-no-discard switch.guard-true switch.sel.int type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB002@23:29 Overlapping borrows in a single call where at least one borrow is exclusive. ; VIB003@23:29 Cannot borrow 'v2' mutably while borrowed by '__tmp_48'.
+stage0 check: REJECT VIB002@23:29 Overlapping borrows in a single call where at least one borrow is exclusive. ; VIB003@23:29 Cannot borrow 'v2' mutably while borrowed by '__tmp_48'.
+self check: exit=1 out=[] err=[Program.cs(21,18): error VIB000: Switch expression must be exhaustive (include a '_' or 'var' catch-all arm) in Vibranium.|Program.cs(23,29): error VIB002: Overlapping borrows in a single call where at least one borrow is exclusive.|Program.cs(23,31): error VIB003: Borrow conflicts with an active borrow.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{} self-only:{VIB000} | 

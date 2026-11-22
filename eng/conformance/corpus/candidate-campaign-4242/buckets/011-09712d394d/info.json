@@ -1,0 +1,32 @@
+{
+  "signature": "invalid-accepted | self | CS8518 | ",
+  "category": "new",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS8518",
+  "msg": "",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "expr.conditional",
+    "expr.conditional-arg",
+    "func.expr-body",
+    "local.decl",
+    "local.underscore",
+    "local.underscore-read",
+    "local.var",
+    "localfunc.static",
+    "pattern.combinator",
+    "pattern.is",
+    "pattern.relational",
+    "union.ctor"
+  ],
+  "seed": "4242",
+  "index": 1374,
+  "plan": "CondArg\u003EUnderscore",
+  "mutations": [],
+  "reduceTests": 60,
+  "sizeBefore": 89,
+  "sizeAfter": 47,
+  "firstSeconds": 239.9
+}

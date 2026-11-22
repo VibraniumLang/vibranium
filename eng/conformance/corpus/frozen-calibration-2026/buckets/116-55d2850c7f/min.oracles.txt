@@ -1,0 +1,8 @@
+validity: valid
+tags: arg.ref arith.int assign.compound banned.struct-idisposable local.decl local.uninit localfunc.static param.ref struct.fieldwise-init struct.local type.struct using.var
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@6:15 Use of uninitialized value 's3'. ; VIB008@7:21 Parameterless zero-initialization 'new Dsp()' of non-zero-safe type 'Dsp' is banned in Vibranium. ; VIB000@14:15 IDisposable linear resources must be classes in Vibranium.
+stage0 check: REJECT VIB001@6:15 Use of uninitialized value 's3'. ; VIB008@7:21 Parameterless zero-initialization 'new Dsp()' of non-zero-safe type 'Dsp' is banned in Vibranium. ; VIB000@14:15 IDisposable linear resources must be classes in Vibranium.
+self check: exit=1 out=[] err=[Program.cs(6,15): error VIB001: Use of uninitialized value.|Program.cs(7,15): error VIB000: 'using var' requires an IDisposable class in Vibranium.|Program.cs(14,21): error VIB000: IDisposable linear resources must be classes in Vibranium.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB008} self-only:{} | 

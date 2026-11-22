@@ -1,0 +1,35 @@
+{
+  "signature": "invalid-accepted | self | CS0128 | ",
+  "category": "known:O2a",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS0128",
+  "msg": "",
+  "minTags": [
+    "arg.out",
+    "arith.int",
+    "assign.compound",
+    "assign.simple",
+    "bcl.tryparse",
+    "local.decl",
+    "local.uninit",
+    "method.static",
+    "out.var",
+    "pattern.relational",
+    "switch.cross-section-dup",
+    "switch.no-default",
+    "switch.sel.char",
+    "switch.stmt",
+    "type.class"
+  ],
+  "seed": "2026",
+  "index": 367,
+  "plan": "SwitchStmt\u003ECondArg",
+  "mutations": [
+    "dup-expr-var"
+  ],
+  "reduceTests": 83,
+  "sizeBefore": 110,
+  "sizeAfter": 55,
+  "firstSeconds": 268.1
+}

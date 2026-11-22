@@ -1,0 +1,14 @@
+validity: valid
+tags: arith.int assign.compound expr.compare func.expr-body local.decl localfunc.nested localfunc.static loop.do utf8.foreach utf8.line-ops utf8.span-lines utf8.span-local
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=134 out=[-1|-1|-1|] err=[Stack overflow.|Repeated 261715 times:|--------------------------------|   at Program.<<Main>$>g__L5|0_1(Int32)|--------------------------------|   at Program.<<Main>$>g__F|0_0(Int32, Boolean, Int64)|   at Program.<Main>$(System.String[])|]
+self-O0 run: exit=139 out=[-1|-1|-1|] err=[]
+stage0-O0 run: exit=139 out=[-1|-1|-1|] err=[]
+DISAGREEMENT: managed-crash | managed | exit134 | stack overflow.
+DISAGREEMENT: output-mismatch | stage0+self | exit+stderr | stage0-O0,self-O0

@@ -1,0 +1,24 @@
+{
+  "signature": "banned-accepted | analyzer\u002Bstage0 | cut.nested-in-generic | ",
+  "category": "known:O11-8b",
+  "kind": "banned-accepted",
+  "frontends": "analyzer\u002Bstage0",
+  "ids": "cut.nested-in-generic",
+  "msg": "",
+  "minTags": [
+    "cut.nested-in-generic",
+    "func.expr-body",
+    "local.decl",
+    "localfunc.static",
+    "union.ctor"
+  ],
+  "seed": "8181",
+  "profile": "activation",
+  "index": 42,
+  "plan": "DeclCuts\u003EOptionResult",
+  "mutations": [],
+  "reduceTests": 28,
+  "sizeBefore": 63,
+  "sizeAfter": 33,
+  "firstSeconds": 53.8
+}

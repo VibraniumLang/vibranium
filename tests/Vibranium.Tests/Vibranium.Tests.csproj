@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <LangVersion>15.0</LangVersion>
+    <RootNamespace>Vibranium.Tests</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.13.0" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="3.0.2" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.12.0" />
+    <ProjectReference Include="..\..\src\Vibranium.Core\Vibranium.Core.csproj" />
+    <ProjectReference Include="..\..\src\Vibranium.Std\Vibranium.Std.csproj" />
+    <ProjectReference Include="..\..\src\Vibranium.Compiler.Core\Vibranium.Compiler.Core.csproj" />
+    <ProjectReference Include="..\..\src\Vibranium.Analysis\Vibranium.Analysis.csproj" />
+    <ProjectReference Include="..\..\src\Vibranium.Frontend.Roslyn\Vibranium.Frontend.Roslyn.csproj" />
+    <ProjectReference Include="..\..\src\Vibranium.Analyzer\Vibranium.Analyzer.csproj" />
+    <ProjectReference Include="..\..\src\Vibranium.Backend.Llvm\Vibranium.Backend.Llvm.csproj" />
+    <ProjectReference Include="..\..\src\vib\vib.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,14 @@
+WriteLine(F(1));
+static int F(int x)
+{
+    return x is > 0 and < 0 ? 1 : 2;
+}
+
+validity: invalid
+tags: 
+sdk-roslyn errors: CS8518@4:12 An expression of type 'int' can never match the provided pattern.
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS8518@4:12 An expression of type 'int' can never match the provided pattern.
+self check: exit=1 out=[] err=[Program.cs(4,12): error VIB000: An expression of this type can never match the provided pattern (CS8518).|]
+

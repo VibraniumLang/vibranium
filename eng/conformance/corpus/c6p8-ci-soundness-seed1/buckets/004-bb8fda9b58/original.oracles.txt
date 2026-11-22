@@ -1,0 +1,17 @@
+validity: valid
+tags: arith.int assign.compound coll.local-init coll.vec expr.cast local.decl localfunc.static loop.foreach loop.foreach-vec uswitch.exhaustive uswitch.loop uswitch.nonunion-label uswitch.not-case uswitch.option uswitch.payload-owner uswitch.place uswitch.stmt uswitch.stmt-nonunion-label
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-asan: TIMEOUT: over the 20 s budget while stage0-O0-asan matched the managed run in 14 ms (no slow re-run)
+self-ir-contract: OK
+stage0-ir-contract: OK
+managed run: exit=0 out=[396063|396071|] err=[]
+self-O0-asan run: TIMEOUT
+self-O3-asan run: exit=1 out=[] err=[AddressSanitizer:DEADLYSIGNAL|=================================================================|==3642254==ERROR: AddressSanitizer: SEGV on unknown address 0x00000000000d (pc 0x5ad6ee604773 bp 0x7ffeb3e58080 sp 0x7ffeb3e57fd8 T0)|==3642254==The signal is caused by a READ memory access.|==3642254==Hint: address points to the zero page.|    #0 0x5ad6ee604773 in vib_fn_fn_239_Class_22_TcpStream_Dispose_e93ac8f9 (self-O3-asan.bin+0x104773) (BuildId: d2a75146df226966441d560253ea566fdf6aa424)|    #1 0x7e3180a2a28a in __li...]
+stage0-O0-asan run: exit=0 out=[396063|396071|] err=[]
+stage0-O3-asan run: exit=0 out=[396063|396071|] err=[]
+DISAGREEMENT: run-timeout | self-O0-asan |  | 
+DISAGREEMENT: sanitizer | self-O3-asan | report | 

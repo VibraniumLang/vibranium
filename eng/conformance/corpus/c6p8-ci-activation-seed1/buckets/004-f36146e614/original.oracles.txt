@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound coll.conditional-locals coll.elem-enum coll.local-init coll.rospan expr.cast expr.compare expr.conditional expr.conditional-arg expr.index expr.qualified-member func.expr-body local.decl localfunc.static param.scoped type.enum uswitch.exhaustive uswitch.expr uswitch.expr-whole-union-arm uswitch.nonunion-label uswitch.not-case uswitch.option uswitch.payload-owner uswitch.place
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(14,83): error VIB005: Cannot move non-Copy value out of a field, indexed element, or borrowed place.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB005 | cannot move non-copy value out of a field, indexed element, or borrowed place.

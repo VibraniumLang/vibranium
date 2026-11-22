@@ -1,0 +1,16 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Vec<int> v = [1, 2];
+Span<int> sp = v.AsSpan();
+int n = (v = MakeVec(5)).Count;
+WriteLine(n + sp[0]);
+
+static Vec<int> MakeVec(int a) { Vec<int> r = [a, a + 1]; return r; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@3:10 Cannot move 'v' while borrowed by 'sp'. ; VIB003@3:14 Cannot mutate 'v' while borrowed by 'sp'.
+stage0 check: REJECT VIB003@3:10 Cannot move 'v' while borrowed by 'sp'. ; VIB003@3:14 Cannot mutate 'v' while borrowed by 'sp'.
+self check: exit=1 out=[] err=[Program.cs(3,12): error VIB003: Cannot mutate value while borrowed.|]
+

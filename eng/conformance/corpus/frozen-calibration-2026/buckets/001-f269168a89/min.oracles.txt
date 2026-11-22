@@ -1,0 +1,8 @@
+validity: invalid
+tags: local.decl localfunc.static mut.embedded-decl pattern.is pattern.relational stmt.if
+sdk-roslyn errors: CS1023@4:20 Embedded statement cannot be a declaration or labeled statement
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0219@4:24 The variable 'emb' is assigned but its value is never used
+analyzer: none
+stage0 check: REJECT CS1023@4:20 Embedded statement cannot be a declaration or labeled statement
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS1023 | 

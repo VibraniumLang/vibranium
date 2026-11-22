@@ -1,0 +1,21 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Vec<int> a = [1, 2];
+Vec<int> b = [3, 4, 5];
+Span<int> s = a.AsSpan();
+int n = 0;
+for (int i = 0; i < 2; i++)
+{
+    b[0] = i;
+    n += s[0];
+    n += (s = b.AsSpan()).Length;
+}
+WriteLine(n);
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@7:5 Cannot borrow 'b' immutably while borrowed by 's'. ; VIB003@7:5 Cannot mutate 'b' while borrowed by 's'. ; VIB003@9:10 Cannot read 'b' while exclusively borrowed by 's'. ; VIB003@9:11 Cannot move 's' while it is borrowed by an earlier argument or receiver of the same call.
+stage0 check: REJECT VIB003@7:5 Cannot borrow 'b' immutably while borrowed by 's'. ; VIB003@7:5 Cannot mutate 'b' while borrowed by 's'. ; VIB003@9:10 Cannot read 'b' while exclusively borrowed by 's'. ; VIB003@9:11 Cannot move 's' while it is borrowed by an earlier argument or receiver of the same call.
+self check: exit=1 out=[] err=[Program.cs(7,6): error VIB003: Borrow conflicts with an active borrow.|Program.cs(7,10): error VIB003: Cannot mutate through reference while borrowed by another live reference.|]
+

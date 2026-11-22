@@ -1,0 +1,8 @@
+validity: valid
+tags: local.decl localfunc.static span.foreach-ref span.from-vec span.nm-overlap span.vec-slice-call stmt.nested-block utf8.foreach utf8.line-tryparse utf8.span-lines utf8.span-local
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@10:22 Cannot borrow 'v8' mutably while borrowed by 's7'. ; VIB003@10:35 Cannot read 'v8' while exclusively borrowed by 's7'. ; VIB003@10:39 Cannot borrow 'v8' immutably while borrowed by 's7'. ; VIB001@11:23 Use of moved value 's7'. ; VIB001@11:27 Use of moved value 's7'. ; VIB002@11:27 Overlapping borrows in a single call where at least one borrow is exclusive.
+stage0 check: REJECT VIB003@10:22 Cannot borrow 'v8' mutably while borrowed by 's7'. ; VIB003@10:35 Cannot read 'v8' while exclusively borrowed by 's7'. ; VIB003@10:39 Cannot borrow 'v8' immutably while borrowed by 's7'. ; VIB001@11:23 Use of moved value 's7'. ; VIB001@11:27 Use of moved value 's7'. ; VIB002@11:27 Overlapping borrows in a single call where at least one borrow is exclusive.
+self check: exit=1 out=[] err=[Program.cs(11,27): error VIB002: Overlapping borrows in a single call where at least one borrow is exclusive.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001,VIB003} self-only:{} | 

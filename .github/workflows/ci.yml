@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: "${{ github.event_name == 'pull_request' }}"
+
+jobs:
+  build-and-test:
+    name: Build & Differential Tests (.NET 11 + LLVM 18)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install LLVM 18 & Clang 18 (with ASan/LSan runtime)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends clang-18 llvm-18 libclang-rt-18-dev
+          clang-18 --version
+          opt-18 --version
+
+      - name: Install .NET 11.0.100 SDK
+        run: |
+          curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
+          bash /tmp/dotnet-install.sh --version 11.0.100 --install-dir "$HOME/.dotnet"
+          rm -f /tmp/dotnet-install.sh
+          echo "$HOME/.dotnet" >> "$GITHUB_PATH"
+          echo "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"
+          echo "DOTNET_CLI_TELEMETRY_OPTOUT=1" >> "$GITHUB_ENV"
+          echo "DOTNET_NOLOGO=1" >> "$GITHUB_ENV"
+
+      - name: Verify .NET SDK version
+        run: dotnet --info
+
+      - name: Build Vibranium.slnx (0 warnings, 0 errors)
+        run: dotnet build --disable-build-servers Vibranium.slnx
+
+      - name: Run xUnit Differential & Analyzer Parity Suite
+        run: dotnet test --disable-build-servers Vibranium.slnx --no-build --logger "console;verbosity=normal"
+
+      - name: Smoke-test vib CLI (check, emit-ll, build)
+        run: |
+          dotnet run --project src/vib/vib.csproj --no-build -- check samples/demo/Program.cs
+          dotnet run --project src/vib/vib.csproj --no-build -- emit-ll samples/demo/Program.cs -o /tmp/demo.ll
+          opt-18 -passes=verify -disable-output /tmp/demo.ll
+          dotnet run --project src/vib/vib.csproj --no-build -- build samples/demo/Program.cs -O3 -o /tmp/demo-native
+          /tmp/demo-native
+          rm -f /tmp/demo.ll /tmp/demo-native
+
+      - name: Verify Self-Hosting Triple-Identity Bootstrap (vib-self)
+        run: ./eng/bootstrap/bootstrap.sh --skip-benchmark
+
+      - name: Differential conformance fuzzer (fixed budget, see docs/CONFORMANCE.md)
+        env:
+          CONF_FAIL_ON: open
+        run: ./eng/conformance/run-conformance.sh ci
+
+      - name: Conformance activation profile (fixed budget, see docs/CONFORMANCE.md)
+        env:
+          CONF_FAIL_ON: open
+          CONF_PROFILE: activation
+          CONF_SKIP_BUILD: "1"
+        run: ./eng/conformance/run-conformance.sh ci
+
+      - name: Conformance soundness profile (accepted programs run ASan/LSan-clean at -O0 and -O3, see docs/CONFORMANCE.md)
+        env:
+          CONF_FAIL_ON: open
+          CONF_PROFILE: soundness
+          CONF_SKIP_BUILD: "1"
+        run: ./eng/conformance/run-conformance.sh ci
+
+      - name: Conformance feature matrix (banned, cut and decided rows on every frontend, see docs/CONFORMANCE.md)
+        env:
+          CONF_SKIP_BUILD: "1"
+        run: ./eng/conformance/run-conformance.sh matrix
+
+      - name: Mutation oracle self-test
+        run: ./eng/mutation/run-mutation.sh self-test
+
+      - name: Mutation diagnostic regression gate (empty known-open list, not release sign-off)
+        env:
+          MUTATION_SKIP_BUILD: "1"
+        run: ./eng/mutation/run-mutation.sh ci
+
+  formal-proofs:
+    name: Lean 4 Formal Proofs (VibraniumFormal)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install elan & Lean 4 toolchain
+        run: |
+          curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Build VibraniumFormal & Run Proof Verifier
+        working-directory: formal
+        run: |
+          lake build
+          lake exe vibranium-formal-verify

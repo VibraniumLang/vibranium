@@ -1,0 +1,20 @@
+{
+  "signature": "output-mismatch | stage0\u002Bself | stdout\u002Bstderr | stage0-O0,self-O0",
+  "category": "known:O11-12",
+  "kind": "output-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stdout\u002Bstderr",
+  "msg": "stage0-O0,self-O0",
+  "minTags": [
+    "std.append-nonseekable"
+  ],
+  "seed": "8181",
+  "profile": "activation",
+  "index": 26,
+  "plan": "ClassInstance\u003EStdAppend",
+  "mutations": [],
+  "reduceTests": 7,
+  "sizeBefore": 60,
+  "sizeAfter": 4,
+  "firstSeconds": 32.5
+}

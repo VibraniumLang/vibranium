@@ -1,0 +1,8 @@
+validity: valid
+tags: arg.out arith.int assign.compound assign.field assign.simple coll.empty coll.vec cut.struct-piecewise-owned expr.cast func.expr-body local.decl local.uninit method.static out.var stmt.if struct.local struct.owned-field type.class type.field type.struct union.ctor union.guard
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@11:16 Use of uninitialized value 'v4'.
+stage0 check: REJECT VIB001@11:16 Use of uninitialized value 'v4'.
+self check: exit=1 out=[] err=[Program.cs(11,16): error VIB001: Use of uninitialized value.|]
+DISAGREEMENT: banned-wrong-id | cut.struct-piecewise-owned | analyzer:VIB001 stage0:VIB001 self:VIB001 | expected VIB000

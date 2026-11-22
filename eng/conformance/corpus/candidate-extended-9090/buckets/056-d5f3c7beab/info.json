@@ -1,0 +1,29 @@
+{
+  "signature": "invalid-accepted | self | CS9135 | ",
+  "category": "known:N10",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS9135",
+  "msg": "",
+  "minTags": [
+    "local.decl",
+    "method.static",
+    "pattern.named-const",
+    "switch.default",
+    "switch.section-no-terminator",
+    "switch.sel.int",
+    "switch.stmt",
+    "type.class"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 12481,
+  "plan": "Const\u003EStdText\u003EPanic",
+  "mutations": [
+    "const-to-var"
+  ],
+  "reduceTests": 51,
+  "sizeBefore": 106,
+  "sizeAfter": 31,
+  "firstSeconds": 1768
+}

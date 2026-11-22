@@ -1,0 +1,29 @@
+{
+  "signature": "invalid-accepted | self | CS0165 | ",
+  "category": "new",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS0165",
+  "msg": "",
+  "minTags": [
+    "expr.cast",
+    "func.expr-body",
+    "local.decl",
+    "local.underscore",
+    "local.underscore-read",
+    "localfunc.static",
+    "pattern.discard",
+    "pattern.union",
+    "switch.expr",
+    "switch.sel.option",
+    "union.ctor"
+  ],
+  "seed": "4242",
+  "index": 10331,
+  "plan": "Underscore\u003EArith",
+  "mutations": [],
+  "reduceTests": 53,
+  "sizeBefore": 98,
+  "sizeAfter": 50,
+  "firstSeconds": 2274.3
+}

@@ -1,0 +1,8 @@
+validity: invalid
+tags: arg.out arith.int arith.rem-int assign.compound bcl.tryparse expr.cast local.decl local.underscore-read local.var localfunc.in-class-method localfunc.static method.static out.underscore panic.call param.underscore pattern.combinator pattern.is pattern.relational span.from-coll span.length span.range span.read span.slice-local span.to-rospan span.write-after-shared stmt.if type.class
+sdk-roslyn errors: CS8518@23:13 An expression of type 'int' can never match the provided pattern.
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS8518@23:13 An expression of type 'int' can never match the provided pattern.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS8518 | 

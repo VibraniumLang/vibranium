@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int arith.rem-int arith.unsigned assign.compound expr.cast expr.compare expr.conditional expr.logical local.decl local.var localfunc.static pattern.const pattern.discard switch.expr switch.sel-unparenthesized switch.sel.float view.assign-value-copy-view view.loop-rebind-old-owner-mutated
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@14:178 Cannot move 's' while borrowed by 't'.
+stage0 check: REJECT VIB003@14:178 Cannot move 's' while borrowed by 't'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB003 | cannot move 'x' while borrowed by 'x'.

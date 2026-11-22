@@ -1,0 +1,15 @@
+validity: valid
+tags: coll.local-init coll.rospan local.decl loop.foreach method.static type.class uswitch.default uswitch.guard uswitch.nonunion-label uswitch.not-case uswitch.or-cases uswitch.payload-owner uswitch.place uswitch.result uswitch.stmt uswitch.stmt-nonunion-label uswitch.two-fallbacks
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+self-ir-contract: OK
+stage0-O0-needed: libc.so.6
+stage0-ir-contract: OK
+managed run: exit=0 out=[111400|] err=[]
+self-O0 run: exit=0 out=[111079|] err=[]
+stage0-O0 run: exit=0 out=[111400|] err=[]
+DISAGREEMENT: output-mismatch | self | stdout | self-O0

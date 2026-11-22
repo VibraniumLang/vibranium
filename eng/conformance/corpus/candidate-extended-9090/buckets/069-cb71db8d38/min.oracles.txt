@@ -1,0 +1,8 @@
+validity: valid
+tags: class.primary-ctor func.expr-body local.decl local.var method.instance method.static span.foreach-ref span.from-vec span.range span.slice-local span.vec-range type.class type.field type.resource using.var
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@9:22 Cannot borrow 'v5' mutably while borrowed by 's4'. ; VIB003@9:35 Cannot read 'v5' while exclusively borrowed by 's4'. ; VIB003@9:39 Cannot borrow 'v5' immutably while borrowed by 's4'. ; VIB001@10:19 Use of moved value 's4'. ; VIB001@16:16 Use of moved value 'x'.
+stage0 check: REJECT VIB003@9:22 Cannot borrow 'v5' mutably while borrowed by 's4'. ; VIB003@9:35 Cannot read 'v5' while exclusively borrowed by 's4'. ; VIB003@9:39 Cannot borrow 'v5' immutably while borrowed by 's4'. ; VIB001@10:19 Use of moved value 's4'. ; VIB001@16:16 Use of moved value 'x'.
+self check: exit=1 out=[] err=[Program.cs(16,17): error VIB001: Use of moved value.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB003} self-only:{} | 

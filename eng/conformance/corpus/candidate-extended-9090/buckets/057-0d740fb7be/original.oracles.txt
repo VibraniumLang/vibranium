@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arith.int arith.rem-int arith.shift assign.compound assign.simple assign.underscore class.primary-ctor expr.cast expr.compare expr.conditional func.expr-body local.decl local.underscore local.underscore-read local.uninit local.var localfunc.nested localfunc.static mut.calls-mut mut.drain mut.field-foreach mut.local mut.shared-call mut.two-phase-read pattern.relational stmt.nested-block switch.default switch.section-local switch.section-no-terminator switch.sel.char switch.stmt type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@27:17 Unreachable code detected
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(24,9): error VIB000: C# switch section endpoints must not be reachable; Panic is an ordinary invocation for source reachability (CS0163/CS8070).|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | c# switch section endpoints must not be reachable; panic is an ordinary invocation for sou

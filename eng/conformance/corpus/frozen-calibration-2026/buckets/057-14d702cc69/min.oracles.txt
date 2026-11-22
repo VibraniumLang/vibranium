@@ -1,0 +1,8 @@
+validity: invalid
+tags: arg.out arith.int assign.compound assign.simple bcl.tryparse local.decl local.uninit method.static out.var pattern.relational switch.cross-section-dup switch.no-default switch.sel.char switch.stmt type.class
+sdk-roslyn errors: CS0128@12:52 A local variable or function named 'o3' is already defined in this scope
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@14:16 Use of uninitialized value 'r2'.
+stage0 check: REJECT CS0128@12:52 A local variable or function named 'o3' is already defined in this scope
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS0128 | 

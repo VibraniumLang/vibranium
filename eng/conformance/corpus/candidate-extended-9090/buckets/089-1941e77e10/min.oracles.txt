@@ -1,0 +1,8 @@
+validity: invalid
+tags: arg.ref arith.int assign.compound local.decl local.ref method.static param.ref-readonly type.class
+sdk-roslyn errors: CS1510@9:23 A ref or out value must be an assignable variable
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS1510@9:23 A ref or out value must be an assignable variable
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS1510 | 

@@ -1,0 +1,30 @@
+{
+  "signature": "output-mismatch | stage0 | stdout | stage0-O0,stage0-O3-asan",
+  "category": "known:N3",
+  "kind": "output-mismatch",
+  "frontends": "stage0",
+  "ids": "stdout",
+  "msg": "stage0-O0,stage0-O3-asan",
+  "minTags": [
+    "arg.ref",
+    "arith.int",
+    "assign.compound",
+    "expr.conditional",
+    "local.decl",
+    "method.static",
+    "mut.struct-local",
+    "mut.struct-readonly-method",
+    "param.ref",
+    "type.class",
+    "type.struct"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 3205,
+  "plan": "MutReceiver\u003ERefParams",
+  "mutations": [],
+  "reduceTests": 80,
+  "sizeBefore": 82,
+  "sizeAfter": 49,
+  "firstSeconds": 715.2
+}

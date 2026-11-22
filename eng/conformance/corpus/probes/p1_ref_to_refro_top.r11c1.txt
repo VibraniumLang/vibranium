@@ -1,0 +1,17 @@
+int x = 1;
+WriteLine(Id(ref x));
+static int Id(ref readonly int p) => p;
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[1|] err=[]
+self-O0 run: exit=0 out=[1|] err=[]
+stage0-O0 run: exit=0 out=[1|] err=[]
+

@@ -1,0 +1,23 @@
+{
+  "signature": "accept-reject | self-accepts | stage0:VIB003 | cannot read \u0027x\u0027 while exclusively borrowed by \u0027x\u0027.",
+  "category": "new:N17",
+  "kind": "accept-reject",
+  "frontends": "self-accepts",
+  "ids": "stage0:VIB003",
+  "msg": "cannot read \u0027x\u0027 while exclusively borrowed by \u0027x\u0027.",
+  "minTags": [
+    "local.decl",
+    "localfunc.static",
+    "view.loop-assign-value-receiver",
+    "view.loop-reassign-call"
+  ],
+  "seed": "1",
+  "profile": "activation",
+  "index": 109,
+  "plan": "ViewMove\u003EViewMove",
+  "mutations": [],
+  "reduceTests": 23,
+  "sizeBefore": 56,
+  "sizeAfter": 26,
+  "firstSeconds": 67.6
+}

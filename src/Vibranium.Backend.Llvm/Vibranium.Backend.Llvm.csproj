@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <LangVersion>15.0</LangVersion>
+    <RootNamespace>Vibranium.Backend.Llvm</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Vibranium.Compiler.Core\Vibranium.Compiler.Core.csproj" />
+    <EmbeddedResource Include="..\Vibranium.Core\Native\x86_64-linux-gnu\vib_rt.ll" LogicalName="vib_rt.ll" />
+    <EmbeddedResource Include="..\Vibranium.Std\Native\x86_64-linux-gnu\vib_std.ll" LogicalName="vib_std.ll" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,15 @@
+WriteLine(F());
+static int F()
+{
+    if (0 is > -1 and var q) { }
+    return q;
+}
+
+validity: invalid
+tags: 
+sdk-roslyn errors: CS8793@4:9 The given expression always matches the provided pattern.
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@4:9 C# warning CS8793 is not permitted in Vibranium: The given expression always matches the provided pattern.
+stage0 check: REJECT CS8793@4:9 The given expression always matches the provided pattern.
+self check: exit=1 out=[] err=[Program.cs(4,9): error VIB000: C# warning CS8793 is not permitted in Vibranium: The given expression always matches the provided pattern.|]
+

@@ -1,0 +1,1931 @@
+{
+  "seed": "6161",
+  "options": {
+    "Seed": 6161,
+    "Count": 0,
+    "Minutes": 60,
+    "Workers": 3,
+    "OutDir": "<scratch>",
+    "ExecRate": 0.5,
+    "AsanRate": 0.05,
+    "InProcessSelf": true,
+    "ReduceBudget": 250,
+    "ReduceBudgetExec": 80,
+    "MaxMinimizePerSignature": 6,
+    "Profile": "default"
+  },
+  "seconds": 3600.3,
+  "programs": 35950,
+  "programsPerMinute": 599.1,
+  "executed": 7090,
+  "nonTerminatingSkipped": 20,
+  "avgFrontendMsPerProgram": 198,
+  "avgExecMsPerExecutedProgram": 505,
+  "reductionTests": 75,
+  "reductionSeconds": 12,
+  "validity": {
+    "valid": 18065,
+    "invalid": 16066,
+    "warn-only": 1819
+  },
+  "warningOnlyById": {
+    "CS0162": {
+      "programs": 1339,
+      "analyzerClean": 1025,
+      "stage0Accepts": 1025,
+      "selfAccepts": 1025,
+      "firstProgram": 32
+    },
+    "CS0168": {
+      "programs": 275,
+      "analyzerClean": 192,
+      "stage0Accepts": 192,
+      "selfAccepts": 192,
+      "firstProgram": 65
+    },
+    "CS0219": {
+      "programs": 170,
+      "analyzerClean": 138,
+      "stage0Accepts": 138,
+      "selfAccepts": 138,
+      "firstProgram": 78
+    },
+    "CS8321": {
+      "programs": 50,
+      "analyzerClean": 30,
+      "stage0Accepts": 30,
+      "selfAccepts": 30,
+      "firstProgram": 47
+    },
+    "CS1718": {
+      "programs": 19,
+      "analyzerClean": 13,
+      "stage0Accepts": 13,
+      "selfAccepts": 13,
+      "firstProgram": 1178
+    },
+    "CS1717": {
+      "programs": 13,
+      "analyzerClean": 11,
+      "stage0Accepts": 11,
+      "selfAccepts": 11,
+      "firstProgram": 41
+    },
+    "CS1522": {
+      "programs": 10,
+      "analyzerClean": 9,
+      "stage0Accepts": 9,
+      "selfAccepts": 9,
+      "firstProgram": 2908
+    },
+    "CS9195": {
+      "programs": 4,
+      "analyzerClean": 0,
+      "stage0Accepts": 0,
+      "selfAccepts": 0,
+      "firstProgram": 22310
+    }
+  },
+  "signatures": [
+    {
+      "signature": "banned-accepted | analyzer\u002Bstage0\u002Bself | cut.struct-piecewise-owned | ",
+      "hits": 1,
+      "firstProgram": 28828,
+      "firstSeconds": 2945.9,
+      "minimized": 1
+    }
+  ],
+  "buckets": [
+    {
+      "id": "001-2aeda0d464",
+      "category": "regression:CUT2",
+      "signature": "banned-accepted | analyzer\u002Bstage0\u002Bself | cut.struct-piecewise-owned | ",
+      "minTags": [
+        "assign.simple",
+        "class.primary-ctor",
+        "cut.struct-piecewise-owned",
+        "expr.qualified-member",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "method.instance",
+        "pattern.named-const",
+        "struct.local",
+        "struct.owned-field",
+        "switch.default",
+        "switch.section-local",
+        "switch.section-no-terminator",
+        "switch.sel.enum",
+        "switch.stmt",
+        "type.class",
+        "type.enum",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 28828,
+      "firstSeconds": 2958.8
+    }
+  ],
+  "knownRootsFirstHit": {
+    "CUT2": {
+      "program": 28828,
+      "seconds": 2958.8
+    }
+  },
+  "tagCoverage": {
+    "arg.in": 1694,
+    "arg.out": 11631,
+    "arg.ref": 2049,
+    "arg.rvalue-to-ref-param": 325,
+    "arith.bitwise": 4804,
+    "arith.div-double": 272,
+    "arith.div-float": 167,
+    "arith.div-int": 3598,
+    "arith.div-long": 501,
+    "arith.div-unsigned": 342,
+    "arith.double": 1047,
+    "arith.float": 382,
+    "arith.float-to-int-cast": 3708,
+    "arith.int": 35498,
+    "arith.long": 2642,
+    "arith.rem-double": 918,
+    "arith.rem-float": 488,
+    "arith.rem-int": 5136,
+    "arith.rem-long": 815,
+    "arith.rem-unsigned": 588,
+    "arith.shift": 3804,
+    "arith.unsigned": 995,
+    "assign.compound": 34180,
+    "assign.field": 4633,
+    "assign.index": 85,
+    "assign.simple": 12015,
+    "assign.underscore": 4208,
+    "banned.array": 251,
+    "banned.checked": 213,
+    "banned.collection-return-span": 754,
+    "banned.default-nonzerosafe": 266,
+    "banned.goto": 232,
+    "banned.inheritance": 215,
+    "banned.interpolation": 255,
+    "banned.lambda": 219,
+    "banned.linear-field": 197,
+    "banned.manual-dispose": 210,
+    "banned.nonstatic-localfunc": 1721,
+    "banned.null": 241,
+    "banned.null-forgiving": 249,
+    "banned.nullable": 490,
+    "banned.object": 240,
+    "banned.object-initializer": 117,
+    "banned.static-field": 229,
+    "banned.string-concat": 232,
+    "banned.string-equality": 222,
+    "banned.string-length": 220,
+    "banned.struct-idisposable": 210,
+    "banned.throw": 222,
+    "banned.try": 245,
+    "bcl.tryparse": 8036,
+    "class.primary-ctor": 7514,
+    "coll.arg": 1064,
+    "coll.conditional": 1790,
+    "coll.conditional-unparenthesized": 1213,
+    "coll.elem-byte": 353,
+    "coll.elem-char": 732,
+    "coll.elem-enum": 779,
+    "coll.elem-long": 378,
+    "coll.empty": 270,
+    "coll.foreach-literal": 86,
+    "coll.local-init": 3942,
+    "coll.returned": 912,
+    "coll.rospan": 4802,
+    "coll.span": 837,
+    "coll.vec": 1405,
+    "const.class": 357,
+    "const.local": 3237,
+    "cut.localfunc-in-switch-section": 323,
+    "cut.struct-piecewise-owned": 745,
+    "expr.cast": 22868,
+    "expr.compare": 23793,
+    "expr.conditional": 19738,
+    "expr.conditional-arg": 6772,
+    "expr.index": 3791,
+    "expr.logical": 7376,
+    "expr.qualified-member": 1624,
+    "expr.u8-literal": 24,
+    "field.underscore": 1569,
+    "func.expr-body": 19677,
+    "func.returns-span": 912,
+    "local.decl": 35950,
+    "local.ref": 320,
+    "local.underscore": 3927,
+    "local.underscore-read": 6896,
+    "local.uninit": 6868,
+    "local.var": 13897,
+    "localfunc.in-class-method": 2157,
+    "localfunc.nested": 5109,
+    "localfunc.static": 27596,
+    "loop.continue": 803,
+    "loop.do": 433,
+    "loop.for": 1267,
+    "loop.foreach": 2158,
+    "loop.foreach-ref": 426,
+    "loop.foreach-vec": 715,
+    "loop.while": 1450,
+    "method.instance": 8844,
+    "method.static": 10412,
+    "mut.embedded-decl": 892,
+    "out.existing-local": 2813,
+    "out.field": 377,
+    "out.other": 164,
+    "out.typed": 1267,
+    "out.typed-discard": 758,
+    "out.underscore": 3904,
+    "out.var": 2793,
+    "out.var-discard": 954,
+    "panic.call": 5201,
+    "param.in": 2043,
+    "param.out": 3028,
+    "param.ref": 1248,
+    "param.ref-readonly": 1635,
+    "param.scoped": 300,
+    "param.underscore": 758,
+    "pattern.combinator": 4439,
+    "pattern.const": 4919,
+    "pattern.decl": 2141,
+    "pattern.discard": 3076,
+    "pattern.is": 9431,
+    "pattern.named-const": 1238,
+    "pattern.relational": 8505,
+    "pattern.type": 494,
+    "pattern.type-discard": 181,
+    "pattern.union": 3124,
+    "pattern.var": 6023,
+    "stmt.if": 13819,
+    "stmt.if-else": 3924,
+    "stmt.nested-block": 5545,
+    "struct.ctor": 244,
+    "struct.fieldwise-init": 2310,
+    "struct.local": 4760,
+    "struct.new-default": 1696,
+    "struct.out-fieldwise": 544,
+    "struct.owned-field": 1014,
+    "switch.cross-section-dup": 61,
+    "switch.cross-section-var": 455,
+    "switch.default": 1803,
+    "switch.expr": 6245,
+    "switch.expr-no-discard": 3572,
+    "switch.guard": 2721,
+    "switch.guard-const": 606,
+    "switch.guard-false": 1107,
+    "switch.guard-true": 1226,
+    "switch.nested": 191,
+    "switch.no-default": 2992,
+    "switch.section-local": 3127,
+    "switch.section-no-terminator": 567,
+    "switch.sel-unparenthesized": 111,
+    "switch.sel.bool": 863,
+    "switch.sel.char": 342,
+    "switch.sel.enum": 917,
+    "switch.sel.float": 462,
+    "switch.sel.int": 5052,
+    "switch.sel.option": 1725,
+    "switch.sel.result": 871,
+    "switch.sel.unsigned": 1087,
+    "switch.stmt": 4696,
+    "type.class": 13475,
+    "type.enum": 2823,
+    "type.field": 13497,
+    "type.resource": 4804,
+    "type.struct": 5457,
+    "union.consume": 1998,
+    "union.ctor": 7361,
+    "union.guard": 1422,
+    "using.block": 945,
+    "using.var": 3729
+  },
+  "uncoveredCatalogTags": [],
+  "schedulePairs": 324,
+  "vibInvalidTags": {},
+  "anchorPairs": {
+    "Arith\u003EArith": {
+      "Programs": 111,
+      "Valid": 75,
+      "Disagree": 0
+    },
+    "Arith\u003EBanned": {
+      "Programs": 111,
+      "Valid": 73,
+      "Disagree": 0
+    },
+    "Arith\u003EClassInstance": {
+      "Programs": 110,
+      "Valid": 77,
+      "Disagree": 0
+    },
+    "Arith\u003ECollection": {
+      "Programs": 111,
+      "Valid": 71,
+      "Disagree": 0
+    },
+    "Arith\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 73,
+      "Disagree": 0
+    },
+    "Arith\u003EConst": {
+      "Programs": 111,
+      "Valid": 58,
+      "Disagree": 0
+    },
+    "Arith\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 71,
+      "Disagree": 0
+    },
+    "Arith\u003ELoop": {
+      "Programs": 111,
+      "Valid": 72,
+      "Disagree": 0
+    },
+    "Arith\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 70,
+      "Disagree": 0
+    },
+    "Arith\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 68,
+      "Disagree": 0
+    },
+    "Arith\u003EPanic": {
+      "Programs": 111,
+      "Valid": 38,
+      "Disagree": 0
+    },
+    "Arith\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 72,
+      "Disagree": 0
+    },
+    "Arith\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 54,
+      "Disagree": 0
+    },
+    "Arith\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 69,
+      "Disagree": 0
+    },
+    "Arith\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 44,
+      "Disagree": 0
+    },
+    "Arith\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 49,
+      "Disagree": 0
+    },
+    "Arith\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 51,
+      "Disagree": 0
+    },
+    "Arith\u003EUsing": {
+      "Programs": 111,
+      "Valid": 67,
+      "Disagree": 0
+    },
+    "Banned\u003EArith": {
+      "Programs": 111,
+      "Valid": 81,
+      "Disagree": 0
+    },
+    "Banned\u003EBanned": {
+      "Programs": 111,
+      "Valid": 72,
+      "Disagree": 0
+    },
+    "Banned\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 80,
+      "Disagree": 0
+    },
+    "Banned\u003ECollection": {
+      "Programs": 111,
+      "Valid": 76,
+      "Disagree": 0
+    },
+    "Banned\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 80,
+      "Disagree": 0
+    },
+    "Banned\u003EConst": {
+      "Programs": 111,
+      "Valid": 48,
+      "Disagree": 0
+    },
+    "Banned\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 74,
+      "Disagree": 0
+    },
+    "Banned\u003ELoop": {
+      "Programs": 111,
+      "Valid": 66,
+      "Disagree": 0
+    },
+    "Banned\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 78,
+      "Disagree": 0
+    },
+    "Banned\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 72,
+      "Disagree": 0
+    },
+    "Banned\u003EPanic": {
+      "Programs": 111,
+      "Valid": 43,
+      "Disagree": 0
+    },
+    "Banned\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 71,
+      "Disagree": 0
+    },
+    "Banned\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 43,
+      "Disagree": 0
+    },
+    "Banned\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 66,
+      "Disagree": 0
+    },
+    "Banned\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 41,
+      "Disagree": 0
+    },
+    "Banned\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 43,
+      "Disagree": 0
+    },
+    "Banned\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 63,
+      "Disagree": 0
+    },
+    "Banned\u003EUsing": {
+      "Programs": 111,
+      "Valid": 77,
+      "Disagree": 0
+    },
+    "ClassInstance\u003EArith": {
+      "Programs": 111,
+      "Valid": 74,
+      "Disagree": 0
+    },
+    "ClassInstance\u003EBanned": {
+      "Programs": 111,
+      "Valid": 72,
+      "Disagree": 0
+    },
+    "ClassInstance\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 85,
+      "Disagree": 0
+    },
+    "ClassInstance\u003ECollection": {
+      "Programs": 111,
+      "Valid": 80,
+      "Disagree": 0
+    },
+    "ClassInstance\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 79,
+      "Disagree": 0
+    },
+    "ClassInstance\u003EConst": {
+      "Programs": 111,
+      "Valid": 56,
+      "Disagree": 0
+    },
+    "ClassInstance\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 77,
+      "Disagree": 0
+    },
+    "ClassInstance\u003ELoop": {
+      "Programs": 111,
+      "Valid": 69,
+      "Disagree": 0
+    },
+    "ClassInstance\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 74,
+      "Disagree": 0
+    },
+    "ClassInstance\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 70,
+      "Disagree": 0
+    },
+    "ClassInstance\u003EPanic": {
+      "Programs": 111,
+      "Valid": 52,
+      "Disagree": 0
+    },
+    "ClassInstance\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 68,
+      "Disagree": 0
+    },
+    "ClassInstance\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 55,
+      "Disagree": 0
+    },
+    "ClassInstance\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 59,
+      "Disagree": 0
+    },
+    "ClassInstance\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 52,
+      "Disagree": 0
+    },
+    "ClassInstance\u003ESwitchStmt": {
+      "Programs": 110,
+      "Valid": 41,
+      "Disagree": 1
+    },
+    "ClassInstance\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 59,
+      "Disagree": 0
+    },
+    "ClassInstance\u003EUsing": {
+      "Programs": 111,
+      "Valid": 79,
+      "Disagree": 0
+    },
+    "Collection\u003EArith": {
+      "Programs": 111,
+      "Valid": 71,
+      "Disagree": 0
+    },
+    "Collection\u003EBanned": {
+      "Programs": 111,
+      "Valid": 88,
+      "Disagree": 0
+    },
+    "Collection\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 77,
+      "Disagree": 0
+    },
+    "Collection\u003ECollection": {
+      "Programs": 111,
+      "Valid": 71,
+      "Disagree": 0
+    },
+    "Collection\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 78,
+      "Disagree": 0
+    },
+    "Collection\u003EConst": {
+      "Programs": 111,
+      "Valid": 53,
+      "Disagree": 0
+    },
+    "Collection\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 72,
+      "Disagree": 0
+    },
+    "Collection\u003ELoop": {
+      "Programs": 111,
+      "Valid": 75,
+      "Disagree": 0
+    },
+    "Collection\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 59,
+      "Disagree": 0
+    },
+    "Collection\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 69,
+      "Disagree": 0
+    },
+    "Collection\u003EPanic": {
+      "Programs": 111,
+      "Valid": 46,
+      "Disagree": 0
+    },
+    "Collection\u003EPatternVar": {
+      "Programs": 110,
+      "Valid": 71,
+      "Disagree": 0
+    },
+    "Collection\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 53,
+      "Disagree": 0
+    },
+    "Collection\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 57,
+      "Disagree": 0
+    },
+    "Collection\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 44,
+      "Disagree": 0
+    },
+    "Collection\u003ESwitchStmt": {
+      "Programs": 110,
+      "Valid": 40,
+      "Disagree": 0
+    },
+    "Collection\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 59,
+      "Disagree": 0
+    },
+    "Collection\u003EUsing": {
+      "Programs": 111,
+      "Valid": 71,
+      "Disagree": 0
+    },
+    "CondArg\u003EArith": {
+      "Programs": 111,
+      "Valid": 73,
+      "Disagree": 0
+    },
+    "CondArg\u003EBanned": {
+      "Programs": 111,
+      "Valid": 76,
+      "Disagree": 0
+    },
+    "CondArg\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 69,
+      "Disagree": 0
+    },
+    "CondArg\u003ECollection": {
+      "Programs": 111,
+      "Valid": 72,
+      "Disagree": 0
+    },
+    "CondArg\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 82,
+      "Disagree": 0
+    },
+    "CondArg\u003EConst": {
+      "Programs": 111,
+      "Valid": 67,
+      "Disagree": 0
+    },
+    "CondArg\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 72,
+      "Disagree": 0
+    },
+    "CondArg\u003ELoop": {
+      "Programs": 111,
+      "Valid": 67,
+      "Disagree": 0
+    },
+    "CondArg\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 58,
+      "Disagree": 0
+    },
+    "CondArg\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 71,
+      "Disagree": 0
+    },
+    "CondArg\u003EPanic": {
+      "Programs": 111,
+      "Valid": 48,
+      "Disagree": 0
+    },
+    "CondArg\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 69,
+      "Disagree": 0
+    },
+    "CondArg\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 43,
+      "Disagree": 0
+    },
+    "CondArg\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 64,
+      "Disagree": 0
+    },
+    "CondArg\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 42,
+      "Disagree": 0
+    },
+    "CondArg\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 40,
+      "Disagree": 0
+    },
+    "CondArg\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 56,
+      "Disagree": 0
+    },
+    "CondArg\u003EUsing": {
+      "Programs": 111,
+      "Valid": 75,
+      "Disagree": 0
+    },
+    "Const\u003EArith": {
+      "Programs": 111,
+      "Valid": 54,
+      "Disagree": 0
+    },
+    "Const\u003EBanned": {
+      "Programs": 110,
+      "Valid": 54,
+      "Disagree": 0
+    },
+    "Const\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 55,
+      "Disagree": 0
+    },
+    "Const\u003ECollection": {
+      "Programs": 111,
+      "Valid": 58,
+      "Disagree": 0
+    },
+    "Const\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 62,
+      "Disagree": 0
+    },
+    "Const\u003EConst": {
+      "Programs": 111,
+      "Valid": 42,
+      "Disagree": 0
+    },
+    "Const\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 50,
+      "Disagree": 0
+    },
+    "Const\u003ELoop": {
+      "Programs": 111,
+      "Valid": 48,
+      "Disagree": 0
+    },
+    "Const\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 44,
+      "Disagree": 0
+    },
+    "Const\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 41,
+      "Disagree": 0
+    },
+    "Const\u003EPanic": {
+      "Programs": 111,
+      "Valid": 34,
+      "Disagree": 0
+    },
+    "Const\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 47,
+      "Disagree": 0
+    },
+    "Const\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 32,
+      "Disagree": 0
+    },
+    "Const\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 44,
+      "Disagree": 0
+    },
+    "Const\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 31,
+      "Disagree": 0
+    },
+    "Const\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 32,
+      "Disagree": 0
+    },
+    "Const\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 51,
+      "Disagree": 0
+    },
+    "Const\u003EUsing": {
+      "Programs": 111,
+      "Valid": 45,
+      "Disagree": 0
+    },
+    "LocalFunc\u003EArith": {
+      "Programs": 111,
+      "Valid": 80,
+      "Disagree": 0
+    },
+    "LocalFunc\u003EBanned": {
+      "Programs": 111,
+      "Valid": 77,
+      "Disagree": 0
+    },
+    "LocalFunc\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 76,
+      "Disagree": 0
+    },
+    "LocalFunc\u003ECollection": {
+      "Programs": 111,
+      "Valid": 81,
+      "Disagree": 0
+    },
+    "LocalFunc\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 81,
+      "Disagree": 0
+    },
+    "LocalFunc\u003EConst": {
+      "Programs": 111,
+      "Valid": 60,
+      "Disagree": 0
+    },
+    "LocalFunc\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 85,
+      "Disagree": 0
+    },
+    "LocalFunc\u003ELoop": {
+      "Programs": 111,
+      "Valid": 74,
+      "Disagree": 0
+    },
+    "LocalFunc\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 65,
+      "Disagree": 0
+    },
+    "LocalFunc\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 75,
+      "Disagree": 0
+    },
+    "LocalFunc\u003EPanic": {
+      "Programs": 111,
+      "Valid": 57,
+      "Disagree": 0
+    },
+    "LocalFunc\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 74,
+      "Disagree": 0
+    },
+    "LocalFunc\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 44,
+      "Disagree": 0
+    },
+    "LocalFunc\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 68,
+      "Disagree": 0
+    },
+    "LocalFunc\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 44,
+      "Disagree": 0
+    },
+    "LocalFunc\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 49,
+      "Disagree": 0
+    },
+    "LocalFunc\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 56,
+      "Disagree": 0
+    },
+    "LocalFunc\u003EUsing": {
+      "Programs": 111,
+      "Valid": 79,
+      "Disagree": 0
+    },
+    "Loop\u003EArith": {
+      "Programs": 111,
+      "Valid": 71,
+      "Disagree": 0
+    },
+    "Loop\u003EBanned": {
+      "Programs": 111,
+      "Valid": 75,
+      "Disagree": 0
+    },
+    "Loop\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 66,
+      "Disagree": 0
+    },
+    "Loop\u003ECollection": {
+      "Programs": 111,
+      "Valid": 70,
+      "Disagree": 0
+    },
+    "Loop\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 73,
+      "Disagree": 0
+    },
+    "Loop\u003EConst": {
+      "Programs": 110,
+      "Valid": 40,
+      "Disagree": 0
+    },
+    "Loop\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 65,
+      "Disagree": 0
+    },
+    "Loop\u003ELoop": {
+      "Programs": 111,
+      "Valid": 65,
+      "Disagree": 0
+    },
+    "Loop\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 60,
+      "Disagree": 0
+    },
+    "Loop\u003EOutArg": {
+      "Programs": 110,
+      "Valid": 72,
+      "Disagree": 0
+    },
+    "Loop\u003EPanic": {
+      "Programs": 111,
+      "Valid": 37,
+      "Disagree": 0
+    },
+    "Loop\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 61,
+      "Disagree": 0
+    },
+    "Loop\u003ERefParams": {
+      "Programs": 110,
+      "Valid": 37,
+      "Disagree": 0
+    },
+    "Loop\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 55,
+      "Disagree": 0
+    },
+    "Loop\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 47,
+      "Disagree": 0
+    },
+    "Loop\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 39,
+      "Disagree": 0
+    },
+    "Loop\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 61,
+      "Disagree": 0
+    },
+    "Loop\u003EUsing": {
+      "Programs": 111,
+      "Valid": 68,
+      "Disagree": 0
+    },
+    "OptionResult\u003EArith": {
+      "Programs": 111,
+      "Valid": 55,
+      "Disagree": 0
+    },
+    "OptionResult\u003EBanned": {
+      "Programs": 111,
+      "Valid": 79,
+      "Disagree": 0
+    },
+    "OptionResult\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 70,
+      "Disagree": 0
+    },
+    "OptionResult\u003ECollection": {
+      "Programs": 111,
+      "Valid": 60,
+      "Disagree": 0
+    },
+    "OptionResult\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 54,
+      "Disagree": 0
+    },
+    "OptionResult\u003EConst": {
+      "Programs": 111,
+      "Valid": 47,
+      "Disagree": 0
+    },
+    "OptionResult\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 73,
+      "Disagree": 0
+    },
+    "OptionResult\u003ELoop": {
+      "Programs": 111,
+      "Valid": 64,
+      "Disagree": 0
+    },
+    "OptionResult\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 59,
+      "Disagree": 0
+    },
+    "OptionResult\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 62,
+      "Disagree": 0
+    },
+    "OptionResult\u003EPanic": {
+      "Programs": 111,
+      "Valid": 48,
+      "Disagree": 0
+    },
+    "OptionResult\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 65,
+      "Disagree": 0
+    },
+    "OptionResult\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 35,
+      "Disagree": 0
+    },
+    "OptionResult\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 54,
+      "Disagree": 0
+    },
+    "OptionResult\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 41,
+      "Disagree": 0
+    },
+    "OptionResult\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 32,
+      "Disagree": 0
+    },
+    "OptionResult\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 49,
+      "Disagree": 0
+    },
+    "OptionResult\u003EUsing": {
+      "Programs": 111,
+      "Valid": 76,
+      "Disagree": 0
+    },
+    "OutArg\u003EArith": {
+      "Programs": 111,
+      "Valid": 79,
+      "Disagree": 0
+    },
+    "OutArg\u003EBanned": {
+      "Programs": 111,
+      "Valid": 73,
+      "Disagree": 0
+    },
+    "OutArg\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 71,
+      "Disagree": 0
+    },
+    "OutArg\u003ECollection": {
+      "Programs": 111,
+      "Valid": 80,
+      "Disagree": 0
+    },
+    "OutArg\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 76,
+      "Disagree": 0
+    },
+    "OutArg\u003EConst": {
+      "Programs": 111,
+      "Valid": 66,
+      "Disagree": 0
+    },
+    "OutArg\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 73,
+      "Disagree": 0
+    },
+    "OutArg\u003ELoop": {
+      "Programs": 111,
+      "Valid": 70,
+      "Disagree": 0
+    },
+    "OutArg\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 56,
+      "Disagree": 0
+    },
+    "OutArg\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 79,
+      "Disagree": 0
+    },
+    "OutArg\u003EPanic": {
+      "Programs": 111,
+      "Valid": 51,
+      "Disagree": 0
+    },
+    "OutArg\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 71,
+      "Disagree": 0
+    },
+    "OutArg\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 56,
+      "Disagree": 0
+    },
+    "OutArg\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 68,
+      "Disagree": 0
+    },
+    "OutArg\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 41,
+      "Disagree": 0
+    },
+    "OutArg\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 39,
+      "Disagree": 0
+    },
+    "OutArg\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 47,
+      "Disagree": 0
+    },
+    "OutArg\u003EUsing": {
+      "Programs": 111,
+      "Valid": 70,
+      "Disagree": 0
+    },
+    "Panic\u003EArith": {
+      "Programs": 111,
+      "Valid": 46,
+      "Disagree": 0
+    },
+    "Panic\u003EBanned": {
+      "Programs": 111,
+      "Valid": 48,
+      "Disagree": 0
+    },
+    "Panic\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 46,
+      "Disagree": 0
+    },
+    "Panic\u003ECollection": {
+      "Programs": 111,
+      "Valid": 46,
+      "Disagree": 0
+    },
+    "Panic\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 50,
+      "Disagree": 0
+    },
+    "Panic\u003EConst": {
+      "Programs": 111,
+      "Valid": 41,
+      "Disagree": 0
+    },
+    "Panic\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 36,
+      "Disagree": 0
+    },
+    "Panic\u003ELoop": {
+      "Programs": 111,
+      "Valid": 37,
+      "Disagree": 0
+    },
+    "Panic\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 42,
+      "Disagree": 0
+    },
+    "Panic\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 43,
+      "Disagree": 0
+    },
+    "Panic\u003EPanic": {
+      "Programs": 111,
+      "Valid": 29,
+      "Disagree": 0
+    },
+    "Panic\u003EPatternVar": {
+      "Programs": 110,
+      "Valid": 39,
+      "Disagree": 0
+    },
+    "Panic\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 34,
+      "Disagree": 0
+    },
+    "Panic\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 37,
+      "Disagree": 0
+    },
+    "Panic\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 29,
+      "Disagree": 0
+    },
+    "Panic\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 33,
+      "Disagree": 0
+    },
+    "Panic\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 46,
+      "Disagree": 0
+    },
+    "Panic\u003EUsing": {
+      "Programs": 111,
+      "Valid": 54,
+      "Disagree": 0
+    },
+    "PatternVar\u003EArith": {
+      "Programs": 111,
+      "Valid": 69,
+      "Disagree": 0
+    },
+    "PatternVar\u003EBanned": {
+      "Programs": 111,
+      "Valid": 74,
+      "Disagree": 0
+    },
+    "PatternVar\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 67,
+      "Disagree": 0
+    },
+    "PatternVar\u003ECollection": {
+      "Programs": 111,
+      "Valid": 64,
+      "Disagree": 0
+    },
+    "PatternVar\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 62,
+      "Disagree": 0
+    },
+    "PatternVar\u003EConst": {
+      "Programs": 111,
+      "Valid": 60,
+      "Disagree": 0
+    },
+    "PatternVar\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 68,
+      "Disagree": 0
+    },
+    "PatternVar\u003ELoop": {
+      "Programs": 111,
+      "Valid": 60,
+      "Disagree": 0
+    },
+    "PatternVar\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 66,
+      "Disagree": 0
+    },
+    "PatternVar\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 62,
+      "Disagree": 0
+    },
+    "PatternVar\u003EPanic": {
+      "Programs": 111,
+      "Valid": 32,
+      "Disagree": 0
+    },
+    "PatternVar\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 56,
+      "Disagree": 0
+    },
+    "PatternVar\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 42,
+      "Disagree": 0
+    },
+    "PatternVar\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 63,
+      "Disagree": 0
+    },
+    "PatternVar\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 44,
+      "Disagree": 0
+    },
+    "PatternVar\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 36,
+      "Disagree": 0
+    },
+    "PatternVar\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 50,
+      "Disagree": 0
+    },
+    "PatternVar\u003EUsing": {
+      "Programs": 110,
+      "Valid": 63,
+      "Disagree": 0
+    },
+    "RefParams\u003EArith": {
+      "Programs": 111,
+      "Valid": 51,
+      "Disagree": 0
+    },
+    "RefParams\u003EBanned": {
+      "Programs": 111,
+      "Valid": 56,
+      "Disagree": 0
+    },
+    "RefParams\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 43,
+      "Disagree": 0
+    },
+    "RefParams\u003ECollection": {
+      "Programs": 111,
+      "Valid": 51,
+      "Disagree": 0
+    },
+    "RefParams\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 41,
+      "Disagree": 0
+    },
+    "RefParams\u003EConst": {
+      "Programs": 111,
+      "Valid": 34,
+      "Disagree": 0
+    },
+    "RefParams\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 52,
+      "Disagree": 0
+    },
+    "RefParams\u003ELoop": {
+      "Programs": 111,
+      "Valid": 45,
+      "Disagree": 0
+    },
+    "RefParams\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 42,
+      "Disagree": 0
+    },
+    "RefParams\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 47,
+      "Disagree": 0
+    },
+    "RefParams\u003EPanic": {
+      "Programs": 111,
+      "Valid": 30,
+      "Disagree": 0
+    },
+    "RefParams\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 43,
+      "Disagree": 0
+    },
+    "RefParams\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 27,
+      "Disagree": 0
+    },
+    "RefParams\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 38,
+      "Disagree": 0
+    },
+    "RefParams\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 27,
+      "Disagree": 0
+    },
+    "RefParams\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 24,
+      "Disagree": 0
+    },
+    "RefParams\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 46,
+      "Disagree": 0
+    },
+    "RefParams\u003EUsing": {
+      "Programs": 111,
+      "Valid": 53,
+      "Disagree": 0
+    },
+    "StructInit\u003EArith": {
+      "Programs": 111,
+      "Valid": 70,
+      "Disagree": 0
+    },
+    "StructInit\u003EBanned": {
+      "Programs": 111,
+      "Valid": 68,
+      "Disagree": 0
+    },
+    "StructInit\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 72,
+      "Disagree": 0
+    },
+    "StructInit\u003ECollection": {
+      "Programs": 111,
+      "Valid": 59,
+      "Disagree": 0
+    },
+    "StructInit\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 69,
+      "Disagree": 0
+    },
+    "StructInit\u003EConst": {
+      "Programs": 111,
+      "Valid": 60,
+      "Disagree": 0
+    },
+    "StructInit\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 70,
+      "Disagree": 0
+    },
+    "StructInit\u003ELoop": {
+      "Programs": 111,
+      "Valid": 63,
+      "Disagree": 0
+    },
+    "StructInit\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 56,
+      "Disagree": 0
+    },
+    "StructInit\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 62,
+      "Disagree": 0
+    },
+    "StructInit\u003EPanic": {
+      "Programs": 111,
+      "Valid": 46,
+      "Disagree": 0
+    },
+    "StructInit\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 61,
+      "Disagree": 0
+    },
+    "StructInit\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 40,
+      "Disagree": 0
+    },
+    "StructInit\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 64,
+      "Disagree": 0
+    },
+    "StructInit\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 34,
+      "Disagree": 0
+    },
+    "StructInit\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 54,
+      "Disagree": 0
+    },
+    "StructInit\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 51,
+      "Disagree": 0
+    },
+    "StructInit\u003EUsing": {
+      "Programs": 111,
+      "Valid": 75,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003EArith": {
+      "Programs": 111,
+      "Valid": 58,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003EBanned": {
+      "Programs": 111,
+      "Valid": 47,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 47,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003ECollection": {
+      "Programs": 111,
+      "Valid": 44,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 51,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003EConst": {
+      "Programs": 111,
+      "Valid": 25,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 53,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003ELoop": {
+      "Programs": 111,
+      "Valid": 47,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 42,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003EOutArg": {
+      "Programs": 110,
+      "Valid": 48,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003EPanic": {
+      "Programs": 111,
+      "Valid": 23,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 39,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 25,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 40,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 28,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 17,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 34,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003EUsing": {
+      "Programs": 111,
+      "Valid": 43,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003EArith": {
+      "Programs": 111,
+      "Valid": 37,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003EBanned": {
+      "Programs": 111,
+      "Valid": 39,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003EClassInstance": {
+      "Programs": 110,
+      "Valid": 38,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003ECollection": {
+      "Programs": 111,
+      "Valid": 25,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 28,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003EConst": {
+      "Programs": 111,
+      "Valid": 31,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 45,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003ELoop": {
+      "Programs": 111,
+      "Valid": 41,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 27,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 40,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003EPanic": {
+      "Programs": 111,
+      "Valid": 26,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 30,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 29,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 24,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 19,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 24,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 21,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003EUsing": {
+      "Programs": 111,
+      "Valid": 33,
+      "Disagree": 0
+    },
+    "Underscore\u003EArith": {
+      "Programs": 111,
+      "Valid": 64,
+      "Disagree": 0
+    },
+    "Underscore\u003EBanned": {
+      "Programs": 111,
+      "Valid": 53,
+      "Disagree": 0
+    },
+    "Underscore\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 57,
+      "Disagree": 0
+    },
+    "Underscore\u003ECollection": {
+      "Programs": 111,
+      "Valid": 48,
+      "Disagree": 0
+    },
+    "Underscore\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 65,
+      "Disagree": 0
+    },
+    "Underscore\u003EConst": {
+      "Programs": 111,
+      "Valid": 39,
+      "Disagree": 0
+    },
+    "Underscore\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 58,
+      "Disagree": 0
+    },
+    "Underscore\u003ELoop": {
+      "Programs": 111,
+      "Valid": 51,
+      "Disagree": 0
+    },
+    "Underscore\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 49,
+      "Disagree": 0
+    },
+    "Underscore\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 44,
+      "Disagree": 0
+    },
+    "Underscore\u003EPanic": {
+      "Programs": 111,
+      "Valid": 32,
+      "Disagree": 0
+    },
+    "Underscore\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 52,
+      "Disagree": 0
+    },
+    "Underscore\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 30,
+      "Disagree": 0
+    },
+    "Underscore\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 46,
+      "Disagree": 0
+    },
+    "Underscore\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 37,
+      "Disagree": 0
+    },
+    "Underscore\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 31,
+      "Disagree": 0
+    },
+    "Underscore\u003EUnderscore": {
+      "Programs": 110,
+      "Valid": 53,
+      "Disagree": 0
+    },
+    "Underscore\u003EUsing": {
+      "Programs": 111,
+      "Valid": 52,
+      "Disagree": 0
+    },
+    "Using\u003EArith": {
+      "Programs": 111,
+      "Valid": 80,
+      "Disagree": 0
+    },
+    "Using\u003EBanned": {
+      "Programs": 111,
+      "Valid": 74,
+      "Disagree": 0
+    },
+    "Using\u003EClassInstance": {
+      "Programs": 111,
+      "Valid": 76,
+      "Disagree": 0
+    },
+    "Using\u003ECollection": {
+      "Programs": 111,
+      "Valid": 72,
+      "Disagree": 0
+    },
+    "Using\u003ECondArg": {
+      "Programs": 111,
+      "Valid": 84,
+      "Disagree": 0
+    },
+    "Using\u003EConst": {
+      "Programs": 111,
+      "Valid": 55,
+      "Disagree": 0
+    },
+    "Using\u003ELocalFunc": {
+      "Programs": 111,
+      "Valid": 74,
+      "Disagree": 0
+    },
+    "Using\u003ELoop": {
+      "Programs": 111,
+      "Valid": 70,
+      "Disagree": 0
+    },
+    "Using\u003EOptionResult": {
+      "Programs": 111,
+      "Valid": 73,
+      "Disagree": 0
+    },
+    "Using\u003EOutArg": {
+      "Programs": 111,
+      "Valid": 73,
+      "Disagree": 0
+    },
+    "Using\u003EPanic": {
+      "Programs": 111,
+      "Valid": 51,
+      "Disagree": 0
+    },
+    "Using\u003EPatternVar": {
+      "Programs": 111,
+      "Valid": 65,
+      "Disagree": 0
+    },
+    "Using\u003ERefParams": {
+      "Programs": 111,
+      "Valid": 63,
+      "Disagree": 0
+    },
+    "Using\u003EStructInit": {
+      "Programs": 111,
+      "Valid": 83,
+      "Disagree": 0
+    },
+    "Using\u003ESwitchExpr": {
+      "Programs": 111,
+      "Valid": 48,
+      "Disagree": 0
+    },
+    "Using\u003ESwitchStmt": {
+      "Programs": 111,
+      "Valid": 41,
+      "Disagree": 0
+    },
+    "Using\u003EUnderscore": {
+      "Programs": 111,
+      "Valid": 56,
+      "Disagree": 0
+    },
+    "Using\u003EUsing": {
+      "Programs": 110,
+      "Valid": 75,
+      "Disagree": 0
+    }
+  }
+}

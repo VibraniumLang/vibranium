@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arg.out arith.int assign.compound assign.simple bcl.tryparse local.decl localfunc.static out.var pattern.relational span.arg-rospan span.foreach-ref span.from-vec span.read span.to-rospan span.vec-after-borrow span.vec-range span.write-after-shared switch.cross-section-var switch.guard-false switch.no-default switch.sel.int switch.stmt
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@22:31 Unreachable code detected
+analyzer: VIB003@12:26 Cannot borrow 'v3' mutably while borrowed by 's2'. ; VIB003@12:39 Cannot read 'v3' while exclusively borrowed by 's2'. ; VIB003@12:43 Cannot borrow 'v3' immutably while borrowed by 's2'. ; VIB001@13:27 Use of moved value 's2'. ; VIB001@14:31 Use of moved value 's2'. ; VIB001@16:13 Use of moved value 's2'.
+stage0 check: REJECT VIB003@12:26 Cannot borrow 'v3' mutably while borrowed by 's2'. ; VIB003@12:39 Cannot read 'v3' while exclusively borrowed by 's2'. ; VIB003@12:43 Cannot borrow 'v3' immutably while borrowed by 's2'. ; VIB001@13:27 Use of moved value 's2'. ; VIB001@14:31 Use of moved value 's2'. ; VIB001@16:13 Use of moved value 's2'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001,VIB003 | cannot borrow 'x' mutably while borrowed by 'x'.

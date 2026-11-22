@@ -1,0 +1,13 @@
+Candidate 6 (c6-pre1), release-7 tool, run --exec:
+WriteLine(Snd2(2));
+static int Snd2(int p) { int acc = 0; var h = new Hold1(p); if (p > 1) { var it = h.Items; acc += it.Count; } acc += h.Items.Count; return acc; }
+public struct Hold1(int p) { public Vec<int> Items = [p, 2, 3]; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB005@2:83 Cannot move non-Copy value out of a field, indexed element, or borrowed place.
+stage0 check: REJECT VIB005@2:83 Cannot move non-Copy value out of a field, indexed element, or borrowed place.
+self check: exit=1 out=[] err=[Program.cs(2,84): error VIB005: Cannot move non-Copy value out of a field, indexed element, or borrowed place.|]
+

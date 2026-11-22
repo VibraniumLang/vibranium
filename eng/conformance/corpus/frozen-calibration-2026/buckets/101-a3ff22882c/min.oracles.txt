@@ -1,0 +1,8 @@
+validity: valid
+tags: assign.simple assign.underscore banned.interpolation class.primary-ctor field.underscore local.decl localfunc.static method.instance type.class type.field
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@13:19 String interpolation is not supported in Vibranium. ; VIB004@14:9 Cannot take a mutable reference through a shared borrow.
+stage0 check: REJECT VIB000@13:19 String interpolation is not supported in Vibranium. ; VIB004@14:9 Cannot take a mutable reference through a shared borrow.
+self check: exit=1 out=[] err=[Program.cs(13,19): error VIB000: String interpolation is not supported in Vibranium.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB004} self-only:{} | 

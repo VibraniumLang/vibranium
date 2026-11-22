@@ -1,0 +1,9 @@
+validity: valid
+tags: arith.int assign.compound banned.linear-field banned.nonstatic-localfunc class.primary-ctor func.expr-body local.decl localfunc.nested localfunc.static method.instance stmt.nested-block type.field type.resource
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@6:13 Non-static (capturing) local functions are banned in Vibranium; declare local functions 'static'. ; VIB006@16:48 Linear IDisposable resource 'Res' cannot be stored in field 'R'.
+stage0 check: REJECT VIB000@6:13 Non-static (capturing) local functions are banned in Vibranium; declare local functions 'static'. ; VIB006@16:48 Linear IDisposable resource 'Res' cannot be stored in field 'R'.
+self check: exit=1 out=[] err=[Program.cs(6,13): error VIB000: Non-static (capturing) local functions are banned in Vibranium; declare local functions 'static'.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB006} self-only:{} | 
+DISAGREEMENT: banned-wrong-id | banned.linear-field | self:VIB000 | expected VIB006

@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound coll.empty coll.local-init coll.span local.decl localfunc.static loop.foreach
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@6:35 Use of moved value 'v4'.
+stage0 check: REJECT VIB001@6:35 Use of moved value 'v4'.
+self check: exit=1 out=[] err=[Program.cs(6,35): error VIB003: Borrow conflicts with an active borrow.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{VIB003} | 

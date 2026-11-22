@@ -1,0 +1,10 @@
+validity: valid
+tags: arith.int assign.compound cut.localfunc-in-switch-section cut.switch-section-decl func.expr-body local.decl localfunc.nested localfunc.static pattern.combinator pattern.const snd.inval-field-move snd.inval-reassign snd.place-branch snd.place-loop snd.producer-recv-view snd.producer-slice-range snd.use-read snd.use-write stmt.nested-block switch.no-default switch.sel.unsigned switch.stmt
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@9:24 Local functions must be declared inside a block; declaring one directly in a switch section is not supported in Vibranium v0.2. ; VIB003@20:115 Cannot move 'h.Items' while borrowed by 's'. ; VIB005@20:115 Cannot move non-Copy value out of a field, indexed element, or borrowed place. ; VIB003@21:162 Cannot mutate 'v' while borrowed by 's'.
+stage0 check: REJECT VIB000@9:24 Local functions must be declared inside a block; declaring one directly in a switch section is not supported in Vibranium v0.2. ; VIB003@20:115 Cannot move 'h.Items' while borrowed by 's'. ; VIB005@20:115 Cannot move non-Copy value out of a field, indexed element, or borrowed place. ; VIB003@21:162 Cannot mutate 'v' while borrowed by 's'.
+self check: exit=1 out=[] err=[Program.cs(9,24): error VIB000: Local functions must be declared inside a block; declaring one directly in a switch section is not supported in Vibranium v0.2.|]
+cuts (C10–C20 scan, first occurrence): C18 cut.switch-section-decl (9,13)
+cut anchors: cut.switch-section-decl>analyzer: no VIB000 with the exact message, want (9,13) ; cut.switch-section-decl>stage0: no VIB000 with the exact message, want (9,13) ; cut.switch-section-decl>self: no VIB000 with the exact message, want (9,13)
+DISAGREEMENT: cut-anchor | cut.switch-section-decl | cut.switch-section-decl>analyzer:missing cut.switch-section-decl>stage0:missing cut.switch-section-decl>self:missing | 

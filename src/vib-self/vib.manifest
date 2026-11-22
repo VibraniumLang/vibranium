@@ -1,0 +1,20 @@
+# Vibranium self-hosted compiler manifest
+unit app
+use ../Vibranium.Core
+use ../Vibranium.Std
+source Ast/IdsAndNodes.cs
+source Diagnostics/DiagnosticBag.cs
+source Driver/Manifest.cs
+source Lex/Lexer.cs
+source Parse/Parser.cs
+source Parse/SubsetCuts.cs
+source Parse/SubsetCutChecker.cs
+source Types/TypeTable.cs
+source Mir/MirArena.cs
+source Lower/DeclBinder.cs
+source Lower/FuncLowerer.cs
+source Check/OwnershipChecker.cs
+source Check/SourceValidityChecker.cs
+source Check/SourceLexicalScopeChecker.cs
+source Llvm/LlvmEmitter.cs
+source Driver/Program.cs

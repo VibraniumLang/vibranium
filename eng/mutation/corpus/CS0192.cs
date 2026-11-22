@@ -1,0 +1,1 @@
+var p=new Pair(new Box(1));Set(out p.Value,9);static void Set(out Box x,int n){x=new Box(n);}public struct Pair{readonly public Box Value;public Pair(Box value){Value=value;}}public class Box{public Box(int n){}}

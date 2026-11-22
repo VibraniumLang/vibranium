@@ -1,0 +1,15 @@
+WriteLine(F(0, false));
+static int F(int p0, bool p1)
+{
+    int s2 = 0.0 % 0.0 switch { _ => 0 };
+    return s2;
+}
+
+validity: invalid
+tags: 
+sdk-roslyn errors: CS0266@4:14 Cannot implicitly convert type 'double' to 'int'. An explicit conversion exists (are you missing a cast?)
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS0266@4:14 Cannot implicitly convert type 'double' to 'int'. An explicit conversion exists (are you missing a cast?)
+self check: exit=1 out=[] err=[Program.cs(4,18): error VIB000: Cannot implicitly convert numeric expression to target type in Vibranium.|]
+

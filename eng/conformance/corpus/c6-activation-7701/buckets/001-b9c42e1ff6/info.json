@@ -1,0 +1,28 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB003} | ",
+  "category": "new:N16",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{} self-only:{VIB003}",
+  "msg": "",
+  "minTags": [
+    "ca.control-shared-read-reserved",
+    "ca.form-assign-field",
+    "ca.loan-target",
+    "ca.owner-holder",
+    "ca.rel-prefix",
+    "local.decl",
+    "localfunc.static",
+    "view.param-stack-escape",
+    "view.param-stack-scope-exit"
+  ],
+  "seed": "7701",
+  "profile": "activation",
+  "index": 102,
+  "plan": "CaAssign\u003EViewReturn",
+  "mutations": [],
+  "reduceTests": 24,
+  "sizeBefore": 38,
+  "sizeAfter": 28,
+  "firstSeconds": 35.6
+}

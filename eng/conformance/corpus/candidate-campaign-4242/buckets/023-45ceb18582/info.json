@@ -1,0 +1,30 @@
+{
+  "signature": "invalid-accepted | self | CS8518 | ",
+  "category": "new",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS8518",
+  "msg": "",
+  "minTags": [
+    "class.primary-ctor",
+    "func.expr-body",
+    "local.decl",
+    "localfunc.nested",
+    "localfunc.static",
+    "method.instance",
+    "pattern.combinator",
+    "pattern.is",
+    "pattern.relational",
+    "type.field",
+    "type.resource",
+    "using.block"
+  ],
+  "seed": "4242",
+  "index": 3370,
+  "plan": "Using\u003ELocalFunc",
+  "mutations": [],
+  "reduceTests": 65,
+  "sizeBefore": 97,
+  "sizeAfter": 53,
+  "firstSeconds": 522.2
+}

@@ -1,0 +1,8 @@
+validity: invalid
+tags: arith.float arith.int arith.rem-int assign.compound expr.cast expr.compare local.decl local.var localfunc.static pattern.const pattern.discard pattern.relational span.arg-span span.from-vec span.read span.to-rospan span.vec-after-borrow span.vec-slice-call span.write-after-shared stmt.if stmt.if-else switch.expr switch.sel-unparenthesized switch.sel.float utf8.buf-lines utf8.foreach utf8.line-tryparse utf8.stringbuf
+sdk-roslyn errors: CS0266@21:5 Cannot implicitly convert type 'float' to 'int'. An explicit conversion exists (are you missing a cast?)
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS0266@21:5 Cannot implicitly convert type 'float' to 'int'. An explicit conversion exists (are you missing a cast?)
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS0266 | 

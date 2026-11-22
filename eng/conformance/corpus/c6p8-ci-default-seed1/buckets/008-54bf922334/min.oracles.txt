@@ -1,0 +1,15 @@
+validity: valid
+tags: arith.int assign.compound local.decl local.var localfunc.static uswitch.default uswitch.guard uswitch.loop uswitch.nonunion-label uswitch.not-case uswitch.payload-copy uswitch.place uswitch.result uswitch.stmt uswitch.stmt-nonunion-label uswitch.two-fallbacks
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+self-ir-contract: OK
+stage0-O0-needed: libc.so.6
+stage0-ir-contract: OK
+managed run: exit=0 out=[131320|] err=[]
+self-O0 run: exit=0 out=[111720|] err=[]
+stage0-O0 run: exit=0 out=[131320|] err=[]
+DISAGREEMENT: output-mismatch | self | stdout | self-O0

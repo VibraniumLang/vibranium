@@ -1,0 +1,42 @@
+WriteLine(F(0, false));
+static int F(int p0, bool p1)
+{
+    int acc = 0;
+    return acc;
+}
+public enum E { A = 1, B = 2, C = 7 }
+public struct SO(int a, int b, Vec<int> n)
+{
+    public int A = a;
+    public int B = b;
+    public Vec<int> V = n;
+}
+public sealed class C1(int seed)
+{
+    public int F = seed;
+    [Mut] public int Run()
+    {
+        int r2;
+        switch (E.C)
+        {
+            case E.A: SO s3; WriteLine(s3.A);
+            default: r2 = 0; break;
+        }
+        WriteLine(r2);
+        return 0;
+    }
+}
+
+validity: warn-only
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@22:23 Unreachable code detected
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[0|] err=[]
+self-O0 run: exit=0 out=[0|] err=[]
+stage0-O0 run: exit=0 out=[0|] err=[]
+

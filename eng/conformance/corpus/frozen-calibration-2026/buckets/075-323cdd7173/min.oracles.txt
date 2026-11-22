@@ -1,0 +1,8 @@
+validity: valid
+tags: coll.elem-enum coll.returned coll.rospan expr.qualified-member func.returns-span method.static panic.call type.class type.enum
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(7,9): error VIB007: C# value return requires a returnable safe-context (CS8352/CS8347).|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB007 | c# value return requires a returnable safe-context (csn<path>

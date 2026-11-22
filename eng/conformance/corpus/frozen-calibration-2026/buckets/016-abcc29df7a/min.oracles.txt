@@ -1,0 +1,15 @@
+validity: valid
+tags: arith.float-to-int-cast arith.int arith.rem-double assign.compound expr.cast local.decl local.underscore local.underscore-read local.var localfunc.static stmt.nested-block
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libm.so.6 libc.so.6
+stage0-O0-build: FAIL /usr/bin/ld: <tmp>.o: in function `vib_fn_Program__LT_Main_GT___string____35_F_int__bool__d64c4a92':
+vib_086c50493e814955b6a5faf8a8f39d9d.ll:(.text+0xce0): undefined reference to `fmod'
+clang-18: error: linker command failed with exit code 1 (use -v to see invocation)
+managed run: exit=0 out=[0|0|] err=[]
+self-O0 run: exit=0 out=[0|0|] err=[]
+DISAGREEMENT: native-build-failure | stage0-O0 |  | undefined reference to fmod
+DISAGREEMENT: link-contract | self-O0 | libm.so.6 | dt_needed beyond libc

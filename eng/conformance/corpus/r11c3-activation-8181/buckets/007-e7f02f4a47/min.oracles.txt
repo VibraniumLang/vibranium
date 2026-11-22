@@ -1,0 +1,8 @@
+validity: valid
+tags: cond.temp-escapes-statement local.decl localfunc.static view.elision-this
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB007@11:77 Borrowed reference or view 's' cannot outlive temporary rvalue.
+stage0 check: REJECT VIB007@11:77 Borrowed reference or view 's' cannot outlive temporary rvalue.
+self check: exit=1 out=[] err=[Program.cs(11,77): error VIB007: Borrowed reference or view cannot outlive temporary rvalue.|Program.cs(11,83): error VIB003: Local goes out of scope while borrowed by an outer reference or view.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{} self-only:{VIB003} | 

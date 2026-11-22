@@ -1,0 +1,10 @@
+Vec<int> a = [1, 2]; Vec<int> b = [3]; Span<int> s = a.AsSpan(); Span<int> t = a.AsSpan(); t = s = b.AsSpan(); WriteLine(t.Length); WriteLine(s.Length);
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@1:143 Use of moved value 's'.
+stage0 check: REJECT VIB001@1:143 Use of moved value 's'.
+self check: exit=1 out=[] err=[Program.cs(1,143): error VIB001: Use of moved value.|]
+

@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.div-int arith.int assign.compound expr.compare expr.conditional local.decl localfunc.static uswitch.default uswitch.exhaustive uswitch.expr uswitch.expr-whole-union-arm uswitch.guard uswitch.nonunion-label uswitch.not-case uswitch.option uswitch.payload-copy uswitch.payload-owner uswitch.place uswitch.result uswitch.rvalue
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(15,115): error VIB001: Use of moved value.|Program.cs(15,125): error VIB001: Use of moved value.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB001 | use of moved value.

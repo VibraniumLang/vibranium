@@ -1,0 +1,25 @@
+{
+  "signature": "spec-wrong-id | view.lifetimeof-violated\u002Bview.param-stack-escape\u002Bview.param-stack-scope-exit | view.param-stack-scope-exit\u003Eanalyzer:VIB007 view.param-stack-scope-exit\u003Estage0:VIB007 | expected view.lifetimeof-violated:VIB007 view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "category": "new:N16",
+  "kind": "spec-wrong-id",
+  "frontends": "view.lifetimeof-violated\u002Bview.param-stack-escape\u002Bview.param-stack-scope-exit",
+  "ids": "view.param-stack-scope-exit\u003Eanalyzer:VIB007 view.param-stack-scope-exit\u003Estage0:VIB007",
+  "msg": "expected view.lifetimeof-violated:VIB007 view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "minTags": [
+    "local.decl",
+    "localfunc.static",
+    "view.lifetimeof-violated",
+    "view.param-stack-escape",
+    "view.param-stack-scope-exit",
+    "view.reborrow-parent-after"
+  ],
+  "seed": "7701",
+  "profile": "activation",
+  "index": 28337,
+  "plan": "ViewReturn\u003EViewReturn\u003EViewReturn",
+  "mutations": [],
+  "reduceTests": 29,
+  "sizeBefore": 55,
+  "sizeAfter": 33,
+  "firstSeconds": 2705.2
+}

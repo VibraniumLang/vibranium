@@ -1,0 +1,8 @@
+Candidate 6 (c6-pre1 + release-7 tool with the slow-leg rule), run --exec, under machine load; the leg and run lines (no DISAGREEMENT line):
+self-O0: SLOW: over the 20 s budget; with 200 s it matches the managed run (24466 ms native, 9124 ms managed)
+self-O0-needed: libc.so.6
+stage0-O0: SLOW: over the 20 s budget; with 200 s it matches the managed run (25393 ms native, 9124 ms managed)
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[56000000000|] err=[]
+self-O0 run: exit=0 out=[56000000000|] err=[]
+stage0-O0 run: exit=0 out=[56000000000|] err=[]

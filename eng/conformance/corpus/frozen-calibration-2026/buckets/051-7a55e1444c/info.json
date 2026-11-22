@@ -1,0 +1,31 @@
+{
+  "signature": "invalid-accepted | self | CS0165 | ",
+  "category": "known:O5",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS0165",
+  "msg": "",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "assign.simple",
+    "local.decl",
+    "local.uninit",
+    "localfunc.static",
+    "pattern.type",
+    "pattern.union",
+    "pattern.var",
+    "switch.no-default",
+    "switch.sel.result",
+    "switch.stmt",
+    "union.ctor"
+  ],
+  "seed": "2026",
+  "index": 349,
+  "plan": "SwitchStmt\u003ELoop",
+  "mutations": [],
+  "reduceTests": 51,
+  "sizeBefore": 98,
+  "sizeAfter": 51,
+  "firstSeconds": 242.6
+}

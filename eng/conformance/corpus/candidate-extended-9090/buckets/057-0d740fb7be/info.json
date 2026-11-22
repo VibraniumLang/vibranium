@@ -1,0 +1,32 @@
+{
+  "signature": "accept-reject | stage0-accepts | self:VIB000 | c# switch section endpoints must not be reachable; panic is an ordinary invocation for sou",
+  "category": "new",
+  "kind": "accept-reject",
+  "frontends": "stage0-accepts",
+  "ids": "self:VIB000",
+  "msg": "c# switch section endpoints must not be reachable; panic is an ordinary invocation for sou",
+  "minTags": [
+    "assign.simple",
+    "local.decl",
+    "local.underscore",
+    "local.underscore-read",
+    "local.uninit",
+    "local.var",
+    "localfunc.static",
+    "pattern.relational",
+    "switch.default",
+    "switch.section-local",
+    "switch.section-no-terminator",
+    "switch.sel.char",
+    "switch.stmt"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 12587,
+  "plan": "SwitchStmt\u003EMutReceiver\u003EUnderscore",
+  "mutations": [],
+  "reduceTests": 104,
+  "sizeBefore": 130,
+  "sizeAfter": 46,
+  "firstSeconds": 1790.6
+}

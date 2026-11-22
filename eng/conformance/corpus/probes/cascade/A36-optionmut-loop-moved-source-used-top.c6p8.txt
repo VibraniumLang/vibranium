@@ -1,0 +1,21 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Option<Node> o = Some(new Node(1));
+Option<Node> p = Some(new Node(2));
+OptionMut<Node> m = o.AsMut();
+for (int i = 0; i < 2; i++)
+{
+    WriteLine(m.IsSome);
+    OptionMut<Node> k2 = m;
+    WriteLine(k2.IsSome);
+}
+sealed class Node(int v) { public int V = v; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@6:15 Use of moved value 'm'. ; VIB001@7:26 Use of moved value 'm'. ; VIB003@8:15 Cannot read 'o' while exclusively borrowed by 'm'.
+stage0 check: REJECT VIB001@6:15 Use of moved value 'm'. ; VIB001@7:26 Use of moved value 'm'. ; VIB003@8:15 Cannot read 'o' while exclusively borrowed by 'm'.
+self check: exit=1 out=[] err=[Program.cs(6,15): error VIB001: Use of moved value.|Program.cs(7,26): error VIB001: Use of moved value.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB003} self-only:{} | 
+

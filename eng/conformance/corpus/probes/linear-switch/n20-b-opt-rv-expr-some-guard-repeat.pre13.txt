@@ -1,0 +1,14 @@
+WriteLine(Us(1) + Us(4) * 10 + Us(8) * 100);
+static int Us(int p) { int n = 0; n += MkL(p) switch { Some<R>(var v) when p > 5 => 100 + Eat(v), Some<R>(var v) => Eat(v), NoneType => 7 }; return n; }
+static Option<R> MkL(int a) { if (a > 2) return Some(new R(a)); return None; }
+static int Eat(R r) { using var u = r; return u.Id; }
+public sealed class R(int id) : IDisposable { public int Id = id; public void Dispose() { WriteLine(Id); } }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB006@2:56 A switch over a linear union value may test each variant in at most one arm, without a 'when' guard, and may not use 'not' or 'or' patterns; branch inside the arm instead. ; VIB006@2:76 Linear IDisposable resource 'v' must be bound with 'using var' or moved/disposed on all paths. ; VIB006@2:99 A switch over a linear union value may test each variant in at most one arm, without a 'when' guard, and may not use 'not' or 'or' patterns; branch inside the arm instead.
+stage0 check: REJECT VIB006@2:56 A switch over a linear union value may test each variant in at most one arm, without a 'when' guard, and may not use 'not' or 'or' patterns; branch inside the arm instead. ; VIB006@2:76 Linear IDisposable resource 'v' must be bound with 'using var' or moved/disposed on all paths. ; VIB006@2:99 A switch over a linear union value may test each variant in at most one arm, without a 'when' guard, and may not use 'not' or 'or' patterns; branch inside the arm instead.
+self check: exit=1 out=[] err=[Program.cs(2,56): error VIB006: A switch over a linear union value may test each variant in at most one arm, without a 'when' guard, and may not use 'not' or 'or' patterns; branch inside the arm instead.|Program.cs(2,99): error VIB006: A switch over a linear union value may test each variant in at most one arm, without a 'when' guard, and may not use 'not' or 'or' patterns; branch inside the arm instead.|]
+

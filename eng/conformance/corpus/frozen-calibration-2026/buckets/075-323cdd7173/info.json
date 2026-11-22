@@ -1,0 +1,27 @@
+{
+  "signature": "accept-reject | stage0-accepts | self:VIB007 | c# value return requires a returnable safe-context (csn\u003Cpath\u003E",
+  "category": "known:A2",
+  "kind": "accept-reject",
+  "frontends": "stage0-accepts",
+  "ids": "self:VIB007",
+  "msg": "c# value return requires a returnable safe-context (csn\u003Cpath\u003E",
+  "minTags": [
+    "coll.elem-enum",
+    "coll.returned",
+    "coll.rospan",
+    "expr.qualified-member",
+    "func.returns-span",
+    "method.static",
+    "panic.call",
+    "type.class",
+    "type.enum"
+  ],
+  "seed": "2026",
+  "index": 575,
+  "plan": "Underscore\u003ECollection",
+  "mutations": [],
+  "reduceTests": 13,
+  "sizeBefore": 90,
+  "sizeAfter": 21,
+  "firstSeconds": 353.9
+}

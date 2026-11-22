@@ -1,0 +1,19 @@
+Vec<int> a = [1, 2];
+F(ref a);
+WriteLine(a.Count);
+
+static void F(ref Vec<int> d)
+{
+    Span<int> sp = d.AsSpan();
+    d = [9];
+    WriteLine(sp[0]);
+}
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@8:5 Cannot mutate 'd' while borrowed by 'sp'.
+stage0 check: REJECT VIB003@8:5 Cannot mutate 'd' while borrowed by 'sp'.
+self check: exit=1 out=[] err=[Program.cs(8,7): error VIB003: Cannot mutate value while borrowed.|]
+

@@ -1,0 +1,26 @@
+{
+  "signature": "invalid-accepted | self | CS8156 | ",
+  "category": "known:O9",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS8156",
+  "msg": "",
+  "minTags": [
+    "arg.in",
+    "arg.rvalue-to-ref-param",
+    "arith.int",
+    "assign.compound",
+    "func.expr-body",
+    "local.decl",
+    "localfunc.static",
+    "param.ref-readonly"
+  ],
+  "seed": "2026",
+  "index": 19,
+  "plan": "RefParams\u003ECondArg",
+  "mutations": [],
+  "reduceTests": 55,
+  "sizeBefore": 104,
+  "sizeAfter": 51,
+  "firstSeconds": 37.9
+}

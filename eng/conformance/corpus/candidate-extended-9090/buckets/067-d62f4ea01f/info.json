@@ -1,0 +1,32 @@
+{
+  "signature": "invalid-accepted | self | CS1510 | ",
+  "category": "new",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS1510",
+  "msg": "",
+  "minTags": [
+    "arg.ref",
+    "arith.int",
+    "assign.compound",
+    "local.decl",
+    "local.ref",
+    "localfunc.static",
+    "param.ref-readonly",
+    "pattern.type",
+    "switch.no-default",
+    "switch.section-local",
+    "switch.sel.result",
+    "switch.stmt",
+    "union.ctor"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 18649,
+  "plan": "StdText\u003ESwitchStmt\u003ERefParams",
+  "mutations": [],
+  "reduceTests": 72,
+  "sizeBefore": 110,
+  "sizeAfter": 60,
+  "firstSeconds": 2561.5
+}

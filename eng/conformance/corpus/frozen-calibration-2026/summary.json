@@ -1,0 +1,4964 @@
+{
+  "seed": "2026",
+  "options": {
+    "Seed": 2026,
+    "Count": 1000,
+    "Minutes": 0,
+    "Workers": 5,
+    "OutDir": "<scratch>",
+    "ExecRate": 0.5,
+    "AsanRate": 0.05,
+    "InProcessSelf": true,
+    "ReduceBudget": 250,
+    "ReduceBudgetExec": 80,
+    "MaxMinimizePerSignature": 6
+  },
+  "seconds": 611.9,
+  "programs": 1000,
+  "programsPerMinute": 98.1,
+  "executed": 157,
+  "avgFrontendMsPerProgram": 400,
+  "avgExecMsPerExecutedProgram": 746,
+  "reductionTests": 6439,
+  "reductionSeconds": 2443,
+  "validity": {
+    "invalid": 435,
+    "valid": 496,
+    "warn-only": 69
+  },
+  "warningOnlyById": {
+    "CS0162": {
+      "programs": 41,
+      "analyzerClean": 37,
+      "stage0Accepts": 37,
+      "selfAccepts": 34,
+      "firstProgram": 6
+    },
+    "CS0219": {
+      "programs": 11,
+      "analyzerClean": 11,
+      "stage0Accepts": 11,
+      "selfAccepts": 10,
+      "firstProgram": 2
+    },
+    "CS0168": {
+      "programs": 10,
+      "analyzerClean": 7,
+      "stage0Accepts": 7,
+      "selfAccepts": 7,
+      "firstProgram": 39
+    },
+    "CS9192": {
+      "programs": 3,
+      "analyzerClean": 2,
+      "stage0Accepts": 2,
+      "selfAccepts": 3,
+      "firstProgram": 268
+    },
+    "CS8321": {
+      "programs": 2,
+      "analyzerClean": 1,
+      "stage0Accepts": 1,
+      "selfAccepts": 1,
+      "firstProgram": 30
+    },
+    "CS9191": {
+      "programs": 2,
+      "analyzerClean": 2,
+      "stage0Accepts": 2,
+      "selfAccepts": 0,
+      "firstProgram": 57
+    },
+    "CS1718": {
+      "programs": 1,
+      "analyzerClean": 1,
+      "stage0Accepts": 1,
+      "selfAccepts": 1,
+      "firstProgram": 672
+    }
+  },
+  "signatures": [
+    {
+      "signature": "link-contract | self-O0 | libm.so.6 | dt_needed beyond libc",
+      "hits": 157,
+      "firstProgram": 2,
+      "firstSeconds": 5.6,
+      "minimized": 2
+    },
+    {
+      "signature": "accept-reject | stage0-accepts | self:VIB001 | use of uninitialized value.",
+      "hits": 29,
+      "firstProgram": 12,
+      "firstSeconds": 7.5,
+      "minimized": 6
+    },
+    {
+      "signature": "invalid-accepted | self | CS1023 | ",
+      "hits": 14,
+      "firstProgram": 3,
+      "firstSeconds": 3.3,
+      "minimized": 6
+    },
+    {
+      "signature": "accept-reject | stage0-accepts | self:VIB000,VIB008 | null-conditional \u0027x\u0027 / \u0027x\u0027 operator is banned in vibranium.",
+      "hits": 14,
+      "firstProgram": 124,
+      "firstSeconds": 103.1,
+      "minimized": 6
+    },
+    {
+      "signature": "invalid-accepted | self | CS8510 | ",
+      "hits": 9,
+      "firstProgram": 63,
+      "firstSeconds": 42.8,
+      "minimized": 6
+    },
+    {
+      "signature": "output-mismatch | self | stdout | self-O0",
+      "hits": 9,
+      "firstProgram": 62,
+      "firstSeconds": 43.5,
+      "minimized": 6
+    },
+    {
+      "signature": "banned-accepted | analyzer\u002Bstage0 | cut.struct-piecewise-owned | ",
+      "hits": 7,
+      "firstProgram": 128,
+      "firstSeconds": 104.1,
+      "minimized": 4
+    },
+    {
+      "signature": "banned-wrong-id | cut.struct-piecewise-owned | self:VIB001 | expected VIB000",
+      "hits": 7,
+      "firstProgram": 128,
+      "firstSeconds": 104.1,
+      "minimized": 4
+    },
+    {
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | no applicable local function overload in vibranium.",
+      "hits": 7,
+      "firstProgram": 165,
+      "firstSeconds": 117.1,
+      "minimized": 6
+    },
+    {
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB001} | ",
+      "hits": 6,
+      "firstProgram": 60,
+      "firstSeconds": 41.6,
+      "minimized": 3
+    },
+    {
+      "signature": "accept-reject | self-accepts | stage0:VIB001 | use of uninitialized value \u0027x\u0027.",
+      "hits": 6,
+      "firstProgram": 205,
+      "firstSeconds": 149.1,
+      "minimized": 5
+    },
+    {
+      "signature": "invalid-accepted | self | CS8120 | ",
+      "hits": 5,
+      "firstProgram": 43,
+      "firstSeconds": 27.6,
+      "minimized": 4
+    },
+    {
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | switch expression must be exhaustive (include a \u0027x\u0027 or \u0027x\u0027 catch-all arm) in vibranium.",
+      "hits": 5,
+      "firstProgram": 46,
+      "firstSeconds": 31.3,
+      "minimized": 2
+    },
+    {
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB001} self-only:{} | ",
+      "hits": 5,
+      "firstProgram": 80,
+      "firstSeconds": 75.3,
+      "minimized": 5
+    },
+    {
+      "signature": "invalid-accepted | self | CS8156 | ",
+      "hits": 4,
+      "firstProgram": 19,
+      "firstSeconds": 11,
+      "minimized": 3
+    },
+    {
+      "signature": "native-build-failure | stage0-O0 |  | undefined reference to fmod",
+      "hits": 4,
+      "firstProgram": 62,
+      "firstSeconds": 43.5,
+      "minimized": 3
+    },
+    {
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB008} self-only:{} | ",
+      "hits": 4,
+      "firstProgram": 353,
+      "firstSeconds": 235.7,
+      "minimized": 2
+    },
+    {
+      "signature": "invalid-accepted | self | CS9193 | ",
+      "hits": 4,
+      "firstProgram": 523,
+      "firstSeconds": 316.4,
+      "minimized": 4
+    },
+    {
+      "signature": "accept-reject | self-accepts | stage0:VIB004 | cannot pass shared borrow as mutable reference or receiver.",
+      "hits": 4,
+      "firstProgram": 554,
+      "firstSeconds": 339.9,
+      "minimized": 3
+    },
+    {
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | no applicable method overload on enclosing type in vibranium.",
+      "hits": 3,
+      "firstProgram": 57,
+      "firstSeconds": 40.2,
+      "minimized": 3
+    },
+    {
+      "signature": "banned-wrong-id | cut.struct-piecewise-owned | analyzer:VIB001 stage0:VIB001 self:VIB001 | expected VIB000",
+      "hits": 3,
+      "firstProgram": 77,
+      "firstSeconds": 62.3,
+      "minimized": 3
+    },
+    {
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB004} self-only:{} | ",
+      "hits": 3,
+      "firstProgram": 88,
+      "firstSeconds": 83,
+      "minimized": 3
+    },
+    {
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB000} self-only:{} | ",
+      "hits": 3,
+      "firstProgram": 325,
+      "firstSeconds": 208.3,
+      "minimized": 2
+    },
+    {
+      "signature": "accept-reject | stage0-accepts | self:VIB001 | out parameter must be initialized before return.",
+      "hits": 3,
+      "firstProgram": 454,
+      "firstSeconds": 283.4,
+      "minimized": 3
+    },
+    {
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB006} self-only:{} | ",
+      "hits": 3,
+      "firstProgram": 522,
+      "firstSeconds": 316.6,
+      "minimized": 2
+    },
+    {
+      "signature": "banned-wrong-id | banned.linear-field | self:VIB000 | expected VIB006",
+      "hits": 3,
+      "firstProgram": 522,
+      "firstSeconds": 316.6,
+      "minimized": 2
+    },
+    {
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | unresolved or captured identifier in vibranium.",
+      "hits": 3,
+      "firstProgram": 609,
+      "firstSeconds": 364.8,
+      "minimized": 1
+    },
+    {
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | unexpected token in expression.",
+      "hits": 2,
+      "firstProgram": 204,
+      "firstSeconds": 148.6,
+      "minimized": 2
+    },
+    {
+      "signature": "banned-accepted | analyzer\u002Bstage0 | cut.localfunc-in-switch-section | ",
+      "hits": 2,
+      "firstProgram": 204,
+      "firstSeconds": 148.6,
+      "minimized": 2
+    },
+    {
+      "signature": "accept-reject | stage0-accepts | self:VIB000,VIB001 | no applicable local function overload in vibranium.",
+      "hits": 2,
+      "firstProgram": 212,
+      "firstSeconds": 151.3,
+      "minimized": 2
+    },
+    {
+      "signature": "output-mismatch | stage0 | stdout | stage0-O0",
+      "hits": 2,
+      "firstProgram": 314,
+      "firstSeconds": 207.8,
+      "minimized": 1
+    },
+    {
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB000} | ",
+      "hits": 1,
+      "firstProgram": 79,
+      "firstSeconds": 64.8,
+      "minimized": 1
+    },
+    {
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB004} self-only:{VIB000,VIB008} | ",
+      "hits": 1,
+      "firstProgram": 85,
+      "firstSeconds": 82.5,
+      "minimized": 1
+    },
+    {
+      "signature": "invalid-accepted | self | CS0165 | ",
+      "hits": 1,
+      "firstProgram": 349,
+      "firstSeconds": 230.8,
+      "minimized": 1
+    },
+    {
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB008} | ",
+      "hits": 1,
+      "firstProgram": 364,
+      "firstSeconds": 242.8,
+      "minimized": 1
+    },
+    {
+      "signature": "invalid-accepted | self | CS0128 | ",
+      "hits": 1,
+      "firstProgram": 367,
+      "firstSeconds": 248.7,
+      "minimized": 1
+    },
+    {
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB000,VIB004} self-only:{} | ",
+      "hits": 1,
+      "firstProgram": 444,
+      "firstSeconds": 281.5,
+      "minimized": 1
+    },
+    {
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB001} self-only:{VIB000,VIB008} | ",
+      "hits": 1,
+      "firstProgram": 544,
+      "firstSeconds": 335.9,
+      "minimized": 1
+    },
+    {
+      "signature": "accept-reject | stage0-accepts | self:VIB007 | c# value return requires a returnable safe-context (csn\u003Cpath\u003E",
+      "hits": 1,
+      "firstProgram": 575,
+      "firstSeconds": 349.3,
+      "minimized": 1
+    },
+    {
+      "signature": "accept-reject | stage0-accepts | self:VIB001 | c# requires this variable or struct field to be definitely assigned before it is read (csn",
+      "hits": 1,
+      "firstProgram": 643,
+      "firstSeconds": 375.4,
+      "minimized": 1
+    },
+    {
+      "signature": "output-mismatch | self | stdout | self-O0,self-O3-asan",
+      "hits": 1,
+      "firstProgram": 712,
+      "firstSeconds": 429.1,
+      "minimized": 1
+    },
+    {
+      "signature": "invalid-accepted | self | CS1023,CS8510 | ",
+      "hits": 1,
+      "firstProgram": 723,
+      "firstSeconds": 438.1,
+      "minimized": 1
+    },
+    {
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB001,VIB006} self-only:{VIB000,VIB008} | ",
+      "hits": 1,
+      "firstProgram": 761,
+      "firstSeconds": 465.2,
+      "minimized": 1
+    },
+    {
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB007} self-only:{} | ",
+      "hits": 1,
+      "firstProgram": 772,
+      "firstSeconds": 472.4,
+      "minimized": 1
+    },
+    {
+      "signature": "output-mismatch | self | exit\u002Bstdout\u002Bstderr | self-O0",
+      "hits": 1,
+      "firstProgram": 823,
+      "firstSeconds": 505.2,
+      "minimized": 1
+    },
+    {
+      "signature": "invalid-accepted | self | CS8846 | ",
+      "hits": 1,
+      "firstProgram": 844,
+      "firstSeconds": 515.7,
+      "minimized": 1
+    },
+    {
+      "signature": "native-build-failure | stage0-O0 |  | undefined reference to fmodf",
+      "hits": 1,
+      "firstProgram": 894,
+      "firstSeconds": 545.8,
+      "minimized": 1
+    }
+  ],
+  "buckets": [
+    {
+      "id": "001-f269168a89",
+      "category": "known:O4",
+      "signature": "invalid-accepted | self | CS1023 | ",
+      "minTags": [
+        "local.decl",
+        "localfunc.static",
+        "mut.embedded-decl",
+        "pattern.is",
+        "pattern.relational",
+        "stmt.if"
+      ],
+      "hits": 1,
+      "firstProgram": 3,
+      "firstSeconds": 19.4
+    },
+    {
+      "id": "002-5c3e914bba",
+      "category": "known:A1-self",
+      "signature": "link-contract | self-O0 | libm.so.6 | dt_needed beyond libc",
+      "minTags": [
+        "localfunc.static"
+      ],
+      "hits": 1,
+      "firstProgram": 2,
+      "firstSeconds": 35.2
+    },
+    {
+      "id": "003-1647e4e829",
+      "category": "known:O9",
+      "signature": "invalid-accepted | self | CS8156 | ",
+      "minTags": [
+        "arg.in",
+        "arg.rvalue-to-ref-param",
+        "arith.int",
+        "assign.compound",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.static",
+        "param.ref-readonly"
+      ],
+      "hits": 1,
+      "firstProgram": 19,
+      "firstSeconds": 37.9
+    },
+    {
+      "id": "004-529c34d35c",
+      "category": "known:O10",
+      "signature": "invalid-accepted | self | CS8120 | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.static",
+        "pattern.relational",
+        "switch.default",
+        "switch.guard-false",
+        "switch.section-no-terminator",
+        "switch.sel.unsigned",
+        "switch.stmt"
+      ],
+      "hits": 1,
+      "firstProgram": 43,
+      "firstSeconds": 41
+    },
+    {
+      "id": "005-03e6ea92c0",
+      "category": "known:O7",
+      "signature": "accept-reject | stage0-accepts | self:VIB001 | use of uninitialized value.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.field",
+        "assign.simple",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "local.uninit",
+        "local.var",
+        "method.static",
+        "struct.fieldwise-init",
+        "struct.local",
+        "type.class",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 12,
+      "firstSeconds": 42.7
+    },
+    {
+      "id": "006-3e1d233dc7",
+      "category": "known:O10",
+      "signature": "invalid-accepted | self | CS8510 | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.nested",
+        "localfunc.static",
+        "pattern.discard",
+        "pattern.relational",
+        "switch.expr",
+        "switch.sel.int"
+      ],
+      "hits": 1,
+      "firstProgram": 63,
+      "firstSeconds": 55.7
+    },
+    {
+      "id": "007-86b028a9c7",
+      "category": "known:O7",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB001} | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.field",
+        "assign.simple",
+        "banned.string-equality",
+        "local.decl",
+        "local.uninit",
+        "method.static",
+        "struct.fieldwise-init",
+        "struct.local",
+        "type.class",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 60,
+      "firstSeconds": 56.4
+    },
+    {
+      "id": "008-1d1113b4f7",
+      "category": "new:N2",
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | switch expression must be exhaustive (include a \u0027x\u0027 or \u0027x\u0027 catch-all arm) in vibranium.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "coll.empty",
+        "coll.local-init",
+        "coll.vec",
+        "local.decl",
+        "local.underscore",
+        "local.var",
+        "loop.foreach",
+        "loop.foreach-vec",
+        "method.static",
+        "pattern.relational",
+        "switch.expr",
+        "switch.expr-no-discard",
+        "switch.guard-true",
+        "switch.sel.int",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 46,
+      "firstSeconds": 59.5
+    },
+    {
+      "id": "009-b890251b42",
+      "category": "known:A1-self",
+      "signature": "link-contract | self-O0 | libm.so.6 | dt_needed beyond libc",
+      "minTags": [],
+      "hits": 1,
+      "firstProgram": 68,
+      "firstSeconds": 61
+    },
+    {
+      "id": "010-95544b4742",
+      "category": "new:N1",
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | no applicable method overload on enclosing type in vibranium.",
+      "minTags": [
+        "arg.ref",
+        "arith.float-to-int-cast",
+        "arith.int",
+        "assign.compound",
+        "expr.cast",
+        "local.decl",
+        "method.static",
+        "param.in",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 57,
+      "firstSeconds": 64.2
+    },
+    {
+      "id": "011-b308cdb4f8",
+      "category": "known:O10",
+      "signature": "invalid-accepted | self | CS8510 | ",
+      "minTags": [
+        "local.decl",
+        "local.uninit",
+        "local.var",
+        "localfunc.static",
+        "pattern.decl",
+        "pattern.discard",
+        "stmt.nested-block",
+        "switch.expr",
+        "switch.sel.int"
+      ],
+      "hits": 1,
+      "firstProgram": 73,
+      "firstSeconds": 75
+    },
+    {
+      "id": "012-d6724fba39",
+      "category": "new:N1",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB000} | ",
+      "minTags": [
+        "arg.ref",
+        "arith.int",
+        "assign.compound",
+        "local.decl",
+        "local.ref",
+        "localfunc.static",
+        "param.ref-readonly",
+        "pattern.relational",
+        "switch.no-default",
+        "switch.sel.unsigned",
+        "switch.stmt"
+      ],
+      "hits": 1,
+      "firstProgram": 79,
+      "firstSeconds": 80.9
+    },
+    {
+      "id": "013-80124962d6",
+      "category": "known-cut:CUT2",
+      "signature": "banned-wrong-id | cut.struct-piecewise-owned | analyzer:VIB001 stage0:VIB001 self:VIB001 | expected VIB000",
+      "minTags": [
+        "arg.out",
+        "arith.int",
+        "assign.compound",
+        "assign.field",
+        "assign.simple",
+        "coll.empty",
+        "coll.vec",
+        "cut.struct-piecewise-owned",
+        "expr.cast",
+        "func.expr-body",
+        "local.decl",
+        "local.uninit",
+        "method.static",
+        "out.var",
+        "stmt.if",
+        "struct.local",
+        "struct.owned-field",
+        "type.class",
+        "type.field",
+        "type.struct",
+        "union.ctor",
+        "union.guard"
+      ],
+      "hits": 1,
+      "firstProgram": 77,
+      "firstSeconds": 81.9
+    },
+    {
+      "id": "014-08bde7ac99",
+      "category": "known:O6",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB001} self-only:{} | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.simple",
+        "class.primary-ctor",
+        "func.expr-body",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "method.instance",
+        "pattern.relational",
+        "switch.no-default",
+        "switch.sel.int",
+        "switch.stmt",
+        "type.field",
+        "type.resource"
+      ],
+      "hits": 1,
+      "firstProgram": 80,
+      "firstSeconds": 91.8
+    },
+    {
+      "id": "015-273896ec41",
+      "category": "known:O1",
+      "signature": "output-mismatch | self | stdout | self-O0",
+      "minTags": [
+        "arg.out",
+        "arith.int",
+        "assign.compound",
+        "assign.simple",
+        "bcl.tryparse",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "local.uninit",
+        "localfunc.static",
+        "out.underscore",
+        "pattern.type-discard",
+        "switch.no-default",
+        "switch.sel.int",
+        "switch.stmt"
+      ],
+      "hits": 1,
+      "firstProgram": 70,
+      "firstSeconds": 93.8
+    },
+    {
+      "id": "016-abcc29df7a",
+      "category": "known:A1",
+      "signature": "native-build-failure | stage0-O0 |  | undefined reference to fmod",
+      "minTags": [
+        "arith.float-to-int-cast",
+        "arith.int",
+        "arith.rem-double",
+        "assign.compound",
+        "expr.cast",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "local.var",
+        "localfunc.static",
+        "stmt.nested-block"
+      ],
+      "hits": 1,
+      "firstProgram": 62,
+      "firstSeconds": 93.8
+    },
+    {
+      "id": "017-f67084dbc1",
+      "category": "new-low",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB004} self-only:{} | ",
+      "minTags": [
+        "arg.out",
+        "banned.checked",
+        "bcl.tryparse",
+        "local.decl",
+        "localfunc.static",
+        "method.instance",
+        "out.existing-local",
+        "type.class",
+        "type.field"
+      ],
+      "hits": 1,
+      "firstProgram": 88,
+      "firstSeconds": 96.6
+    },
+    {
+      "id": "018-45a377fcba",
+      "category": "known:O1",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB004} self-only:{VIB000,VIB008} | ",
+      "minTags": [
+        "arg.out",
+        "bcl.tryparse",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.empty",
+        "coll.local-init",
+        "coll.rospan",
+        "expr.conditional",
+        "field.underscore",
+        "local.decl",
+        "local.underscore-read",
+        "method.instance",
+        "method.static",
+        "out.underscore",
+        "type.class",
+        "type.field"
+      ],
+      "hits": 1,
+      "firstProgram": 85,
+      "firstSeconds": 100
+    },
+    {
+      "id": "019-c76ba05067",
+      "category": "known:O7",
+      "signature": "accept-reject | stage0-accepts | self:VIB001 | use of uninitialized value.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.field",
+        "assign.simple",
+        "func.expr-body",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "struct.fieldwise-init",
+        "struct.local",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 91,
+      "firstSeconds": 104.1
+    },
+    {
+      "id": "020-b5f4aebef7",
+      "category": "known:O4",
+      "signature": "invalid-accepted | self | CS1023 | ",
+      "minTags": [
+        "local.decl",
+        "localfunc.static",
+        "mut.embedded-decl",
+        "pattern.decl",
+        "pattern.is",
+        "stmt.if"
+      ],
+      "hits": 1,
+      "firstProgram": 141,
+      "firstSeconds": 112.9
+    },
+    {
+      "id": "021-eed3dad5fc",
+      "category": "known-cut:CUT2",
+      "signature": "banned-accepted | analyzer\u002Bstage0 | cut.struct-piecewise-owned | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.field",
+        "assign.simple",
+        "cut.struct-piecewise-owned",
+        "func.expr-body",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "struct.local",
+        "struct.owned-field",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 128,
+      "firstSeconds": 122.3
+    },
+    {
+      "id": "022-2775453a24",
+      "category": "known:A3",
+      "signature": "accept-reject | stage0-accepts | self:VIB000,VIB008 | null-conditional \u0027x\u0027 / \u0027x\u0027 operator is banned in vibranium.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.elem-char",
+        "coll.empty",
+        "coll.local-init",
+        "coll.rospan",
+        "expr.conditional",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.in-class-method",
+        "localfunc.static",
+        "method.static",
+        "stmt.nested-block",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 124,
+      "firstSeconds": 125.5
+    },
+    {
+      "id": "023-696645824b",
+      "category": "known:O10",
+      "signature": "invalid-accepted | self | CS8510 | ",
+      "minTags": [
+        "arith.rem-unsigned",
+        "local.decl",
+        "method.static",
+        "pattern.const",
+        "pattern.discard",
+        "pattern.relational",
+        "switch.expr",
+        "switch.sel.int",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 163,
+      "firstSeconds": 126.1
+    },
+    {
+      "id": "024-f465f0a350",
+      "category": "known:O8",
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | no applicable local function overload in vibranium.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.empty",
+        "coll.rospan",
+        "expr.conditional",
+        "expr.conditional-arg",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.static"
+      ],
+      "hits": 1,
+      "firstProgram": 165,
+      "firstSeconds": 136.6
+    },
+    {
+      "id": "025-4f321f476c",
+      "category": "known-cut:CUT2",
+      "signature": "banned-wrong-id | cut.struct-piecewise-owned | self:VIB001 | expected VIB000",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.field",
+        "assign.simple",
+        "cut.struct-piecewise-owned",
+        "func.expr-body",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "struct.local",
+        "struct.owned-field",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 128,
+      "firstSeconds": 142.9
+    },
+    {
+      "id": "026-622aa319e2",
+      "category": "known:A3",
+      "signature": "accept-reject | stage0-accepts | self:VIB000,VIB008 | null-conditional \u0027x\u0027 / \u0027x\u0027 operator is banned in vibranium.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.elem-byte",
+        "coll.empty",
+        "coll.local-init",
+        "coll.rospan",
+        "coll.span",
+        "expr.conditional",
+        "expr.conditional-arg",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.static",
+        "loop.foreach"
+      ],
+      "hits": 1,
+      "firstProgram": 168,
+      "firstSeconds": 144.7
+    },
+    {
+      "id": "027-0f2d676776",
+      "category": "known:O10",
+      "signature": "invalid-accepted | self | CS8510 | ",
+      "minTags": [
+        "arg.ref",
+        "arith.int",
+        "assign.compound",
+        "class.primary-ctor",
+        "local.decl",
+        "local.var",
+        "localfunc.static",
+        "method.instance",
+        "param.ref",
+        "pattern.discard",
+        "pattern.var",
+        "switch.expr",
+        "switch.sel.int",
+        "type.class",
+        "type.field"
+      ],
+      "hits": 1,
+      "firstProgram": 176,
+      "firstSeconds": 146.5
+    },
+    {
+      "id": "028-a807262a8a",
+      "category": "known:O1",
+      "signature": "output-mismatch | self | stdout | self-O0",
+      "minTags": [
+        "arg.out",
+        "arith.float-to-int-cast",
+        "arith.int",
+        "assign.compound",
+        "bcl.tryparse",
+        "expr.cast",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "local.var",
+        "localfunc.static",
+        "out.underscore",
+        "stmt.nested-block"
+      ],
+      "hits": 1,
+      "firstProgram": 62,
+      "firstSeconds": 150.9
+    },
+    {
+      "id": "029-dd0fe89af8",
+      "category": "known:O9",
+      "signature": "invalid-accepted | self | CS8156 | ",
+      "minTags": [
+        "arg.in",
+        "arith.int",
+        "assign.compound",
+        "coll.empty",
+        "coll.local-init",
+        "coll.vec",
+        "const.local",
+        "expr.compare",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "localfunc.static",
+        "loop.foreach",
+        "loop.foreach-vec",
+        "param.ref-readonly"
+      ],
+      "hits": 1,
+      "firstProgram": 182,
+      "firstSeconds": 152.5
+    },
+    {
+      "id": "030-dea5934adc",
+      "category": "new-low",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB001} | ",
+      "minTags": [
+        "banned.array",
+        "local.decl",
+        "localfunc.static"
+      ],
+      "hits": 1,
+      "firstProgram": 218,
+      "firstSeconds": 162.7
+    },
+    {
+      "id": "031-2711cc0e3c",
+      "category": "known-cut:O11",
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | unexpected token in expression.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "cut.localfunc-in-switch-section",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.in-class-method",
+        "localfunc.static",
+        "method.static",
+        "switch.default",
+        "switch.sel.bool",
+        "switch.stmt",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 204,
+      "firstSeconds": 164.2
+    },
+    {
+      "id": "032-6db34227bd",
+      "category": "known:O6",
+      "signature": "accept-reject | self-accepts | stage0:VIB001 | use of uninitialized value \u0027x\u0027.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.simple",
+        "class.primary-ctor",
+        "func.expr-body",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "method.instance",
+        "pattern.relational",
+        "switch.no-default",
+        "switch.sel.char",
+        "switch.stmt",
+        "type.field",
+        "type.resource",
+        "using.block"
+      ],
+      "hits": 1,
+      "firstProgram": 205,
+      "firstSeconds": 168.2
+    },
+    {
+      "id": "033-f6c156f3a4",
+      "category": "new-low",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB001} self-only:{} | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "banned.nonstatic-localfunc",
+        "class.primary-ctor",
+        "func.expr-body",
+        "local.decl",
+        "local.var",
+        "localfunc.static",
+        "method.instance",
+        "pattern.type",
+        "pattern.union",
+        "pattern.var",
+        "switch.expr",
+        "switch.expr-no-discard",
+        "switch.sel.result",
+        "type.field",
+        "type.resource",
+        "union.ctor",
+        "using.var"
+      ],
+      "hits": 1,
+      "firstProgram": 211,
+      "firstSeconds": 170.4
+    },
+    {
+      "id": "034-42cd2c8fa2",
+      "category": "known:O7",
+      "signature": "accept-reject | stage0-accepts | self:VIB000,VIB001 | no applicable local function overload in vibranium.",
+      "minTags": [
+        "arg.out",
+        "arg.ref",
+        "arith.int",
+        "assign.compound",
+        "assign.field",
+        "assign.simple",
+        "expr.cast",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.static",
+        "out.var",
+        "param.out",
+        "param.ref-readonly",
+        "stmt.if",
+        "struct.out-fieldwise",
+        "type.field",
+        "type.struct",
+        "union.ctor",
+        "union.guard"
+      ],
+      "hits": 1,
+      "firstProgram": 212,
+      "firstSeconds": 177
+    },
+    {
+      "id": "035-557ffc62d6",
+      "category": "known-cut:O11",
+      "signature": "banned-accepted | analyzer\u002Bstage0 | cut.localfunc-in-switch-section | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "cut.localfunc-in-switch-section",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.in-class-method",
+        "localfunc.static",
+        "method.static",
+        "switch.default",
+        "switch.sel.bool",
+        "switch.stmt",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 204,
+      "firstSeconds": 181.3
+    },
+    {
+      "id": "036-bdefc9dbee",
+      "category": "known:A3",
+      "signature": "accept-reject | stage0-accepts | self:VIB000,VIB008 | null-conditional \u0027x\u0027 / \u0027x\u0027 operator is banned in vibranium.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "coll.arg",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.elem-enum",
+        "coll.empty",
+        "coll.local-init",
+        "coll.rospan",
+        "expr.conditional",
+        "expr.qualified-member",
+        "func.expr-body",
+        "local.decl",
+        "local.var",
+        "localfunc.static",
+        "pattern.named-const",
+        "switch.no-default",
+        "switch.section-local",
+        "switch.sel.enum",
+        "switch.stmt",
+        "type.enum"
+      ],
+      "hits": 1,
+      "firstProgram": 220,
+      "firstSeconds": 185.4
+    },
+    {
+      "id": "037-0dd5002af9",
+      "category": "known:O4",
+      "signature": "invalid-accepted | self | CS1023 | ",
+      "minTags": [
+        "local.decl",
+        "method.static",
+        "mut.embedded-decl",
+        "pattern.decl",
+        "pattern.is",
+        "stmt.if",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 255,
+      "firstSeconds": 188.4
+    },
+    {
+      "id": "038-7eed51ed6c",
+      "category": "known:O10",
+      "signature": "invalid-accepted | self | CS8120 | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "local.decl",
+        "local.var",
+        "method.static",
+        "pattern.decl",
+        "pattern.type-discard",
+        "switch.default",
+        "switch.section-no-terminator",
+        "switch.sel.int",
+        "switch.stmt",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 250,
+      "firstSeconds": 188.7
+    },
+    {
+      "id": "039-cd7c1e4b57",
+      "category": "known:O10",
+      "signature": "invalid-accepted | self | CS8510 | ",
+      "minTags": [
+        "arg.out",
+        "arith.int",
+        "assign.compound",
+        "assign.simple",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.static",
+        "out.existing-local",
+        "param.out",
+        "pattern.discard",
+        "pattern.relational",
+        "switch.expr",
+        "switch.no-default",
+        "switch.sel.int",
+        "switch.stmt",
+        "union.ctor"
+      ],
+      "hits": 1,
+      "firstProgram": 240,
+      "firstSeconds": 198.4
+    },
+    {
+      "id": "040-eb6ddd94de",
+      "category": "known:O6",
+      "signature": "accept-reject | self-accepts | stage0:VIB001 | use of uninitialized value \u0027x\u0027.",
+      "minTags": [
+        "arg.out",
+        "assign.simple",
+        "expr.compare",
+        "expr.conditional",
+        "expr.conditional-arg",
+        "local.decl",
+        "local.uninit",
+        "local.var",
+        "localfunc.static",
+        "out.var-discard",
+        "param.out",
+        "pattern.relational",
+        "switch.no-default",
+        "switch.sel.int",
+        "switch.stmt"
+      ],
+      "hits": 1,
+      "firstProgram": 259,
+      "firstSeconds": 203.5
+    },
+    {
+      "id": "041-ec1391d221",
+      "category": "known:O10",
+      "signature": "invalid-accepted | self | CS8120 | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "func.expr-body",
+        "local.decl",
+        "method.static",
+        "pattern.relational",
+        "pattern.var",
+        "switch.default",
+        "switch.section-no-terminator",
+        "switch.sel.int",
+        "switch.stmt",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 286,
+      "firstSeconds": 206.6
+    },
+    {
+      "id": "042-ff331838b3",
+      "category": "known:O7",
+      "signature": "accept-reject | stage0-accepts | self:VIB001 | use of uninitialized value.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.field",
+        "assign.simple",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "struct.fieldwise-init",
+        "struct.local",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 261,
+      "firstSeconds": 206.8
+    },
+    {
+      "id": "043-ab953cbec4",
+      "category": "known-cut:CUT2",
+      "signature": "banned-accepted | analyzer\u002Bstage0 | cut.struct-piecewise-owned | ",
+      "minTags": [
+        "assign.field",
+        "assign.simple",
+        "coll.empty",
+        "coll.vec",
+        "cut.struct-piecewise-owned",
+        "local.decl",
+        "local.uninit",
+        "local.var",
+        "localfunc.static",
+        "struct.local",
+        "struct.owned-field",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 289,
+      "firstSeconds": 213.6
+    },
+    {
+      "id": "044-ecf16dce72",
+      "category": "known:O4",
+      "signature": "invalid-accepted | self | CS1023 | ",
+      "minTags": [
+        "coll.empty",
+        "coll.local-init",
+        "coll.span",
+        "local.decl",
+        "localfunc.static",
+        "loop.foreach",
+        "mut.embedded-decl"
+      ],
+      "hits": 1,
+      "firstProgram": 331,
+      "firstSeconds": 218.5
+    },
+    {
+      "id": "045-665fa90b17",
+      "category": "new-low",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB000} self-only:{} | ",
+      "minTags": [
+        "arg.out",
+        "assign.simple",
+        "banned.null",
+        "banned.nullable",
+        "local.decl",
+        "local.underscore-read",
+        "localfunc.static",
+        "out.underscore",
+        "param.out"
+      ],
+      "hits": 1,
+      "firstProgram": 325,
+      "firstSeconds": 221.4
+    },
+    {
+      "id": "046-0db0c16e12",
+      "category": "known:O9",
+      "signature": "invalid-accepted | self | CS8156 | ",
+      "minTags": [
+        "arg.in",
+        "arith.int",
+        "assign.compound",
+        "const.local",
+        "expr.cast",
+        "func.expr-body",
+        "local.decl",
+        "local.var",
+        "localfunc.static",
+        "param.in",
+        "union.ctor"
+      ],
+      "hits": 1,
+      "firstProgram": 339,
+      "firstSeconds": 227.9
+    },
+    {
+      "id": "047-7934252d3f",
+      "category": "known-cut:CUT2",
+      "signature": "banned-wrong-id | cut.struct-piecewise-owned | self:VIB001 | expected VIB000",
+      "minTags": [
+        "assign.field",
+        "assign.simple",
+        "coll.empty",
+        "coll.vec",
+        "cut.struct-piecewise-owned",
+        "local.decl",
+        "local.uninit",
+        "local.var",
+        "localfunc.static",
+        "struct.local",
+        "struct.owned-field",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 289,
+      "firstSeconds": 230.4
+    },
+    {
+      "id": "048-4a151fde8f",
+      "category": "known:O6",
+      "signature": "accept-reject | self-accepts | stage0:VIB001 | use of uninitialized value \u0027x\u0027.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.simple",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "pattern.relational",
+        "switch.no-default",
+        "switch.section-local",
+        "switch.sel.int",
+        "switch.stmt"
+      ],
+      "hits": 1,
+      "firstProgram": 338,
+      "firstSeconds": 233.9
+    },
+    {
+      "id": "049-e59ab4f034",
+      "category": "new-low",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB000} self-only:{} | ",
+      "minTags": [
+        "banned.null",
+        "banned.nullable",
+        "local.decl",
+        "method.static",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 344,
+      "firstSeconds": 236.5
+    },
+    {
+      "id": "050-5b35657cb0",
+      "category": "known:O4",
+      "signature": "invalid-accepted | self | CS1023 | ",
+      "minTags": [
+        "local.decl",
+        "local.var",
+        "method.static",
+        "mut.embedded-decl",
+        "pattern.is",
+        "pattern.relational",
+        "stmt.if",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 347,
+      "firstSeconds": 240.6
+    },
+    {
+      "id": "051-7a55e1444c",
+      "category": "known:O5",
+      "signature": "invalid-accepted | self | CS0165 | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.simple",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "pattern.type",
+        "pattern.union",
+        "pattern.var",
+        "switch.no-default",
+        "switch.sel.result",
+        "switch.stmt",
+        "union.ctor"
+      ],
+      "hits": 1,
+      "firstProgram": 349,
+      "firstSeconds": 242.6
+    },
+    {
+      "id": "052-a67e17bee7",
+      "category": "new-low",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB001} | ",
+      "minTags": [
+        "banned.array",
+        "local.decl",
+        "method.static",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 360,
+      "firstSeconds": 248.5
+    },
+    {
+      "id": "053-354c085b8d",
+      "category": "new:N3",
+      "signature": "output-mismatch | stage0 | stdout | stage0-O0",
+      "minTags": [
+        "arg.out",
+        "arith.int",
+        "assign.compound",
+        "assign.simple",
+        "expr.compare",
+        "expr.conditional",
+        "local.decl",
+        "localfunc.static",
+        "out.existing-local",
+        "param.out"
+      ],
+      "hits": 1,
+      "firstProgram": 314,
+      "firstSeconds": 249.8
+    },
+    {
+      "id": "054-b913237d98",
+      "category": "known:A3",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB008} | ",
+      "minTags": [
+        "banned.string-length",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.empty",
+        "coll.local-init",
+        "coll.rospan",
+        "expr.conditional",
+        "local.decl",
+        "localfunc.static"
+      ],
+      "hits": 1,
+      "firstProgram": 364,
+      "firstSeconds": 256.1
+    },
+    {
+      "id": "055-2ab404e469",
+      "category": "known:O7",
+      "signature": "accept-reject | stage0-accepts | self:VIB001 | use of uninitialized value.",
+      "minTags": [
+        "assign.field",
+        "assign.simple",
+        "local.decl",
+        "local.uninit",
+        "method.static",
+        "struct.fieldwise-init",
+        "struct.local",
+        "type.class",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 366,
+      "firstSeconds": 259.5
+    },
+    {
+      "id": "056-a313826236",
+      "category": "new-low",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB008} self-only:{} | ",
+      "minTags": [
+        "arg.ref",
+        "arith.float-to-int-cast",
+        "arith.int",
+        "assign.compound",
+        "banned.struct-idisposable",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "param.ref",
+        "struct.fieldwise-init",
+        "struct.local",
+        "type.struct",
+        "using.var"
+      ],
+      "hits": 1,
+      "firstProgram": 353,
+      "firstSeconds": 261.9
+    },
+    {
+      "id": "057-14d702cc69",
+      "category": "known:O2a",
+      "signature": "invalid-accepted | self | CS0128 | ",
+      "minTags": [
+        "arg.out",
+        "arith.int",
+        "assign.compound",
+        "assign.simple",
+        "bcl.tryparse",
+        "local.decl",
+        "local.uninit",
+        "method.static",
+        "out.var",
+        "pattern.relational",
+        "switch.cross-section-dup",
+        "switch.no-default",
+        "switch.sel.char",
+        "switch.stmt",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 367,
+      "firstSeconds": 268.1
+    },
+    {
+      "id": "058-6ba9d00b33",
+      "category": "known:O6",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB001} self-only:{} | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.simple",
+        "banned.object",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "pattern.relational",
+        "switch.no-default",
+        "switch.sel.int",
+        "switch.stmt"
+      ],
+      "hits": 1,
+      "firstProgram": 404,
+      "firstSeconds": 277
+    },
+    {
+      "id": "059-959112d2e7",
+      "category": "known:O6",
+      "signature": "accept-reject | self-accepts | stage0:VIB001 | use of uninitialized value \u0027x\u0027.",
+      "minTags": [
+        "assign.simple",
+        "class.primary-ctor",
+        "func.expr-body",
+        "local.decl",
+        "local.uninit",
+        "local.var",
+        "localfunc.static",
+        "method.instance",
+        "pattern.relational",
+        "switch.no-default",
+        "switch.sel.unsigned",
+        "switch.stmt",
+        "type.field",
+        "type.resource",
+        "using.block"
+      ],
+      "hits": 1,
+      "firstProgram": 397,
+      "firstSeconds": 280.6
+    },
+    {
+      "id": "060-452e0a6974",
+      "category": "known:A3",
+      "signature": "accept-reject | stage0-accepts | self:VIB000,VIB008 | null-conditional \u0027x\u0027 / \u0027x\u0027 operator is banned in vibranium.",
+      "minTags": [
+        "assign.simple",
+        "assign.underscore",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.empty",
+        "coll.local-init",
+        "coll.rospan",
+        "expr.conditional",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "local.uninit",
+        "localfunc.static"
+      ],
+      "hits": 1,
+      "firstProgram": 408,
+      "firstSeconds": 281.2
+    },
+    {
+      "id": "061-0b9fa46166",
+      "category": "known-cut:CUT2",
+      "signature": "banned-wrong-id | cut.struct-piecewise-owned | analyzer:VIB001 stage0:VIB001 self:VIB001 | expected VIB000",
+      "minTags": [
+        "assign.field",
+        "assign.simple",
+        "cut.struct-piecewise-owned",
+        "func.expr-body",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "struct.local",
+        "struct.owned-field",
+        "type.field",
+        "type.struct",
+        "union.ctor"
+      ],
+      "hits": 1,
+      "firstProgram": 401,
+      "firstSeconds": 285.6
+    },
+    {
+      "id": "062-837a4bf106",
+      "category": "known:O4",
+      "signature": "invalid-accepted | self | CS1023 | ",
+      "minTags": [
+        "arg.out",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.static",
+        "mut.embedded-decl",
+        "out.var",
+        "stmt.if",
+        "union.ctor",
+        "union.guard"
+      ],
+      "hits": 1,
+      "firstProgram": 483,
+      "firstSeconds": 296.4
+    },
+    {
+      "id": "063-5f17007cab",
+      "category": "known:O1",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB000,VIB004} self-only:{} | ",
+      "minTags": [
+        "arg.out",
+        "banned.null",
+        "banned.nullable",
+        "bcl.tryparse",
+        "class.primary-ctor",
+        "field.underscore",
+        "local.decl",
+        "local.underscore-read",
+        "localfunc.static",
+        "method.instance",
+        "out.underscore",
+        "type.class",
+        "type.field"
+      ],
+      "hits": 1,
+      "firstProgram": 444,
+      "firstSeconds": 296.4
+    },
+    {
+      "id": "064-0ac1f80284",
+      "category": "known:O7",
+      "signature": "accept-reject | stage0-accepts | self:VIB001 | out parameter must be initialized before return.",
+      "minTags": [
+        "arg.out",
+        "arith.float-to-int-cast",
+        "assign.field",
+        "assign.simple",
+        "local.decl",
+        "localfunc.static",
+        "out.typed",
+        "param.out",
+        "struct.out-fieldwise",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 454,
+      "firstSeconds": 303
+    },
+    {
+      "id": "065-8eaf264334",
+      "category": "new:N1",
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | no applicable local function overload in vibranium.",
+      "minTags": [
+        "arg.ref",
+        "arith.int",
+        "assign.compound",
+        "coll.empty",
+        "coll.local-init",
+        "coll.vec",
+        "expr.index",
+        "local.decl",
+        "localfunc.static",
+        "param.ref-readonly"
+      ],
+      "hits": 2,
+      "firstProgram": 481,
+      "firstSeconds": 307.8
+    },
+    {
+      "id": "066-2f2782f657",
+      "category": "known-cut:O11",
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | unexpected token in expression.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "cut.localfunc-in-switch-section",
+        "expr.cast",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.nested",
+        "localfunc.static",
+        "pattern.union",
+        "switch.no-default",
+        "switch.sel.option",
+        "switch.stmt",
+        "union.ctor"
+      ],
+      "hits": 1,
+      "firstProgram": 497,
+      "firstSeconds": 314.6
+    },
+    {
+      "id": "067-0d39f98d5f",
+      "category": "known:O10",
+      "signature": "invalid-accepted | self | CS8510 | ",
+      "minTags": [
+        "local.decl",
+        "method.static",
+        "pattern.decl",
+        "pattern.discard",
+        "pattern.relational",
+        "switch.default",
+        "switch.expr",
+        "switch.sel.char",
+        "switch.sel.int",
+        "switch.stmt",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 502,
+      "firstSeconds": 315.3
+    },
+    {
+      "id": "068-8a1ea6d3dc",
+      "category": "known:A3",
+      "signature": "accept-reject | stage0-accepts | self:VIB000,VIB008 | null-conditional \u0027x\u0027 / \u0027x\u0027 operator is banned in vibranium.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.empty",
+        "coll.rospan",
+        "const.local",
+        "expr.conditional",
+        "expr.conditional-arg",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.nested",
+        "localfunc.static"
+      ],
+      "hits": 1,
+      "firstProgram": 491,
+      "firstSeconds": 315.7
+    },
+    {
+      "id": "069-47ef994df1",
+      "category": "known:O1",
+      "signature": "output-mismatch | self | stdout | self-O0",
+      "minTags": [
+        "arg.out",
+        "assign.simple",
+        "assign.underscore",
+        "bcl.tryparse",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "local.uninit",
+        "localfunc.static",
+        "out.underscore"
+      ],
+      "hits": 1,
+      "firstProgram": 499,
+      "firstSeconds": 325.4
+    },
+    {
+      "id": "070-3e10c79a4e",
+      "category": "known:O9",
+      "signature": "invalid-accepted | self | CS9193 | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "const.local",
+        "local.decl",
+        "localfunc.nested",
+        "localfunc.static",
+        "param.ref-readonly",
+        "param.underscore"
+      ],
+      "hits": 1,
+      "firstProgram": 523,
+      "firstSeconds": 329.8
+    },
+    {
+      "id": "071-f98ee1018b",
+      "category": "known-cut:O11",
+      "signature": "banned-accepted | analyzer\u002Bstage0 | cut.localfunc-in-switch-section | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "cut.localfunc-in-switch-section",
+        "expr.cast",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.nested",
+        "localfunc.static",
+        "pattern.union",
+        "switch.no-default",
+        "switch.sel.option",
+        "switch.stmt",
+        "union.ctor"
+      ],
+      "hits": 1,
+      "firstProgram": 497,
+      "firstSeconds": 334.9
+    },
+    {
+      "id": "072-5bf2c91cb9",
+      "category": "known:O7",
+      "signature": "accept-reject | stage0-accepts | self:VIB000,VIB001 | no applicable local function overload in vibranium.",
+      "minTags": [
+        "arg.out",
+        "arith.int",
+        "assign.compound",
+        "assign.field",
+        "assign.simple",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.elem-char",
+        "coll.empty",
+        "coll.rospan",
+        "expr.conditional",
+        "expr.conditional-arg",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.static",
+        "out.var",
+        "param.out",
+        "param.scoped",
+        "struct.out-fieldwise",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 517,
+      "firstSeconds": 338.7
+    },
+    {
+      "id": "073-36baa2fef7",
+      "category": "new-low",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB006} self-only:{} | ",
+      "minTags": [
+        "arg.out",
+        "assign.simple",
+        "banned.linear-field",
+        "banned.nonstatic-localfunc",
+        "class.primary-ctor",
+        "expr.cast",
+        "func.expr-body",
+        "local.decl",
+        "local.underscore-read",
+        "local.var",
+        "localfunc.static",
+        "method.instance",
+        "out.underscore",
+        "param.out",
+        "type.field",
+        "type.resource"
+      ],
+      "hits": 1,
+      "firstProgram": 522,
+      "firstSeconds": 340.3
+    },
+    {
+      "id": "074-24c88fa8ff",
+      "category": "known:O1",
+      "signature": "accept-reject | self-accepts | stage0:VIB004 | cannot pass shared borrow as mutable reference or receiver.",
+      "minTags": [
+        "arg.out",
+        "bcl.tryparse",
+        "class.primary-ctor",
+        "field.underscore",
+        "local.underscore-read",
+        "method.instance",
+        "out.underscore",
+        "type.class",
+        "type.field"
+      ],
+      "hits": 1,
+      "firstProgram": 554,
+      "firstSeconds": 347.4
+    },
+    {
+      "id": "075-323cdd7173",
+      "category": "known:A2",
+      "signature": "accept-reject | stage0-accepts | self:VIB007 | c# value return requires a returnable safe-context (csn\u003Cpath\u003E",
+      "minTags": [
+        "coll.elem-enum",
+        "coll.returned",
+        "coll.rospan",
+        "expr.qualified-member",
+        "func.returns-span",
+        "method.static",
+        "panic.call",
+        "type.class",
+        "type.enum"
+      ],
+      "hits": 1,
+      "firstProgram": 575,
+      "firstSeconds": 353.9
+    },
+    {
+      "id": "076-0ae0dadfab",
+      "category": "known:O6",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB001} self-only:{VIB000,VIB008} | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.simple",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.empty",
+        "coll.rospan",
+        "expr.conditional",
+        "expr.conditional-arg",
+        "func.expr-body",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "pattern.relational",
+        "switch.no-default",
+        "switch.sel.char",
+        "switch.stmt"
+      ],
+      "hits": 1,
+      "firstProgram": 544,
+      "firstSeconds": 356.4
+    },
+    {
+      "id": "077-2bf14e0012",
+      "category": "new-low",
+      "signature": "banned-wrong-id | banned.linear-field | self:VIB000 | expected VIB006",
+      "minTags": [
+        "arg.out",
+        "assign.simple",
+        "banned.linear-field",
+        "banned.nonstatic-localfunc",
+        "class.primary-ctor",
+        "expr.cast",
+        "func.expr-body",
+        "local.decl",
+        "local.underscore-read",
+        "local.var",
+        "localfunc.static",
+        "method.instance",
+        "out.underscore",
+        "param.out",
+        "type.field",
+        "type.resource"
+      ],
+      "hits": 1,
+      "firstProgram": 522,
+      "firstSeconds": 360.7
+    },
+    {
+      "id": "078-6367c2cd0c",
+      "category": "known:O10",
+      "signature": "invalid-accepted | self | CS8120 | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "expr.cast",
+        "func.expr-body",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "localfunc.static",
+        "pattern.discard",
+        "pattern.relational",
+        "switch.default",
+        "switch.expr",
+        "switch.section-local",
+        "switch.section-no-terminator",
+        "switch.sel.option",
+        "switch.sel.unsigned",
+        "switch.stmt",
+        "union.ctor"
+      ],
+      "hits": 1,
+      "firstProgram": 569,
+      "firstSeconds": 362.6
+    },
+    {
+      "id": "079-2c40fa5fa7",
+      "category": "known:A1",
+      "signature": "native-build-failure | stage0-O0 |  | undefined reference to fmod",
+      "minTags": [
+        "arith.rem-double",
+        "expr.cast",
+        "local.decl",
+        "local.var",
+        "method.static",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 529,
+      "firstSeconds": 366.3
+    },
+    {
+      "id": "080-3ea9a0d6b7",
+      "category": "new-low",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB006} self-only:{} | ",
+      "minTags": [
+        "banned.goto",
+        "banned.linear-field",
+        "class.primary-ctor",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.static",
+        "method.instance",
+        "type.field",
+        "type.resource"
+      ],
+      "hits": 1,
+      "firstProgram": 580,
+      "firstSeconds": 368.5
+    },
+    {
+      "id": "081-5dd6181a0e",
+      "category": "known:O3",
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | unresolved or captured identifier in vibranium.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "const.class",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.in-class-method",
+        "localfunc.static",
+        "method.static",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 609,
+      "firstSeconds": 378.1
+    },
+    {
+      "id": "082-07a2040c7f",
+      "category": "new-low",
+      "signature": "banned-wrong-id | banned.linear-field | self:VIB000 | expected VIB006",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "banned.linear-field",
+        "banned.nonstatic-localfunc",
+        "class.primary-ctor",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.nested",
+        "localfunc.static",
+        "method.instance",
+        "stmt.nested-block",
+        "type.field",
+        "type.resource"
+      ],
+      "hits": 1,
+      "firstProgram": 603,
+      "firstSeconds": 378.3
+    },
+    {
+      "id": "083-b487d4a757",
+      "category": "known:O9",
+      "signature": "invalid-accepted | self | CS9193 | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "const.local",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.static",
+        "param.ref-readonly"
+      ],
+      "hits": 1,
+      "firstProgram": 634,
+      "firstSeconds": 381
+    },
+    {
+      "id": "084-b9af41e6a0",
+      "category": "known:A3",
+      "signature": "accept-reject | stage0-accepts | self:VIB000,VIB008 | null-conditional \u0027x\u0027 / \u0027x\u0027 operator is banned in vibranium.",
+      "minTags": [
+        "assign.field",
+        "assign.simple",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.elem-char",
+        "coll.empty",
+        "coll.local-init",
+        "coll.rospan",
+        "expr.cast",
+        "expr.conditional",
+        "func.expr-body",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "pattern.union",
+        "struct.fieldwise-init",
+        "struct.local",
+        "switch.no-default",
+        "switch.section-local",
+        "switch.sel.option",
+        "switch.stmt",
+        "type.field",
+        "type.struct",
+        "union.ctor"
+      ],
+      "hits": 1,
+      "firstProgram": 613,
+      "firstSeconds": 386.2
+    },
+    {
+      "id": "085-227e2a20ee",
+      "category": "known:O1",
+      "signature": "accept-reject | stage0-accepts | self:VIB001 | c# requires this variable or struct field to be definitely assigned before it is read (csn",
+      "minTags": [
+        "arg.out",
+        "arith.float-to-int-cast",
+        "bcl.tryparse",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "local.uninit",
+        "localfunc.static",
+        "out.underscore"
+      ],
+      "hits": 1,
+      "firstProgram": 643,
+      "firstSeconds": 393.8
+    },
+    {
+      "id": "086-d4d9aaae70",
+      "category": "known-cut:CUT2",
+      "signature": "accept-reject | stage0-accepts | self:VIB001 | use of uninitialized value.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.field",
+        "assign.simple",
+        "coll.empty",
+        "coll.local-init",
+        "coll.vec",
+        "cut.struct-piecewise-owned",
+        "func.expr-body",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "loop.foreach-ref",
+        "loop.foreach-vec",
+        "struct.local",
+        "struct.owned-field",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 644,
+      "firstSeconds": 395.3
+    },
+    {
+      "id": "087-d67840c422",
+      "category": "known-cut:CUT2",
+      "signature": "accept-reject | stage0-accepts | self:VIB001 | out parameter must be initialized before return.",
+      "minTags": [
+        "arg.out",
+        "arith.int",
+        "assign.compound",
+        "assign.field",
+        "assign.simple",
+        "class.primary-ctor",
+        "cut.struct-piecewise-owned",
+        "func.expr-body",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "localfunc.static",
+        "out.typed",
+        "param.out",
+        "struct.owned-field",
+        "type.class",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 660,
+      "firstSeconds": 404.3
+    },
+    {
+      "id": "088-3a4a674c1c",
+      "category": "new-low",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB004} self-only:{} | ",
+      "minTags": [
+        "arg.out",
+        "banned.throw",
+        "bcl.tryparse",
+        "class.primary-ctor",
+        "local.decl",
+        "localfunc.static",
+        "method.instance",
+        "out.existing-local",
+        "type.class",
+        "type.field"
+      ],
+      "hits": 1,
+      "firstProgram": 668,
+      "firstSeconds": 410.7
+    },
+    {
+      "id": "089-17f54affa3",
+      "category": "known:O1",
+      "signature": "output-mismatch | self | stdout | self-O0",
+      "minTags": [
+        "arg.out",
+        "arith.int",
+        "assign.compound",
+        "bcl.tryparse",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "localfunc.in-class-method",
+        "localfunc.static",
+        "method.static",
+        "out.underscore",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 645,
+      "firstSeconds": 411.6
+    },
+    {
+      "id": "090-b15894562c",
+      "category": "new-low",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB001} self-only:{} | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.field",
+        "assign.simple",
+        "banned.nonstatic-localfunc",
+        "const.local",
+        "func.expr-body",
+        "local.decl",
+        "local.uninit",
+        "localfunc.nested",
+        "localfunc.static",
+        "struct.fieldwise-init",
+        "struct.local",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 665,
+      "firstSeconds": 412.8
+    },
+    {
+      "id": "091-459d1fe6f4",
+      "category": "known:O8",
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | no applicable local function overload in vibranium.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.elem-long",
+        "coll.empty",
+        "coll.rospan",
+        "expr.conditional",
+        "expr.conditional-arg",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.static",
+        "param.scoped"
+      ],
+      "hits": 1,
+      "firstProgram": 671,
+      "firstSeconds": 421.4
+    },
+    {
+      "id": "092-c57cfc8d49",
+      "category": "known-cut:CUT2",
+      "signature": "banned-accepted | analyzer\u002Bstage0 | cut.struct-piecewise-owned | ",
+      "minTags": [
+        "arg.out",
+        "arith.int",
+        "assign.compound",
+        "assign.field",
+        "assign.simple",
+        "class.primary-ctor",
+        "cut.struct-piecewise-owned",
+        "func.expr-body",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "localfunc.static",
+        "out.typed",
+        "param.out",
+        "struct.owned-field",
+        "type.class",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 660,
+      "firstSeconds": 422.7
+    },
+    {
+      "id": "093-a00563353d",
+      "category": "known:O8",
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | no applicable method overload on enclosing type in vibranium.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.elem-byte",
+        "coll.empty",
+        "coll.rospan",
+        "expr.conditional",
+        "expr.conditional-arg",
+        "func.expr-body",
+        "local.decl",
+        "local.var",
+        "localfunc.in-class-method",
+        "localfunc.static",
+        "method.static",
+        "stmt.nested-block",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 674,
+      "firstSeconds": 434.1
+    },
+    {
+      "id": "094-c9ccf58bd0",
+      "category": "known:O9",
+      "signature": "invalid-accepted | self | CS9193 | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "func.expr-body",
+        "local.decl",
+        "local.var",
+        "localfunc.static",
+        "param.ref-readonly",
+        "pattern.union",
+        "pattern.var",
+        "stmt.nested-block",
+        "struct.new-default",
+        "switch.expr",
+        "switch.expr-no-discard",
+        "switch.sel.option",
+        "type.struct",
+        "union.ctor"
+      ],
+      "hits": 1,
+      "firstProgram": 678,
+      "firstSeconds": 434.3
+    },
+    {
+      "id": "095-8a08ea51b8",
+      "category": "known-cut:CUT2",
+      "signature": "banned-wrong-id | cut.struct-piecewise-owned | self:VIB001 | expected VIB000",
+      "minTags": [
+        "arg.out",
+        "arith.int",
+        "assign.compound",
+        "assign.field",
+        "assign.simple",
+        "class.primary-ctor",
+        "cut.struct-piecewise-owned",
+        "func.expr-body",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "localfunc.static",
+        "out.typed",
+        "param.out",
+        "struct.owned-field",
+        "type.class",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 660,
+      "firstSeconds": 438.3
+    },
+    {
+      "id": "096-df1535cfeb",
+      "category": "new:N2",
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | switch expression must be exhaustive (include a \u0027x\u0027 or \u0027x\u0027 catch-all arm) in vibranium.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "local.decl",
+        "localfunc.static",
+        "pattern.relational",
+        "switch.expr",
+        "switch.expr-no-discard",
+        "switch.guard-true",
+        "switch.sel.int"
+      ],
+      "hits": 1,
+      "firstProgram": 703,
+      "firstSeconds": 443.4
+    },
+    {
+      "id": "097-1b8c9549ea",
+      "category": "known:O4",
+      "signature": "invalid-accepted | self | CS1023,CS8510 | ",
+      "minTags": [
+        "expr.cast",
+        "local.decl",
+        "local.var",
+        "localfunc.static",
+        "mut.embedded-decl",
+        "pattern.discard",
+        "pattern.relational",
+        "stmt.if",
+        "switch.expr",
+        "switch.sel.int"
+      ],
+      "hits": 1,
+      "firstProgram": 723,
+      "firstSeconds": 455.4
+    },
+    {
+      "id": "098-7da882ab8c",
+      "category": "known:O1",
+      "signature": "accept-reject | self-accepts | stage0:VIB004 | cannot pass shared borrow as mutable reference or receiver.",
+      "minTags": [
+        "arg.out",
+        "arith.int",
+        "assign.compound",
+        "bcl.tryparse",
+        "field.underscore",
+        "func.expr-body",
+        "local.decl",
+        "local.underscore-read",
+        "localfunc.static",
+        "method.instance",
+        "out.underscore",
+        "type.class",
+        "type.field"
+      ],
+      "hits": 1,
+      "firstProgram": 717,
+      "firstSeconds": 458.4
+    },
+    {
+      "id": "099-6116ff8867",
+      "category": "known:O1",
+      "signature": "output-mismatch | self | stdout | self-O0",
+      "minTags": [
+        "arg.out",
+        "arith.int",
+        "assign.compound",
+        "bcl.tryparse",
+        "class.primary-ctor",
+        "field.underscore",
+        "local.decl",
+        "local.underscore-read",
+        "local.var",
+        "method.instance",
+        "method.static",
+        "out.underscore",
+        "type.class",
+        "type.field"
+      ],
+      "hits": 1,
+      "firstProgram": 730,
+      "firstSeconds": 470.3
+    },
+    {
+      "id": "100-76d7feaea3",
+      "category": "known:O8",
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | no applicable method overload on enclosing type in vibranium.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.empty",
+        "coll.rospan",
+        "expr.conditional",
+        "expr.conditional-arg",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.in-class-method",
+        "localfunc.static",
+        "method.static",
+        "param.underscore",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 732,
+      "firstSeconds": 472.4
+    },
+    {
+      "id": "101-a3ff22882c",
+      "category": "new-low",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB004} self-only:{} | ",
+      "minTags": [
+        "assign.simple",
+        "assign.underscore",
+        "banned.interpolation",
+        "class.primary-ctor",
+        "field.underscore",
+        "local.decl",
+        "localfunc.static",
+        "method.instance",
+        "type.class",
+        "type.field"
+      ],
+      "hits": 1,
+      "firstProgram": 768,
+      "firstSeconds": 484.1
+    },
+    {
+      "id": "102-8955e4e29e",
+      "category": "new-low",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB007} self-only:{} | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "banned.nonstatic-localfunc",
+        "coll.elem-byte",
+        "coll.empty",
+        "coll.returned",
+        "coll.rospan",
+        "func.expr-body",
+        "func.returns-span",
+        "local.decl",
+        "localfunc.in-class-method",
+        "localfunc.static",
+        "method.static",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 772,
+      "firstSeconds": 485.6
+    },
+    {
+      "id": "103-216cbb2ea2",
+      "category": "known:A3",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB001,VIB006} self-only:{VIB000,VIB008} | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "class.primary-ctor",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.empty",
+        "coll.rospan",
+        "expr.conditional",
+        "expr.conditional-arg",
+        "func.expr-body",
+        "local.decl",
+        "local.var",
+        "localfunc.static",
+        "method.instance",
+        "type.field",
+        "type.resource",
+        "using.var"
+      ],
+      "hits": 1,
+      "firstProgram": 761,
+      "firstSeconds": 486.9
+    },
+    {
+      "id": "104-d90b5ddf16",
+      "category": "known-cut:CUT2",
+      "signature": "accept-reject | stage0-accepts | self:VIB001 | use of uninitialized value.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.field",
+        "assign.simple",
+        "class.primary-ctor",
+        "cut.struct-piecewise-owned",
+        "func.expr-body",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "param.in",
+        "struct.local",
+        "struct.owned-field",
+        "type.class",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 775,
+      "firstSeconds": 489.8
+    },
+    {
+      "id": "105-11e1249c3a",
+      "category": "known:O1",
+      "signature": "accept-reject | self-accepts | stage0:VIB004 | cannot pass shared borrow as mutable reference or receiver.",
+      "minTags": [
+        "arg.out",
+        "bcl.tryparse",
+        "field.underscore",
+        "local.decl",
+        "local.underscore-read",
+        "localfunc.static",
+        "method.instance",
+        "out.underscore",
+        "type.class",
+        "type.field"
+      ],
+      "hits": 1,
+      "firstProgram": 812,
+      "firstSeconds": 502.6
+    },
+    {
+      "id": "106-f1aff379d8",
+      "category": "known-cut:CUT2",
+      "signature": "banned-wrong-id | cut.struct-piecewise-owned | analyzer:VIB001 stage0:VIB001 self:VIB001 | expected VIB000",
+      "minTags": [
+        "assign.field",
+        "assign.simple",
+        "cut.struct-piecewise-owned",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "struct.local",
+        "struct.owned-field",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 809,
+      "firstSeconds": 509.1
+    },
+    {
+      "id": "107-3578d28da2",
+      "category": "known:O1",
+      "signature": "output-mismatch | self | stdout | self-O0",
+      "minTags": [
+        "arg.out",
+        "bcl.tryparse",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "local.var",
+        "method.static",
+        "out.underscore",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 808,
+      "firstSeconds": 515.6
+    },
+    {
+      "id": "108-488cd33b5f",
+      "category": "known:O6",
+      "signature": "accept-reject | self-accepts | stage0:VIB001 | use of uninitialized value \u0027x\u0027.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.simple",
+        "local.decl",
+        "local.uninit",
+        "method.static",
+        "pattern.relational",
+        "switch.no-default",
+        "switch.sel.unsigned",
+        "switch.stmt",
+        "type.class"
+      ],
+      "hits": 1,
+      "firstProgram": 825,
+      "firstSeconds": 533.2
+    },
+    {
+      "id": "109-91165779a7",
+      "category": "new:N5",
+      "signature": "invalid-accepted | self | CS8846 | ",
+      "minTags": [
+        "func.expr-body",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "local.var",
+        "localfunc.static",
+        "pattern.discard",
+        "pattern.relational",
+        "pattern.union",
+        "pattern.var",
+        "switch.expr",
+        "switch.expr-no-discard",
+        "switch.guard-false",
+        "switch.sel.int",
+        "switch.sel.result",
+        "union.ctor"
+      ],
+      "hits": 1,
+      "firstProgram": 844,
+      "firstSeconds": 535.3
+    },
+    {
+      "id": "110-5992bccaeb",
+      "category": "new:N1",
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | no applicable local function overload in vibranium.",
+      "minTags": [
+        "arg.ref",
+        "arith.int",
+        "assign.compound",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "local.var",
+        "localfunc.static",
+        "param.in",
+        "struct.local",
+        "struct.new-default",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 849,
+      "firstSeconds": 537.5
+    },
+    {
+      "id": "111-fdf90e2b23",
+      "category": "known:O1",
+      "signature": "output-mismatch | self | stdout | self-O0,self-O3-asan",
+      "minTags": [
+        "arg.out",
+        "arith.int",
+        "assign.compound",
+        "assign.simple",
+        "assign.underscore",
+        "bcl.tryparse",
+        "expr.cast",
+        "func.expr-body",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "local.uninit",
+        "local.var",
+        "localfunc.static",
+        "out.underscore",
+        "pattern.discard",
+        "switch.expr",
+        "switch.sel.option",
+        "union.ctor"
+      ],
+      "hits": 1,
+      "firstProgram": 712,
+      "firstSeconds": 543.9
+    },
+    {
+      "id": "112-6d92a8de95",
+      "category": "known:O1",
+      "signature": "output-mismatch | self | exit\u002Bstdout\u002Bstderr | self-O0",
+      "minTags": [
+        "arg.out",
+        "arith.rem-int",
+        "bcl.tryparse",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "local.var",
+        "localfunc.static",
+        "out.underscore"
+      ],
+      "hits": 1,
+      "firstProgram": 823,
+      "firstSeconds": 557.3
+    },
+    {
+      "id": "113-861dd5c19c",
+      "category": "known:O9",
+      "signature": "invalid-accepted | self | CS9193 | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "func.expr-body",
+        "local.decl",
+        "localfunc.nested",
+        "localfunc.static",
+        "param.ref-readonly",
+        "type.enum"
+      ],
+      "hits": 1,
+      "firstProgram": 933,
+      "firstSeconds": 563.3
+    },
+    {
+      "id": "114-45f872cfd8",
+      "category": "known:O8",
+      "signature": "accept-reject | stage0-accepts | self:VIB000 | no applicable local function overload in vibranium.",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "coll.conditional",
+        "coll.conditional-unparenthesized",
+        "coll.rospan",
+        "expr.conditional",
+        "expr.conditional-arg",
+        "func.expr-body",
+        "local.decl",
+        "local.var",
+        "localfunc.static"
+      ],
+      "hits": 1,
+      "firstProgram": 923,
+      "firstSeconds": 571
+    },
+    {
+      "id": "115-a7ff92da44",
+      "category": "known:A1",
+      "signature": "native-build-failure | stage0-O0 |  | undefined reference to fmod",
+      "minTags": [
+        "arg.ref",
+        "arith.float-to-int-cast",
+        "arith.int",
+        "arith.rem-double",
+        "assign.compound",
+        "local.decl",
+        "localfunc.static",
+        "param.ref"
+      ],
+      "hits": 1,
+      "firstProgram": 861,
+      "firstSeconds": 574.4
+    },
+    {
+      "id": "116-55d2850c7f",
+      "category": "new-low",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB008} self-only:{} | ",
+      "minTags": [
+        "arg.ref",
+        "arith.int",
+        "assign.compound",
+        "banned.struct-idisposable",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "param.ref",
+        "struct.fieldwise-init",
+        "struct.local",
+        "type.struct",
+        "using.var"
+      ],
+      "hits": 1,
+      "firstProgram": 942,
+      "firstSeconds": 582.1
+    },
+    {
+      "id": "117-e5e30bb0dd",
+      "category": "known:O7",
+      "signature": "accept-reject | stage0-accepts | self:VIB001 | out parameter must be initialized before return.",
+      "minTags": [
+        "arg.out",
+        "assign.field",
+        "assign.simple",
+        "local.decl",
+        "local.underscore",
+        "local.underscore-read",
+        "localfunc.static",
+        "out.typed",
+        "param.out",
+        "struct.out-fieldwise",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 963,
+      "firstSeconds": 586.5
+    },
+    {
+      "id": "118-961111ab29",
+      "category": "known:A1",
+      "signature": "native-build-failure | stage0-O0 |  | undefined reference to fmodf",
+      "minTags": [
+        "arith.float-to-int-cast",
+        "arith.rem-float",
+        "local.decl",
+        "localfunc.static"
+      ],
+      "hits": 1,
+      "firstProgram": 894,
+      "firstSeconds": 587.4
+    },
+    {
+      "id": "119-386095fa04",
+      "category": "known:O6",
+      "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB001} self-only:{} | ",
+      "minTags": [
+        "arith.int",
+        "assign.compound",
+        "assign.simple",
+        "banned.null-forgiving",
+        "banned.nullable",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "pattern.const",
+        "switch.no-default",
+        "switch.sel.bool",
+        "switch.stmt"
+      ],
+      "hits": 1,
+      "firstProgram": 972,
+      "firstSeconds": 590.8
+    },
+    {
+      "id": "120-5e753a50a5",
+      "category": "known-cut:CUT2",
+      "signature": "banned-accepted | analyzer\u002Bstage0 | cut.struct-piecewise-owned | ",
+      "minTags": [
+        "assign.field",
+        "assign.simple",
+        "class.primary-ctor",
+        "const.local",
+        "cut.struct-piecewise-owned",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "struct.local",
+        "struct.owned-field",
+        "type.class",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 989,
+      "firstSeconds": 598.7
+    },
+    {
+      "id": "121-15e8491187",
+      "category": "known-cut:CUT2",
+      "signature": "banned-wrong-id | cut.struct-piecewise-owned | self:VIB001 | expected VIB000",
+      "minTags": [
+        "assign.field",
+        "assign.simple",
+        "class.primary-ctor",
+        "const.local",
+        "cut.struct-piecewise-owned",
+        "local.decl",
+        "local.uninit",
+        "localfunc.static",
+        "struct.local",
+        "struct.owned-field",
+        "type.class",
+        "type.field",
+        "type.struct"
+      ],
+      "hits": 1,
+      "firstProgram": 989,
+      "firstSeconds": 611.9
+    }
+  ],
+  "knownRootsFirstHit": {
+    "O4": {
+      "program": 3,
+      "seconds": 19.4
+    },
+    "A1-self": {
+      "program": 2,
+      "seconds": 35.2
+    },
+    "O9": {
+      "program": 19,
+      "seconds": 37.9
+    },
+    "O10": {
+      "program": 43,
+      "seconds": 41
+    },
+    "O7": {
+      "program": 12,
+      "seconds": 42.7
+    },
+    "N2": {
+      "program": 46,
+      "seconds": 59.5
+    },
+    "N1": {
+      "program": 57,
+      "seconds": 64.2
+    },
+    "CUT2": {
+      "program": 77,
+      "seconds": 81.9
+    },
+    "O6": {
+      "program": 80,
+      "seconds": 91.8
+    },
+    "O1": {
+      "program": 70,
+      "seconds": 93.8
+    },
+    "A1": {
+      "program": 62,
+      "seconds": 93.8
+    },
+    "A3": {
+      "program": 124,
+      "seconds": 125.5
+    },
+    "O8": {
+      "program": 165,
+      "seconds": 136.6
+    },
+    "O11": {
+      "program": 204,
+      "seconds": 164.2
+    },
+    "O5": {
+      "program": 349,
+      "seconds": 242.6
+    },
+    "N3": {
+      "program": 314,
+      "seconds": 249.8
+    },
+    "O2a": {
+      "program": 367,
+      "seconds": 268.1
+    },
+    "A2": {
+      "program": 575,
+      "seconds": 353.9
+    },
+    "O3": {
+      "program": 609,
+      "seconds": 378.1
+    },
+    "N5": {
+      "program": 844,
+      "seconds": 535.3
+    }
+  },
+  "tagCoverage": {
+    "arg.in": 42,
+    "arg.out": 311,
+    "arg.ref": 65,
+    "arg.rvalue-to-ref-param": 7,
+    "arith.bitwise": 125,
+    "arith.div-double": 8,
+    "arith.div-float": 3,
+    "arith.div-int": 112,
+    "arith.div-long": 15,
+    "arith.div-unsigned": 7,
+    "arith.double": 21,
+    "arith.float": 14,
+    "arith.float-to-int-cast": 105,
+    "arith.int": 985,
+    "arith.long": 63,
+    "arith.rem-double": 21,
+    "arith.rem-float": 11,
+    "arith.rem-int": 134,
+    "arith.rem-long": 31,
+    "arith.rem-unsigned": 16,
+    "arith.shift": 115,
+    "arith.unsigned": 22,
+    "assign.compound": 937,
+    "assign.field": 116,
+    "assign.index": 2,
+    "assign.simple": 297,
+    "assign.underscore": 107,
+    "banned.array": 7,
+    "banned.checked": 6,
+    "banned.default-nonzerosafe": 5,
+    "banned.goto": 7,
+    "banned.inheritance": 4,
+    "banned.interpolation": 7,
+    "banned.lambda": 6,
+    "banned.linear-field": 7,
+    "banned.manual-dispose": 8,
+    "banned.nonstatic-localfunc": 51,
+    "banned.null": 8,
+    "banned.null-forgiving": 7,
+    "banned.nullable": 15,
+    "banned.object": 7,
+    "banned.object-initializer": 2,
+    "banned.static-field": 1,
+    "banned.string-concat": 13,
+    "banned.string-equality": 6,
+    "banned.string-length": 4,
+    "banned.struct-idisposable": 10,
+    "banned.throw": 5,
+    "banned.try": 3,
+    "bcl.tryparse": 236,
+    "class.primary-ctor": 224,
+    "coll.arg": 36,
+    "coll.conditional": 44,
+    "coll.conditional-unparenthesized": 29,
+    "coll.elem-byte": 8,
+    "coll.elem-char": 15,
+    "coll.elem-enum": 20,
+    "coll.elem-long": 10,
+    "coll.empty": 11,
+    "coll.foreach-literal": 3,
+    "coll.local-init": 102,
+    "coll.returned": 23,
+    "coll.rospan": 127,
+    "coll.span": 18,
+    "coll.vec": 42,
+    "const.class": 13,
+    "const.local": 86,
+    "cut.localfunc-in-switch-section": 9,
+    "cut.struct-piecewise-owned": 18,
+    "expr.cast": 617,
+    "expr.compare": 665,
+    "expr.conditional": 556,
+    "expr.conditional-arg": 189,
+    "expr.index": 105,
+    "expr.logical": 202,
+    "expr.qualified-member": 42,
+    "expr.u8-literal": 2,
+    "field.underscore": 38,
+    "func.expr-body": 558,
+    "func.returns-span": 23,
+    "local.decl": 1000,
+    "local.ref": 13,
+    "local.underscore": 103,
+    "local.underscore-read": 186,
+    "local.uninit": 201,
+    "local.var": 391,
+    "localfunc.in-class-method": 58,
+    "localfunc.nested": 153,
+    "localfunc.static": 780,
+    "loop.continue": 17,
+    "loop.do": 13,
+    "loop.for": 26,
+    "loop.foreach": 60,
+    "loop.foreach-ref": 9,
+    "loop.foreach-vec": 26,
+    "loop.while": 47,
+    "method.instance": 251,
+    "method.static": 280,
+    "mut.embedded-decl": 31,
+    "out.existing-local": 77,
+    "out.field": 7,
+    "out.typed": 30,
+    "out.typed-discard": 30,
+    "out.underscore": 110,
+    "out.var": 78,
+    "out.var-discard": 30,
+    "panic.call": 154,
+    "param.in": 49,
+    "param.out": 62,
+    "param.ref": 44,
+    "param.ref-readonly": 49,
+    "param.scoped": 6,
+    "param.underscore": 28,
+    "pattern.combinator": 128,
+    "pattern.const": 142,
+    "pattern.decl": 50,
+    "pattern.discard": 93,
+    "pattern.is": 243,
+    "pattern.named-const": 34,
+    "pattern.relational": 249,
+    "pattern.type": 12,
+    "pattern.type-discard": 5,
+    "pattern.union": 73,
+    "pattern.var": 162,
+    "stmt.if": 369,
+    "stmt.if-else": 113,
+    "stmt.nested-block": 171,
+    "struct.ctor": 6,
+    "struct.fieldwise-init": 59,
+    "struct.local": 119,
+    "struct.new-default": 45,
+    "struct.out-fieldwise": 13,
+    "struct.owned-field": 25,
+    "switch.cross-section-dup": 1,
+    "switch.cross-section-var": 11,
+    "switch.default": 43,
+    "switch.expr": 178,
+    "switch.expr-no-discard": 98,
+    "switch.guard": 91,
+    "switch.guard-false": 36,
+    "switch.guard-true": 29,
+    "switch.nested": 6,
+    "switch.no-default": 94,
+    "switch.section-local": 91,
+    "switch.section-no-terminator": 11,
+    "switch.sel.bool": 24,
+    "switch.sel.char": 13,
+    "switch.sel.enum": 25,
+    "switch.sel.float": 9,
+    "switch.sel.int": 157,
+    "switch.sel.option": 39,
+    "switch.sel.result": 20,
+    "switch.sel.unsigned": 33,
+    "switch.stmt": 134,
+    "type.class": 365,
+    "type.enum": 84,
+    "type.field": 366,
+    "type.resource": 137,
+    "type.struct": 140,
+    "union.consume": 59,
+    "union.ctor": 200,
+    "union.guard": 42,
+    "using.block": 21,
+    "using.var": 111
+  },
+  "uncoveredCatalogTags": [
+    "out.other"
+  ],
+  "anchorPairs": {
+    "Arith\u003EArith": {
+      "Programs": 4,
+      "Valid": 4,
+      "Disagree": 2
+    },
+    "Arith\u003EBanned": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "Arith\u003EClassInstance": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "Arith\u003ECollection": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "Arith\u003ECondArg": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Arith\u003EConst": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 0
+    },
+    "Arith\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 2
+    },
+    "Arith\u003ELoop": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Arith\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "Arith\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "Arith\u003EPanic": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 0
+    },
+    "Arith\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Arith\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "Arith\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Arith\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 3
+    },
+    "Arith\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "Arith\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Arith\u003EUsing": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 0
+    },
+    "Banned\u003EArith": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "Banned\u003EBanned": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Banned\u003EClassInstance": {
+      "Programs": 4,
+      "Valid": 4,
+      "Disagree": 2
+    },
+    "Banned\u003ECollection": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Banned\u003ECondArg": {
+      "Programs": 4,
+      "Valid": 3,
+      "Disagree": 0
+    },
+    "Banned\u003EConst": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "Banned\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Banned\u003ELoop": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "Banned\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Banned\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "Banned\u003EPanic": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "Banned\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Banned\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Banned\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Banned\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Banned\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "Banned\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 0
+    },
+    "Banned\u003EUsing": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "ClassInstance\u003EArith": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "ClassInstance\u003EBanned": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "ClassInstance\u003EClassInstance": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "ClassInstance\u003ECollection": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "ClassInstance\u003ECondArg": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "ClassInstance\u003EConst": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "ClassInstance\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "ClassInstance\u003ELoop": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "ClassInstance\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "ClassInstance\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "ClassInstance\u003EPanic": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "ClassInstance\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "ClassInstance\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "ClassInstance\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "ClassInstance\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "ClassInstance\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "ClassInstance\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "ClassInstance\u003EUsing": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "Collection\u003EArith": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "Collection\u003EBanned": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "Collection\u003EClassInstance": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "Collection\u003ECollection": {
+      "Programs": 4,
+      "Valid": 1,
+      "Disagree": 2
+    },
+    "Collection\u003ECondArg": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "Collection\u003EConst": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Collection\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "Collection\u003ELoop": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Collection\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Collection\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Collection\u003EPanic": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "Collection\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Collection\u003ERefParams": {
+      "Programs": 4,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Collection\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 3
+    },
+    "Collection\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Collection\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "Collection\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "Collection\u003EUsing": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "CondArg\u003EArith": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 2
+    },
+    "CondArg\u003EBanned": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "CondArg\u003EClassInstance": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "CondArg\u003ECollection": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "CondArg\u003ECondArg": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "CondArg\u003EConst": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "CondArg\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 0
+    },
+    "CondArg\u003ELoop": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "CondArg\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "CondArg\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "CondArg\u003EPanic": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "CondArg\u003EPatternVar": {
+      "Programs": 4,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "CondArg\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "CondArg\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "CondArg\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "CondArg\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "CondArg\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "CondArg\u003EUsing": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Const\u003EArith": {
+      "Programs": 4,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Const\u003EBanned": {
+      "Programs": 4,
+      "Valid": 4,
+      "Disagree": 0
+    },
+    "Const\u003EClassInstance": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "Const\u003ECollection": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 2
+    },
+    "Const\u003ECondArg": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "Const\u003EConst": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "Const\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "Const\u003ELoop": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "Const\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Const\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "Const\u003EPanic": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 3
+    },
+    "Const\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "Const\u003ERefParams": {
+      "Programs": 4,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Const\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Const\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 2
+    },
+    "Const\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "Const\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "Const\u003EUsing": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "LocalFunc\u003EArith": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "LocalFunc\u003EBanned": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "LocalFunc\u003EClassInstance": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "LocalFunc\u003ECollection": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "LocalFunc\u003ECondArg": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "LocalFunc\u003EConst": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 3
+    },
+    "LocalFunc\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "LocalFunc\u003ELoop": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "LocalFunc\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 2
+    },
+    "LocalFunc\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "LocalFunc\u003EPanic": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "LocalFunc\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "LocalFunc\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "LocalFunc\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "LocalFunc\u003ESwitchExpr": {
+      "Programs": 4,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "LocalFunc\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "LocalFunc\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "LocalFunc\u003EUsing": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Loop\u003EArith": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Loop\u003EBanned": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "Loop\u003EClassInstance": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "Loop\u003ECollection": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 3
+    },
+    "Loop\u003ECondArg": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "Loop\u003EConst": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 2
+    },
+    "Loop\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "Loop\u003ELoop": {
+      "Programs": 4,
+      "Valid": 1,
+      "Disagree": 3
+    },
+    "Loop\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Loop\u003EOutArg": {
+      "Programs": 4,
+      "Valid": 3,
+      "Disagree": 0
+    },
+    "Loop\u003EPanic": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Loop\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Loop\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Loop\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Loop\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "Loop\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "Loop\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "Loop\u003EUsing": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "OptionResult\u003EArith": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "OptionResult\u003EBanned": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "OptionResult\u003EClassInstance": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "OptionResult\u003ECollection": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "OptionResult\u003ECondArg": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "OptionResult\u003EConst": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "OptionResult\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "OptionResult\u003ELoop": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 2
+    },
+    "OptionResult\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 0
+    },
+    "OptionResult\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "OptionResult\u003EPanic": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "OptionResult\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "OptionResult\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "OptionResult\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "OptionResult\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "OptionResult\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "OptionResult\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "OptionResult\u003EUsing": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 0
+    },
+    "OutArg\u003EArith": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "OutArg\u003EBanned": {
+      "Programs": 4,
+      "Valid": 4,
+      "Disagree": 1
+    },
+    "OutArg\u003EClassInstance": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 0
+    },
+    "OutArg\u003ECollection": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 0
+    },
+    "OutArg\u003ECondArg": {
+      "Programs": 4,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "OutArg\u003EConst": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "OutArg\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "OutArg\u003ELoop": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "OutArg\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "OutArg\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 2
+    },
+    "OutArg\u003EPanic": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "OutArg\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "OutArg\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "OutArg\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "OutArg\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "OutArg\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "OutArg\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "OutArg\u003EUsing": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "Panic\u003EArith": {
+      "Programs": 4,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Panic\u003EBanned": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "Panic\u003EClassInstance": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "Panic\u003ECollection": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Panic\u003ECondArg": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "Panic\u003EConst": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Panic\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Panic\u003ELoop": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "Panic\u003EOptionResult": {
+      "Programs": 4,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Panic\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Panic\u003EPanic": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Panic\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "Panic\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Panic\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Panic\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Panic\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "Panic\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Panic\u003EUsing": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "PatternVar\u003EArith": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 3
+    },
+    "PatternVar\u003EBanned": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "PatternVar\u003EClassInstance": {
+      "Programs": 4,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "PatternVar\u003ECollection": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "PatternVar\u003ECondArg": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "PatternVar\u003EConst": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "PatternVar\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "PatternVar\u003ELoop": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 3
+    },
+    "PatternVar\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "PatternVar\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "PatternVar\u003EPanic": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "PatternVar\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "PatternVar\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "PatternVar\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "PatternVar\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "PatternVar\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "PatternVar\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "PatternVar\u003EUsing": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "RefParams\u003EArith": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "RefParams\u003EBanned": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "RefParams\u003EClassInstance": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 2
+    },
+    "RefParams\u003ECollection": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "RefParams\u003ECondArg": {
+      "Programs": 4,
+      "Valid": 3,
+      "Disagree": 4
+    },
+    "RefParams\u003EConst": {
+      "Programs": 4,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "RefParams\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "RefParams\u003ELoop": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "RefParams\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "RefParams\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "RefParams\u003EPanic": {
+      "Programs": 4,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "RefParams\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 3
+    },
+    "RefParams\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "RefParams\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "RefParams\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "RefParams\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "RefParams\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "RefParams\u003EUsing": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "StructInit\u003EArith": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "StructInit\u003EBanned": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 0
+    },
+    "StructInit\u003EClassInstance": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 3
+    },
+    "StructInit\u003ECollection": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "StructInit\u003ECondArg": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "StructInit\u003EConst": {
+      "Programs": 4,
+      "Valid": 3,
+      "Disagree": 3
+    },
+    "StructInit\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "StructInit\u003ELoop": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "StructInit\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "StructInit\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "StructInit\u003EPanic": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "StructInit\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "StructInit\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "StructInit\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "StructInit\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "StructInit\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 3
+    },
+    "StructInit\u003EUnderscore": {
+      "Programs": 4,
+      "Valid": 4,
+      "Disagree": 3
+    },
+    "StructInit\u003EUsing": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "SwitchExpr\u003EArith": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "SwitchExpr\u003EBanned": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003EClassInstance": {
+      "Programs": 4,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003ECollection": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "SwitchExpr\u003ECondArg": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "SwitchExpr\u003EConst": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 2
+    },
+    "SwitchExpr\u003ELoop": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "SwitchExpr\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "SwitchExpr\u003EPanic": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "SwitchExpr\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "SwitchExpr\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "SwitchExpr\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "SwitchExpr\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "SwitchExpr\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "SwitchExpr\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "SwitchExpr\u003EUsing": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "SwitchStmt\u003EArith": {
+      "Programs": 4,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "SwitchStmt\u003EBanned": {
+      "Programs": 4,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "SwitchStmt\u003EClassInstance": {
+      "Programs": 4,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "SwitchStmt\u003ECollection": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003ECondArg": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 2
+    },
+    "SwitchStmt\u003EConst": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "SwitchStmt\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "SwitchStmt\u003ELoop": {
+      "Programs": 4,
+      "Valid": 1,
+      "Disagree": 3
+    },
+    "SwitchStmt\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "SwitchStmt\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "SwitchStmt\u003EPanic": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "SwitchStmt\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "SwitchStmt\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "SwitchStmt\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "SwitchStmt\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "SwitchStmt\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "SwitchStmt\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "SwitchStmt\u003EUsing": {
+      "Programs": 4,
+      "Valid": 4,
+      "Disagree": 2
+    },
+    "Underscore\u003EArith": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Underscore\u003EBanned": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "Underscore\u003EClassInstance": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Underscore\u003ECollection": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Underscore\u003ECondArg": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Underscore\u003EConst": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Underscore\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Underscore\u003ELoop": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "Underscore\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Underscore\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Underscore\u003EPanic": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "Underscore\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 1
+    },
+    "Underscore\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Underscore\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Underscore\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 1
+    },
+    "Underscore\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Underscore\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "Underscore\u003EUsing": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Using\u003EArith": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 2
+    },
+    "Using\u003EBanned": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Using\u003EClassInstance": {
+      "Programs": 3,
+      "Valid": 0,
+      "Disagree": 0
+    },
+    "Using\u003ECollection": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Using\u003ECondArg": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Using\u003EConst": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 0
+    },
+    "Using\u003ELocalFunc": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 0
+    },
+    "Using\u003ELoop": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 1
+    },
+    "Using\u003EOptionResult": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Using\u003EOutArg": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "Using\u003EPanic": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 1
+    },
+    "Using\u003EPatternVar": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "Using\u003ERefParams": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    },
+    "Using\u003EStructInit": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 3
+    },
+    "Using\u003ESwitchExpr": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 3
+    },
+    "Using\u003ESwitchStmt": {
+      "Programs": 3,
+      "Valid": 3,
+      "Disagree": 2
+    },
+    "Using\u003EUnderscore": {
+      "Programs": 3,
+      "Valid": 1,
+      "Disagree": 0
+    },
+    "Using\u003EUsing": {
+      "Programs": 3,
+      "Valid": 2,
+      "Disagree": 2
+    }
+  }
+}

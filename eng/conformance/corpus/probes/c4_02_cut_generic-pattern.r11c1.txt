@@ -1,0 +1,12 @@
+WriteLine(F(1L));
+WriteLine(F(-1L));
+static bool F<T>(T x) => x is > 0 or <= 0;
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@3:26 Patterns other than var and discard on a value of generic type parameter type are not supported in Vibranium v0.2.
+stage0 check: REJECT VIB000@3:26 Patterns other than var and discard on a value of generic type parameter type are not supported in Vibranium v0.2.
+self check: exit=1 out=[] err=[Program.cs(3,26): error VIB000: Patterns other than var and discard on a value of generic type parameter type are not supported in Vibranium v0.2.|]
+

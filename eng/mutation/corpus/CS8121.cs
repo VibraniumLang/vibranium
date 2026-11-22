@@ -1,0 +1,1 @@
+WriteLine(F(Some(4)));WriteLine(F(None));static int F(Option<int> o){switch(o){case Some<int> or not Some<Vec<int>>:return 1;}}

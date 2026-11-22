@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arith.unsigned expr.conditional local.decl localfunc.static pattern.relational span.arg-span span.foreach-ref span.from-coll span.index-from-end span.nm-moved span.read span.to-rospan span.write-after-shared switch.default switch.guard-true switch.section-local switch.section-no-terminator switch.sel.unsigned switch.stmt
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@12:13 Unreachable code detected ; CS0162@25:5 Unreachable code detected
+analyzer: VIB001@22:20 Use of moved value 's2'.
+stage0 check: REJECT VIB001@22:20 Use of moved value 's2'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001 | use of moved value 'x'.

@@ -1,0 +1,3 @@
+# Vibranium.Core manifest
+unit core
+native Native/x86_64-linux-gnu/vib_rt.ll

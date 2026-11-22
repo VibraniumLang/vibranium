@@ -1,0 +1,15 @@
+Vec<Vec<int>> outer = [];
+Vec<int> first = [1];
+outer.Add(first);
+Vec<int> x = [4, 5];
+outer[0] = x;
+WriteLine(x.Count);
+
+validity: invalid
+tags: 
+sdk-roslyn errors: CS8377@1:5 The type 'Vec<int>' must be a non-nullable value type, along with all fields at any level of nesting, in order to use it as parameter 'T' in the generic type or method 'Vec<T>' ; CS8377@1:23 The type 'Vec<int>' must be a non-nullable value type, along with all fields at any level of nesting, in order to use it as parameter 'T' in the generic type or method 'VecBuilder.Create<T>(ReadOnlySpan<T>)'
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@6:11 Use of moved value 'x'.
+stage0 check: REJECT CS8377@1:5 The type 'Vec<int>' must be a non-nullable value type, along with all fields at any level of nesting, in order to use it as parameter 'T' in the generic type or method 'Vec<T>' ; CS8377@1:23 The type 'Vec<int>' must be a non-nullable value type, along with all fields at any level of nesting, in order to use it as parameter 'T' in the generic type or method 'VecBuilder.Create<T>(ReadOnlySpan<T>)'
+self check: exit=1 out=[] err=[Program.cs(1,1): error VIB000: Vec<T> requires unmanaged Copy element type.|Program.cs(6,12): error VIB001: Use of moved value.|]
+

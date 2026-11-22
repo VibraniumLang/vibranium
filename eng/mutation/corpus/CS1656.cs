@@ -1,0 +1,1 @@
+Span<int> s=[1,2];int n=0;foreach(var e in s){ e = e; n+=e+s.Length;}WriteLine(n);WriteLine(s.Length);

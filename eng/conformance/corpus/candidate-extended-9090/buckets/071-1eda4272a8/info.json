@@ -1,0 +1,33 @@
+{
+  "signature": "invalid-accepted | self | CS0266 | ",
+  "category": "known:N7",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS0266",
+  "msg": "",
+  "minTags": [
+    "arith.float",
+    "arith.int",
+    "assign.compound",
+    "local.decl",
+    "local.var",
+    "localfunc.static",
+    "pattern.discard",
+    "span.arg-span",
+    "span.from-vec",
+    "span.vec-slice-call",
+    "stmt.nested-block",
+    "switch.expr",
+    "switch.sel-unparenthesized",
+    "switch.sel.float"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 20055,
+  "plan": "Utf8View\u003ESwitchExpr\u003ESpanSlice",
+  "mutations": [],
+  "reduceTests": 92,
+  "sizeBefore": 100,
+  "sizeAfter": 44,
+  "firstSeconds": 2741.9
+}

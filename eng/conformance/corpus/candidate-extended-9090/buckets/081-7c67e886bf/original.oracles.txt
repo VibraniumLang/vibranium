@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound expr.cast expr.compare expr.conditional expr.conditional-arg func.expr-body local.decl localfunc.static pattern.relational span.foreach-ref span.from-coll span.index-from-end span.slice-call span.to-rospan stmt.if switch.expr switch.expr-no-discard switch.guard-true switch.sel.int union.ctor
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@12:12 Use of moved value 's3'. ; VIB001@12:21 Use of moved value 's3'.
+stage0 check: REJECT VIB001@12:12 Use of moved value 's3'. ; VIB001@12:21 Use of moved value 's3'.
+self check: exit=1 out=[] err=[Program.cs(17,16): error VIB000: Switch expression must be exhaustive (include a '_' or 'var' catch-all arm) in Vibranium.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{VIB000} | 

@@ -1,0 +1,9 @@
+validity: valid
+tags: arith.double arith.float-to-int-cast arith.int ca.form-local ca.loan-in-implicit ca.loan-ref-proj ca.move-explicit ca.move-then-use ca.owner-holder ca.rel-ext expr.cast gen.auto-generated-header local.decl localfunc.static pattern.const pattern.is stmt.if view.param-stack-escape view.param-stack-scope-exit
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@19:83 Use of moved value 'x'. ; VIB007@20:75 Cannot return a reference or view backed by stack-allocated storage.
+stage0 check: REJECT VIB001@19:83 Use of moved value 'x'. ; VIB007@20:75 Cannot return a reference or view backed by stack-allocated storage.
+self check: exit=1 out=[] err=[Program.cs(19,83): error VIB001: Use of moved value.|Program.cs(20,68): error VIB003: Stack-allocated buffer exits scope while borrowed by a live reference or view.|Program.cs(20,68): error VIB007: Cannot return a reference or view backed by stack-allocated storage.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{} self-only:{VIB003} | 
+DISAGREEMENT: spec-wrong-id | ca.move-then-use+view.param-stack-escape+view.param-stack-scope-exit | view.param-stack-scope-exit>analyzer:VIB001,VIB007 view.param-stack-scope-exit>stage0:VIB001,VIB007 | expected ca.move-then-use:VIB001 view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003

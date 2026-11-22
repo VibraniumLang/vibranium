@@ -1,0 +1,16 @@
+WriteLine(F(1));
+static int F(int k)
+{
+    int x = k;
+    return G(ref x);
+}
+static int G(in int p) => p + 1;
+
+validity: invalid
+tags: 
+sdk-roslyn errors: CS9191@5:18 The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@5:18 C# warning CS9191 is not permitted in Vibranium: The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+stage0 check: REJECT CS9191@5:18 The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+self check: exit=1 out=[] err=[Program.cs(5,18): error VIB000: C# warning CS9191 is not permitted in Vibranium: The 'ref' modifier for an argument corresponding to an 'in' parameter is equivalent to 'in'. Consider using 'in' instead.|]
+

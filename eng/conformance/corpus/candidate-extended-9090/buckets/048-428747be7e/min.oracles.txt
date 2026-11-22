@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arg.ref arith.int assign.compound coll.empty coll.local-init coll.vec local.decl local.uninit localfunc.static loop.foreach-ref loop.foreach-vec param.in struct.fieldwise-init struct.local type.struct
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS9191@9:23 The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(9,18): error VIB000: No applicable local function overload in Vibranium.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | no applicable local function overload in vibranium.

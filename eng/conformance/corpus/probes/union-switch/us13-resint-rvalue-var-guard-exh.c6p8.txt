@@ -1,0 +1,13 @@
+WriteLine(Us(1) + Us(4) * 10 + Us(8) * 100);
+static int Us(int p) { int n = 0; switch (MkRI(p)) { case var w when p > 5: n += w.IsOk ? 100 : 200; break; case Ok<int>(var v): n += v; break; case Err<int>(var e): n += e; break; } return n; }
+static Result<int, int> MkRI(int a) { if (a > 2) return Ok(a); return Err(a + 20); }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(2,83): error VIB000: Unsupported, unresolved, or inaccessible member access in Vibranium.|Program.cs(2,135): error VIB001: C# requires this variable or struct field to be definitely assigned before it is read (CS0165/CS0170).|Program.cs(2,172): error VIB001: C# requires this variable or struct field to be definitely assigned before it is read (CS0165/CS0170).|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000,VIB001 | unsupported, unresolved, or inaccessible member access in vibranium.
+

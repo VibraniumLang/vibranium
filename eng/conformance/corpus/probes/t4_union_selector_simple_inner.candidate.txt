@@ -1,0 +1,6 @@
+validity: invalid
+sdk-roslyn errors: CS8509@5:44 The switch expression does not handle all possible values of its input type (it is not exhaustive). For example, the pattern '0L' is not covered.
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS8509@5:44 The switch expression does not handle all possible values of its input type (it is not exhaustive). For example, the pattern '0L' is not covered.
+self check: exit=1 out=[] err=[Program.cs(5,44): error VIB000: Switch expression must be exhaustive (include a '_' or 'var' catch-all arm) in Vibranium.|]

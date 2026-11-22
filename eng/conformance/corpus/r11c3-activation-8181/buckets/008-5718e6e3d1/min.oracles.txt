@@ -1,0 +1,8 @@
+validity: valid
+tags: local.decl localfunc.static view.elision-ambiguous
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB007@8:77 Returned reference or view escapes local or scoped/by-value owner 'x'.
+stage0 check: REJECT VIB007@8:77 Returned reference or view escapes local or scoped/by-value owner 'x'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB007 | returned reference or view escapes local or scoped<path> owner 'x'.

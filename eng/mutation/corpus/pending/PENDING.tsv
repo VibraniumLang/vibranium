@@ -1,0 +1,21 @@
+# file	family	first key	lands with
+hand-c6-CS0220-enum-add.cs	N1	CS0220	self-fix-x
+hand-c6-CS0220-enum-const.cs	N1	CS0220	self-fix-x
+hand-c6-CS0220-enum-span-store.cs	N1	CS0220	self-fix-x
+hand-c6-CS0246-attr-unbound.cs	N2	CS0246	self-fix-x
+hand-c6-CS0234-attr-alias-unbound.cs	N2	CS0234	self-fix-x
+hand-c6-CS1503-attr-arg-type.cs	N2	CS1503	self-fix-x
+hand-c6-CS1503-methodimpl-range.cs	N2	CS1503	self-fix-x
+hand-c6-CS1503-methodimpl-string.cs	N2	CS1503	self-fix-x
+hand-c6-CS1729-unscoped-arity.cs	N2	CS1729	self-fix-x
+hand-c6-CS0019-attr-arg-operator.cs	N2	CS0019	self-fix-x
+hand-c6-CS0220-attr-arg-overflow.cs	N2	CS0220	self-fix-x
+hand-c6-CS0103-attr-arg-unbound-member.cs	N2	CS0103	self-fix-x
+hand-c6-CS0121-attr-arg-ambiguous.cs	N2	CS0121	self-fix-x
+hand-c6-CS8337-ref-ext-class.cs	N3	CS8337	self-fix-x
+hand-c6-CS8337-ref-ext-generic.cs	N3	CS8337	self-fix-x
+hand-c6-CS0161-toplevel-falloff-if.cs	N4	CS0161	self-fix-x
+hand-c6-CS0161-toplevel-falloff-using.cs	N4	CS0161	self-fix-x
+hand-c6-CS8958-internal-ctor-new.cs	N5	CS8958	self-fix-x
+hand-c6-CS8958-private-ctor-unused.cs	N5	CS8958	self-fix-x
+hand-c6-CS0220-enum-long-analyzer.cs	AD0001	CS0220	roslyn-fix2 (Analyzer/Stage0 enum constant crash)

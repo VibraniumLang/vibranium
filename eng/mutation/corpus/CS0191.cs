@@ -1,0 +1,1 @@
+WriteLine("before");WriteLine(F().Y);static Pair F(){VibraniumRuntime.Panic("stop");Pair p;p.X=1;p.Y=7;return p;}public struct Pair{readonly public int X;public int Y;}

@@ -1,0 +1,17 @@
+WriteLine(F());
+static int F()
+{
+    int x = 1;
+    ref readonly int r = ref x;
+    return M(ref r, 2);
+}
+static int M(ref int p, int k) => p + k;
+
+validity: invalid
+tags: 
+sdk-roslyn errors: CS1510@6:18 A ref or out value must be an assignable variable
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS1510@6:18 A ref or out value must be an assignable variable
+self check: exit=1 out=[] err=[Program.cs(6,14): error VIB004: Cannot take a mutable reference through a shared borrow.|]
+

@@ -1,0 +1,8 @@
+validity: valid
+tags: local.decl localfunc.static snd.inval-field-move snd.inval-reassign snd.place-after-loop snd.place-branch snd.producer-recv-view snd.producer-slice-range snd.use-read
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@9:115 Cannot move 'h.Items' while borrowed by 's'. ; VIB003@10:129 Cannot mutate 'v' while borrowed by 's'.
+stage0 check: REJECT VIB003@9:115 Cannot move 'h.Items' while borrowed by 's'. ; VIB003@10:129 Cannot mutate 'v' while borrowed by 's'.
+self check: exit=1 out=[] err=[Program.cs(9,116): error VIB003: Cannot move value while borrowed.|Program.cs(9,116): error VIB005: Cannot move non-Copy value out of a field, indexed element, or borrowed place.|Program.cs(10,131): error VIB003: Cannot mutate value while borrowed.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{} self-only:{VIB005} | 

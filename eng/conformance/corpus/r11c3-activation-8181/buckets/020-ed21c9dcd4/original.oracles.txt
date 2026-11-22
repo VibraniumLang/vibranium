@@ -1,0 +1,8 @@
+validity: valid
+tags: assign.simple cond.temp-both-arms cut.file-type expr.cast expr.conditional local.decl localfunc.static
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(15,6): error VIB000: Expected ';' after expression statement.|]
+DISAGREEMENT: banned-accepted | analyzer+stage0 | cut.file-type | 

@@ -1,0 +1,8 @@
+validity: valid
+tags: local.decl localfunc.static span.arg-span span.foreach-ref span.from-vec span.vec-slice-call std.bytes std.bytes-indexof
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@9:18 Cannot borrow 'v7' mutably while borrowed by 's6'. ; VIB003@9:31 Cannot read 'v7' while exclusively borrowed by 's6'. ; VIB003@9:35 Cannot borrow 'v7' immutably while borrowed by 's6'. ; VIB001@10:11 Use of moved value 's6'.
+stage0 check: REJECT VIB003@9:18 Cannot borrow 'v7' mutably while borrowed by 's6'. ; VIB003@9:31 Cannot read 'v7' while exclusively borrowed by 's6'. ; VIB003@9:35 Cannot borrow 'v7' immutably while borrowed by 's6'. ; VIB001@10:11 Use of moved value 's6'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001,VIB003 | cannot borrow 'x' mutably while borrowed by 'x'.

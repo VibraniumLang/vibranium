@@ -1,0 +1,1 @@
+int a=12;a+=Set(out a)&&a>50?3:2;WriteLine(a);static bool Set(out int a = default){a=90;return true;}

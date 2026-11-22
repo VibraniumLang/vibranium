@@ -1,0 +1,22 @@
+WriteLine(F(true));
+static int F(bool b)
+{
+    switch (b)
+    {
+        case true: return 1;
+        case false: return 2;
+        default:
+            Vec<int> v = [1];
+            var w = v;
+            return v.Count;
+    }
+}
+
+validity: warn-only
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@9:13 Unreachable code detected
+analyzer: VIB001@11:20 Use of moved value 'v'.
+stage0 check: REJECT VIB001@11:20 Use of moved value 'v'.
+self check: exit=1 out=[] err=[Program.cs(11,21): error VIB001: Use of moved value.|]
+

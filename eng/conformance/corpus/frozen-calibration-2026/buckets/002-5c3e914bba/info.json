@@ -1,0 +1,19 @@
+{
+  "signature": "link-contract | self-O0 | libm.so.6 | dt_needed beyond libc",
+  "category": "known:A1-self",
+  "kind": "link-contract",
+  "frontends": "self-O0",
+  "ids": "libm.so.6",
+  "msg": "dt_needed beyond libc",
+  "minTags": [
+    "localfunc.static"
+  ],
+  "seed": "2026",
+  "index": 2,
+  "plan": "SwitchStmt\u003EClassInstance\u003EConst",
+  "mutations": [],
+  "reduceTests": 20,
+  "sizeBefore": 120,
+  "sizeAfter": 19,
+  "firstSeconds": 35.2
+}

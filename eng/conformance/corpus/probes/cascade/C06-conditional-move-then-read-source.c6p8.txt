@@ -1,0 +1,19 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Vec<int> b = [3, 4, 5];
+Span<int> s = b.AsSpan();
+if (b.Count > 1)
+{
+    Span<int> t = s;
+    WriteLine(t.Length);
+}
+WriteLine(b[0]);
+WriteLine(s.Length);
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@3:5 Cannot read 'b' while exclusively borrowed by 's'. ; VIB003@6:15 Cannot read 'b' while exclusively borrowed by 's'. ; VIB003@8:11 Cannot borrow 'b' immutably while borrowed by 's'. ; VIB001@9:11 Use of moved value 's'.
+stage0 check: REJECT VIB003@3:5 Cannot read 'b' while exclusively borrowed by 's'. ; VIB003@6:15 Cannot read 'b' while exclusively borrowed by 's'. ; VIB003@8:11 Cannot borrow 'b' immutably while borrowed by 's'. ; VIB001@9:11 Use of moved value 's'.
+self check: exit=1 out=[] err=[Program.cs(3,6): error VIB003: Borrow conflicts with an active borrow.|Program.cs(8,12): error VIB003: Borrow conflicts with an active borrow.|Program.cs(9,11): error VIB001: Use of moved value.|]
+

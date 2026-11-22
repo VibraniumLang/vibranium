@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound expr.cast expr.compare expr.conditional local.decl local.var localfunc.static pattern.relational switch.expr switch.expr-no-discard switch.guard-true switch.sel.int utf8.foreach utf8.vec-bytes utf8.vec-lines
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(9,17): error VIB000: Switch expression must be exhaustive (include a '_' or 'var' catch-all arm) in Vibranium.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | switch expression must be exhaustive (include a 'x' or 'x' catch-all arm) in vibranium.

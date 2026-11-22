@@ -1,0 +1,19 @@
+Vec<int> b = [3, 4, 5];
+Span<int> s = b.AsSpan();
+for (int i = 0; i < 2; i++)
+{
+    b[0] = i;
+    s = Id(s);
+}
+WriteLine(s[0]);
+
+static Span<int> Id(Span<int> x) => x;
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@5:5 Cannot borrow 'b' immutably while borrowed by 's'. ; VIB003@5:5 Cannot mutate 'b' while borrowed by 's'.
+stage0 check: REJECT VIB003@5:5 Cannot borrow 'b' immutably while borrowed by 's'. ; VIB003@5:5 Cannot mutate 'b' while borrowed by 's'.
+self check: exit=1 out=[] err=[Program.cs(5,6): error VIB003: Borrow conflicts with an active borrow.|Program.cs(5,10): error VIB003: Cannot mutate through reference while borrowed by another live reference.|]
+

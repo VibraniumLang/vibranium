@@ -1,0 +1,8 @@
+validity: valid
+tags: banned.array local.decl localfunc.static
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@6:5 Managed array types 'T[]' are not supported in Vibranium; use Vec<T>, Span<T>, or ReadOnlySpan<T>. ; VIB000@6:11 Collection expression for 'Int32Type { }' is not supported in Vibranium. ; VIB000@7:15 Expression 'ArrayElementReference' is not supported in Vibranium.
+stage0 check: REJECT VIB000@6:5 Managed array types 'T[]' are not supported in Vibranium; use Vec<T>, Span<T>, or ReadOnlySpan<T>. ; VIB000@6:11 Collection expression for 'Int32Type { }' is not supported in Vibranium. ; VIB000@7:15 Expression 'ArrayElementReference' is not supported in Vibranium.
+self check: exit=1 out=[] err=[Program.cs(6,5): error VIB000: Managed array types 'T[]' are not supported in Vibranium; use Vec<T>, Span<T>, or ReadOnlySpan<T>.|Program.cs(6,17): error VIB000: Collection expressions are only supported for Vec<T>, Span<T>, and ReadOnlySpan<T> in Vibranium.|Program.cs(7,18): error VIB000: Cannot apply indexing with '[]' to this expression type in Vibranium.|Program.cs(7,18): error VIB001: C# requires this variable or struct field to be definitely ...]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{} self-only:{VIB001} | 

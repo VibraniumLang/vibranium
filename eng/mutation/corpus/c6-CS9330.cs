@@ -1,0 +1,1 @@
+using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(-300)]static int F()=>1;

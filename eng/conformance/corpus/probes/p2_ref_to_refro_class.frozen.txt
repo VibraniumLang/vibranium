@@ -1,0 +1,6 @@
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(7,17): error VIB000: No applicable method overload on enclosing type in Vibranium.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | no applicable method overload on enclosing type in vibranium.

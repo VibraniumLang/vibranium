@@ -1,0 +1,18 @@
+# Vibranium.Std manifest
+unit std
+use ../Vibranium.Core
+native Native/x86_64-linux-gnu/vib_std.ll
+managed Sys/Sys.Managed.cs
+source Sys/Sys.cs
+source Fs/IoError.cs
+source Fs/PathText.cs
+source Fs/File.cs
+source Io/ConsoleIo.cs
+source Text/Utf8.cs
+source Text/Bytes.cs
+source Text/StringBuf.cs
+source Collections/IntMap.cs
+source Collections/StrMap.cs
+source Env/Env.cs
+source Process/Process.cs
+source Net/Net.cs

@@ -1,0 +1,38 @@
+WriteLine(F(1));
+static int F(int p0)
+{
+    int acc = p0;
+    switch (p0)
+    {
+        case < 4:
+            SNO n4;
+            n4.In.A = 1;
+            n4.In.B = -3;
+            n4.In.V = [5];
+            n4.C = p0;
+            acc += n4.In.A + n4.C;
+            break;
+        default: break;
+    }
+    return acc;
+}
+public struct SO(int a, int b, Vec<int> n)
+{
+    public int A = a;
+    public int B = b;
+    public Vec<int> V = n;
+}
+public struct SNO
+{
+    public SO In;
+    public int C;
+}
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@9:13 A struct with owned fields must be initialized in one assignment; initializing it field by field (including through out) is not supported in Vibranium v0.2. ; VIB000@10:13 A struct with owned fields must be initialized in one assignment; initializing it field by field (including through out) is not supported in Vibranium v0.2. ; VIB000@11:13 A struct with owned fields must be initialized in one assignment; initializing it field by field (including through out) is not supported in Vibranium v0.2. ; VIB000@12:13 A struct with owned fields must be initialized in one assignment; initializing it field by field (including through out) is not supported in Vibranium v0.2.
+stage0 check: REJECT VIB000@9:13 A struct with owned fields must be initialized in one assignment; initializing it field by field (including through out) is not supported in Vibranium v0.2. ; VIB000@10:13 A struct with owned fields must be initialized in one assignment; initializing it field by field (including through out) is not supported in Vibranium v0.2. ; VIB000@11:13 A struct with owned fields must be initialized in one assignment; initializing it field by field (including through out) is not supported in Vibranium v0.2. ; VIB000@12:13 A struct with owned fields must be initialized in one assignment; initializing it field by field (including through out) is not supported in Vibranium v0.2.
+self check: exit=1 out=[] err=[Program.cs(9,21): error VIB000: A struct with owned fields must be initialized in one assignment; initializing it field by field (including through out) is not supported in Vibranium v0.2.|Program.cs(10,21): error VIB000: A struct with owned fields must be initialized in one assignment; initializing it field by field (including through out) is not supported in Vibranium v0.2.|Program.cs(11,21): error VIB000: A struct with owned fields must be initialized in one assignment; initializing it field by field (inc...]
+

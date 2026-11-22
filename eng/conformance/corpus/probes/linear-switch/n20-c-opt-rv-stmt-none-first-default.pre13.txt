@@ -1,0 +1,21 @@
+WriteLine(Us(1) + Us(4) * 10 + Us(8) * 100);
+static int Us(int p) { int n = 0; switch (MkL(p)) { case NoneType: n += 7; break; case Some<R>(var v): n += Eat(v); break; default: n += 9; break; } return n; }
+static Option<R> MkL(int a) { if (a > 2) return Some(new R(a)); return None; }
+static int Eat(R r) { using var u = r; return u.Id; }
+public sealed class R(int id) : IDisposable { public int Id = id; public void Dispose() { WriteLine(Id); } }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+self-ir-contract: OK
+stage0-O0-needed: libc.so.6
+stage0-ir-contract: OK
+managed run: exit=0 out=[4|8|847|] err=[]
+self-O0 run: exit=0 out=[4|8|847|] err=[]
+stage0-O0 run: exit=0 out=[4|8|847|] err=[]
+

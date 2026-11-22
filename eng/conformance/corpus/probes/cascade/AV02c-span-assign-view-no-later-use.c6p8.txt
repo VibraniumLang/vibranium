@@ -1,0 +1,16 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Vec<int> a = [1, 2];
+Vec<int> b = [3, 4, 5];
+Span<int> s = a.AsSpan();
+int n = (s = b.AsSpan()).Length;
+WriteLine(n + s.Length);
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@4:5 Cannot read 'b' while exclusively borrowed by 's'. ; VIB001@5:15 Use of moved value 's'.
+stage0 check: REJECT VIB003@4:5 Cannot read 'b' while exclusively borrowed by 's'. ; VIB001@5:15 Use of moved value 's'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001,VIB003 | cannot read 'x' while exclusively borrowed by 'x'.
+

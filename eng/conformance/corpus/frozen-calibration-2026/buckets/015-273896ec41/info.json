@@ -1,0 +1,33 @@
+{
+  "signature": "output-mismatch | self | stdout | self-O0",
+  "category": "known:O1",
+  "kind": "output-mismatch",
+  "frontends": "self",
+  "ids": "stdout",
+  "msg": "self-O0",
+  "minTags": [
+    "arg.out",
+    "arith.int",
+    "assign.compound",
+    "assign.simple",
+    "bcl.tryparse",
+    "local.decl",
+    "local.underscore",
+    "local.underscore-read",
+    "local.uninit",
+    "localfunc.static",
+    "out.underscore",
+    "pattern.type-discard",
+    "switch.no-default",
+    "switch.sel.int",
+    "switch.stmt"
+  ],
+  "seed": "2026",
+  "index": 70,
+  "plan": "Underscore\u003ESwitchStmt",
+  "mutations": [],
+  "reduceTests": 56,
+  "sizeBefore": 98,
+  "sizeAfter": 49,
+  "firstSeconds": 93.8
+}

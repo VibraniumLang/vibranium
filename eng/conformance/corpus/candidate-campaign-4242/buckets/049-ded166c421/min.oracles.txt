@@ -1,0 +1,15 @@
+validity: valid
+tags: arith.float-to-int-cast arith.int assign.compound coll.local-init coll.span expr.compare local.decl localfunc.static loop.for loop.foreach stmt.if
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: TIMEOUT
+self-O0 run: TIMEOUT
+self-O3-asan run: TIMEOUT
+stage0-O0 run: TIMEOUT
+stage0-O3-asan run: TIMEOUT
+DISAGREEMENT: managed-crash | managed | timeout | 

@@ -1,0 +1,39 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB001} self-only:{} | ",
+  "category": "new-low",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{VIB001} self-only:{}",
+  "msg": "",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "banned.nonstatic-localfunc",
+    "class.primary-ctor",
+    "func.expr-body",
+    "local.decl",
+    "local.var",
+    "localfunc.static",
+    "method.instance",
+    "pattern.type",
+    "pattern.union",
+    "pattern.var",
+    "switch.expr",
+    "switch.expr-no-discard",
+    "switch.sel.result",
+    "type.field",
+    "type.resource",
+    "union.ctor",
+    "using.var"
+  ],
+  "seed": "2026",
+  "index": 211,
+  "plan": "SwitchExpr\u003EUsing",
+  "mutations": [
+    "nonstatic-localfunc"
+  ],
+  "reduceTests": 58,
+  "sizeBefore": 111,
+  "sizeAfter": 67,
+  "firstSeconds": 170.4
+}

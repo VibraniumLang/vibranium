@@ -1,0 +1,15 @@
+WriteLine(Us(1) + Us(4) * 10 + Us(8) * 100);
+static int Us(int p) { int n = 0; switch (MkRL(p)) { case Ok<R>(var v) when p > 5: n += 100 + Eat(v); break; case Ok<R>(var v): n += Eat(v); break; case Err<int>(var e): n += e; break; } return n; }
+static Result<R, int> MkRL(int a) { if (a > 2) return Ok(new R(a)); return Err(a + 20); }
+static int Eat(R r) { using var u = r; return u.Id; }
+public sealed class R(int id) : IDisposable { public int Id = id; public void Dispose() { WriteLine(Id); } }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB006@2:12 Linear IDisposable resource 'v' must be bound with 'using var' or moved/disposed on all paths. ; VIB001@2:43 Use of moved value 'temporary value'.
+stage0 check: REJECT VIB006@2:12 Linear IDisposable resource 'v' must be bound with 'using var' or moved/disposed on all paths. ; VIB001@2:43 Use of moved value 'temporary value'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001,VIB006 | linear idisposable resource 'x' must be bound with 'x' or moved<path> on all paths.
+

@@ -1,0 +1,30 @@
+{
+  "signature": "accept-reject | stage0-accepts | self:VIB000 | unexpected token in expression.",
+  "category": "known-cut:O11",
+  "kind": "accept-reject",
+  "frontends": "stage0-accepts",
+  "ids": "self:VIB000",
+  "msg": "unexpected token in expression.",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "cut.localfunc-in-switch-section",
+    "func.expr-body",
+    "local.decl",
+    "localfunc.in-class-method",
+    "localfunc.static",
+    "method.static",
+    "switch.default",
+    "switch.sel.bool",
+    "switch.stmt",
+    "type.class"
+  ],
+  "seed": "2026",
+  "index": 204,
+  "plan": "SwitchStmt\u003ELocalFunc",
+  "mutations": [],
+  "reduceTests": 47,
+  "sizeBefore": 74,
+  "sizeAfter": 43,
+  "firstSeconds": 164.2
+}

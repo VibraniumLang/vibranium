@@ -1,0 +1,18 @@
+Vec<int> a = [1, 2];
+Vec<int> b = [3, 4, 5];
+Span<int> t = a.AsSpan();
+WriteLine(t[0]);
+Span<int> s = b.AsSpan();
+t = s;
+a.Add(7);
+WriteLine(t[0]);
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(7,6): error VIB003: Borrow conflicts with an active borrow.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB003 | borrow conflicts with an active borrow.
+

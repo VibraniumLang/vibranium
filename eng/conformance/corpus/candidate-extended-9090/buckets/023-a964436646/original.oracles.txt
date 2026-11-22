@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound expr.cast local.decl method.static pattern.const pattern.type-discard span.arg-rospan span.foreach-ref span.from-vec span.nm-parent-while-live span.read span.slice-local span.vec-after-borrow span.vec-slice-call span.write switch.expr switch.expr-no-discard switch.sel.int type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@13:22 Cannot borrow 'v2' mutably while borrowed by 's1'. ; VIB003@13:35 Cannot read 'v2' while exclusively borrowed by 's1'. ; VIB003@13:39 Cannot borrow 'v2' immutably while borrowed by 's1'. ; VIB001@17:19 Use of moved value 's1'. ; VIB001@18:9 Use of moved value 's1'. ; VIB003@18:9 Cannot borrow 'v2' immutably while borrowed by 't3_w'. ; VIB003@18:9 Cannot mutate 'v2' while borrowed by 't3_w'.
+stage0 check: REJECT VIB003@13:22 Cannot borrow 'v2' mutably while borrowed by 's1'. ; VIB003@13:35 Cannot read 'v2' while exclusively borrowed by 's1'. ; VIB003@13:39 Cannot borrow 'v2' immutably while borrowed by 's1'. ; VIB001@17:19 Use of moved value 's1'. ; VIB001@18:9 Use of moved value 's1'. ; VIB003@18:9 Cannot borrow 'v2' immutably while borrowed by 't3_w'. ; VIB003@18:9 Cannot mutate 'v2' while borrowed by 't3_w'.
+self check: exit=1 out=[] err=[Program.cs(18,11): error VIB003: Borrow conflicts with an active borrow.|Program.cs(18,15): error VIB003: Cannot mutate through reference while borrowed by another live reference.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{} | 

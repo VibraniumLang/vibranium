@@ -1,0 +1,23 @@
+Combined cut source 9ba44361 (before C21), release-7 tool, run (frontend checks only):
+WriteLine(new D(4).V);
+public class B
+{
+    public int V;
+    public B(int v) { V = v; }
+}
+public sealed class D : B
+{
+    public D(int v) : base(v + 1) { }
+}
+
+validity: valid
+tags: cut.base-ctor-call
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@7:21 Class inheritance (': B') is banned in Vibranium. ; VIB008@9:21 Cannot access, capture, or call members on 'this' before constructor finishes initializing all fields.
+stage0 check: REJECT VIB000@7:21 Class inheritance (': B') is banned in Vibranium. ; VIB008@9:21 Cannot access, capture, or call members on 'this' before constructor finishes initializing all fields.
+self check: exit=1 out=[] err=[Program.cs(9,23): error VIB000: Constructor chaining (': base(...)' / ': this(...)') is banned in Vibranium.|]
+cuts (C10–C21 scan, first occurrence): C21 cut.base-ctor-call (9,23)
+cut anchors: cut.base-ctor-call>analyzer: no VIB000 with the exact message, want (9,23) ; cut.base-ctor-call>stage0: no VIB000 with the exact message, want (9,23) ; cut.base-ctor-call>self: no VIB000 with the exact message, want (9,23)
+DISAGREEMENT: cut-anchor | cut.base-ctor-call | cut.base-ctor-call>analyzer:missing cut.base-ctor-call>stage0:missing cut.base-ctor-call>self:missing | 
+

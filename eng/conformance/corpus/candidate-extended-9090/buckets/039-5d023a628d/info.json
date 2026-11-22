@@ -1,0 +1,28 @@
+{
+  "signature": "invalid-accepted | self | CS8518 | ",
+  "category": "known:N6",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS8518",
+  "msg": "",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "local.decl",
+    "localfunc.static",
+    "pattern.combinator",
+    "pattern.is",
+    "pattern.relational",
+    "stmt.if",
+    "stmt.nested-block"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 3109,
+  "plan": "Loop\u003EStdText",
+  "mutations": [],
+  "reduceTests": 76,
+  "sizeBefore": 86,
+  "sizeAfter": 36,
+  "firstSeconds": 635.9
+}

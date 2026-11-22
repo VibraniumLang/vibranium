@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound coll.conditional coll.conditional-unparenthesized coll.empty coll.rospan expr.conditional expr.conditional-arg func.expr-body local.decl localfunc.static
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(5,18): error VIB000: No applicable local function overload in Vibranium.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | no applicable local function overload in vibranium.

@@ -1,0 +1,35 @@
+{
+  "signature": "invalid-accepted | self | CS9135 | ",
+  "category": "new",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS9135",
+  "msg": "",
+  "minTags": [
+    "arg.out",
+    "arith.int",
+    "assign.compound",
+    "assign.simple",
+    "local.decl",
+    "local.uninit",
+    "localfunc.static",
+    "out.existing-local",
+    "param.out",
+    "pattern.named-const",
+    "stmt.nested-block",
+    "switch.default",
+    "switch.section-no-terminator",
+    "switch.sel.int",
+    "switch.stmt"
+  ],
+  "seed": "4242",
+  "index": 9981,
+  "plan": "PatternVar\u003EConst\u003ERefParams",
+  "mutations": [
+    "const-to-var"
+  ],
+  "reduceTests": 70,
+  "sizeBefore": 84,
+  "sizeAfter": 54,
+  "firstSeconds": 2227.3
+}

@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arith.int assign.compound expr.cast expr.compare local.decl localfunc.static panic.call span.foreach-ref span.from-coll span.from-vec span.read span.to-rospan span.vec-after-borrow span.vec-range span.write span.write-after-shared stmt.if
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@18:36 Unreachable code detected
+analyzer: VIB001@8:31 Use of moved value 's1'. ; VIB003@14:18 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@14:31 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@14:35 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@15:5 Use of moved value 's3'. ; VIB001@16:12 Use of moved value 's3'.
+stage0 check: REJECT VIB001@8:31 Use of moved value 's1'. ; VIB003@14:18 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@14:31 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@14:35 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@15:5 Use of moved value 's3'. ; VIB001@16:12 Use of moved value 's3'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001,VIB003 | use of moved value 'x'.

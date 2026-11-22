@@ -1,0 +1,34 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB007} self-only:{} | ",
+  "category": "new-low",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{VIB007} self-only:{}",
+  "msg": "",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "banned.nonstatic-localfunc",
+    "coll.elem-byte",
+    "coll.empty",
+    "coll.returned",
+    "coll.rospan",
+    "func.expr-body",
+    "func.returns-span",
+    "local.decl",
+    "localfunc.in-class-method",
+    "localfunc.static",
+    "method.static",
+    "type.class"
+  ],
+  "seed": "2026",
+  "index": 772,
+  "plan": "LocalFunc\u003ECollection",
+  "mutations": [
+    "nonstatic-localfunc"
+  ],
+  "reduceTests": 42,
+  "sizeBefore": 80,
+  "sizeAfter": 43,
+  "firstSeconds": 485.6
+}

@@ -1,0 +1,18 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Vec<int> a = [1, 2];
+Vec<int> b = [3, 4, 5];
+Span<int> s = b.AsSpan();
+Span<int> t = s;
+WriteLine(s.Length);
+s = a.AsSpan();
+WriteLine(t[0] + s[0]);
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@5:11 Use of moved value 's'. ; VIB003@5:11 Cannot read 'b' while exclusively borrowed by 't'.
+stage0 check: REJECT VIB001@5:11 Use of moved value 's'. ; VIB003@5:11 Cannot read 'b' while exclusively borrowed by 't'.
+self check: exit=1 out=[] err=[Program.cs(5,11): error VIB001: Use of moved value.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB003} self-only:{} | 
+

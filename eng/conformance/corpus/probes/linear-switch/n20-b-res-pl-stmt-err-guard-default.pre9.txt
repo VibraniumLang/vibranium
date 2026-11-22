@@ -1,0 +1,14 @@
+WriteLine(Us(1) + Us(4) * 10 + Us(8) * 100);
+static int Us(int p) { int n = 0; Result<R, int> o = MkRL(p); switch (o) { case Ok<R>(var v): n += Eat(v); break; case Err<int>(var e) when e > 21: n += e; break; default: n += 7; break; } return n; }
+static Result<R, int> MkRL(int a) { if (a > 2) return Ok(new R(a)); return Err(a + 20); }
+static int Eat(R r) { using var u = r; return u.Id; }
+public sealed class R(int id) : IDisposable { public int Id = id; public void Dispose() { WriteLine(Id); } }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB006@2:81 Cannot borrow-match linear Result<T, E> in place; consume it via '.IsErr(out ..., out ...)', '.Unwrap()', or 'Move(...)'. ; VIB005@2:104 Cannot move non-Copy value out of a field, indexed element, or borrowed place. ; VIB006@2:120 Cannot borrow-match linear Result<T, E> in place; consume it via '.IsErr(out ..., out ...)', '.Unwrap()', or 'Move(...)'. ; VIB006@2:197 Linear IDisposable resource 'o' must be bound with 'using var' or moved/disposed on all paths.
+stage0 check: REJECT VIB006@2:81 Cannot borrow-match linear Result<T, E> in place; consume it via '.IsErr(out ..., out ...)', '.Unwrap()', or 'Move(...)'. ; VIB005@2:104 Cannot move non-Copy value out of a field, indexed element, or borrowed place. ; VIB006@2:120 Cannot borrow-match linear Result<T, E> in place; consume it via '.IsErr(out ..., out ...)', '.Unwrap()', or 'Move(...)'. ; VIB006@2:197 Linear IDisposable resource 'o' must be bound with 'using var' or moved/disposed on all paths.
+self check: exit=1 out=[] err=[Program.cs(2,81): error VIB006: Pattern matching on a linear union place without moving it is banned in Vibranium.|Program.cs(2,104): error VIB005: Cannot move non-Copy value out of a field, indexed element, or borrowed place.|Program.cs(2,120): error VIB006: Pattern matching on a linear union place without moving it is banned in Vibranium.|<tmp>...]
+

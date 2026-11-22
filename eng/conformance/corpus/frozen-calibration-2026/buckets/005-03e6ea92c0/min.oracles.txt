@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound assign.field assign.simple local.decl local.underscore local.underscore-read local.uninit local.var method.static struct.fieldwise-init struct.local type.class type.field type.struct
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(11,18): error VIB001: Use of uninitialized value.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB001 | use of uninitialized value.

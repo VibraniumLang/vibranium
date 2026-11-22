@@ -1,0 +1,1 @@
+break; VibraniumRuntime.Panic("boom");

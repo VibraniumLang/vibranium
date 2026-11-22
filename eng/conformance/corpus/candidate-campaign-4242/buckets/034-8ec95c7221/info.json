@@ -1,0 +1,29 @@
+{
+  "signature": "accept-reject | stage0-accepts | self:VIB001 | c# requires this variable or struct field to be definitely assigned before it is read (csn",
+  "category": "new",
+  "kind": "accept-reject",
+  "frontends": "stage0-accepts",
+  "ids": "self:VIB001",
+  "msg": "c# requires this variable or struct field to be definitely assigned before it is read (csn",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "func.expr-body",
+    "local.decl",
+    "localfunc.nested",
+    "localfunc.static",
+    "pattern.combinator",
+    "pattern.is",
+    "pattern.relational",
+    "pattern.var",
+    "stmt.if"
+  ],
+  "seed": "4242",
+  "index": 5664,
+  "plan": "Const\u003EPatternVar",
+  "mutations": [],
+  "reduceTests": 53,
+  "sizeBefore": 88,
+  "sizeAfter": 43,
+  "firstSeconds": 914.3
+}

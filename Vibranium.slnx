@@ -1,0 +1,25 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Vibranium.Core/Vibranium.Core.csproj" />
+    <Project Path="src/Vibranium.Std/Vibranium.Std.csproj" />
+    <Project Path="src/Vibranium.Compiler.Core/Vibranium.Compiler.Core.csproj" />
+    <Project Path="src/Vibranium.Analysis/Vibranium.Analysis.csproj" />
+    <Project Path="src/Vibranium.Frontend.Roslyn/Vibranium.Frontend.Roslyn.csproj" />
+    <Project Path="src/Vibranium.Analyzer/Vibranium.Analyzer.csproj" />
+    <Project Path="src/Vibranium.Backend.Llvm/Vibranium.Backend.Llvm.csproj" />
+    <Project Path="src/vib/vib.csproj" />
+    <Project Path="src/vib-self/VibraniumSelfCompiler.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/demo/Demo.csproj" />
+    <Project Path="samples/benchmark/vibranium/VibraniumBenchmark.csproj" />
+    <Project Path="samples/http-server/vibranium/VibraniumHttpServer.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Vibranium.Tests/Vibranium.Tests.csproj" />
+  </Folder>
+  <Folder Name="/eng/">
+    <Project Path="eng/conformance/Vibranium.Conformance.csproj" />
+    <Project Path="eng/mutation/Vibranium.Mutation.csproj" />
+  </Folder>
+</Solution>

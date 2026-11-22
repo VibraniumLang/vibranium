@@ -1,0 +1,20 @@
+WriteLine(Us(1) + Us(4) * 10 + Us(8) * 100);
+static int Us(int p) { int n = 0; switch (MkV(p)) { case not Some<Vec<int>>: n += 3; break; case Some<Vec<int>>(var v): n += v.Count + v[0]; break; } return n; }
+static Option<Vec<int>> MkV(int a) { if (a > 2) { Vec<int> v = [a, a + 1]; return Some(v); } return None; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+self-ir-contract: OK
+stage0-O0-needed: libc.so.6
+stage0-ir-contract: OK
+managed run: exit=0 out=[1063|] err=[]
+self-O0 run: exit=101 out=[] err=[panic: index out of bounds|]
+stage0-O0 run: exit=0 out=[1063|] err=[]
+DISAGREEMENT: output-mismatch | self | exit+stdout+stderr | self-O0
+

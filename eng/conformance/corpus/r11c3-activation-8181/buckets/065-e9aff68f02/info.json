@@ -1,0 +1,23 @@
+{
+  "signature": "accept-reject | self-accepts | stage0:VIB000 | property \u0027x\u0027 is not supported in vibranium.",
+  "category": "known:O11-7",
+  "kind": "accept-reject",
+  "frontends": "self-accepts",
+  "ids": "stage0:VIB000",
+  "msg": "property \u0027x\u0027 is not supported in vibranium.",
+  "minTags": [
+    "arith.nint-bounds",
+    "local.decl",
+    "method.static",
+    "type.class"
+  ],
+  "seed": "8181",
+  "profile": "activation",
+  "index": 169,
+  "plan": "Arith\u003EFloatNint",
+  "mutations": [],
+  "reduceTests": 26,
+  "sizeBefore": 53,
+  "sizeAfter": 24,
+  "firstSeconds": 205.6
+}

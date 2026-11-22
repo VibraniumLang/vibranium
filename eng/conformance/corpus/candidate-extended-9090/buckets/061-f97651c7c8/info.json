@@ -1,0 +1,27 @@
+{
+  "signature": "invalid-accepted | self | CS0266 | ",
+  "category": "known:N7",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS0266",
+  "msg": "",
+  "minTags": [
+    "arith.rem-float",
+    "local.decl",
+    "method.static",
+    "pattern.discard",
+    "switch.expr",
+    "switch.sel-unparenthesized",
+    "switch.sel.float",
+    "type.class"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 15806,
+  "plan": "SwitchExpr\u003EOptionSlot",
+  "mutations": [],
+  "reduceTests": 74,
+  "sizeBefore": 68,
+  "sizeAfter": 25,
+  "firstSeconds": 2190.2
+}

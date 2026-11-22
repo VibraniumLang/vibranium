@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound expr.cast expr.compare expr.conditional expr.logical func.expr-body local.decl method.static pattern.is pattern.union pattern.var stmt.nested-block switch.guard switch.no-default switch.sel.result switch.stmt type.class union.ctor uswitch.case-guard uswitch.default uswitch.guard uswitch.nonunion-label uswitch.option uswitch.payload-copy uswitch.rvalue uswitch.stmt uswitch.stmt-nonunion-label uswitch.var
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(28,96): error VIB000: Unsupported, unresolved, or inaccessible member access in Vibranium.|Program.cs(28,169): error VIB001: C# requires this variable or struct field to be definitely assigned before it is read (CS0165/CS0170).|Program.cs(28,207): error VIB001: C# requires this variable or struct field to be definitely assigned before it is read (CS0...]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000,VIB001 | unsupported, unresolved, or inaccessible member access in vibranium.

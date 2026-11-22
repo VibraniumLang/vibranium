@@ -1,0 +1,18 @@
+WriteLine(F());
+static int F()
+{
+    int x = 1;
+    return N(in x);
+}
+static int N(ref readonly int q) => M(ref q, 2);
+static int M(ref readonly int p, int k) => p + k;
+
+validity: invalid
+tags: 
+sdk-roslyn errors: CS8329@7:43 Cannot use variable 'q' as a ref or out value because it is a readonly variable
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS8329@7:43 Cannot use variable 'q' as a ref or out value because it is a readonly variable
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS8329 | 
+
