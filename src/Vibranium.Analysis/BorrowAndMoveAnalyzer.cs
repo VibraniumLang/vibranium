@@ -528,6 +528,7 @@ public static class BorrowAndMoveAnalyzer
         private readonly bool[] _isLinearOwnedLocal;
         private readonly int[] _compilerRefRootLocal;
         private readonly Dictionary<int, MirPlace> _initializationSnapshots = new();
+        private readonly Dictionary<int, MirPlace> _twoPhaseReservations = new();
         private readonly Dictionary<string, IReadOnlyList<string>> _structFieldLeaves = new(StringComparer.Ordinal);
         private readonly List<VibraniumDiagnostic> _diagnostics = new();
 
@@ -568,6 +569,10 @@ public static class BorrowAndMoveAnalyzer
                         (snapshot.IsOut || snapshot.IsAssignmentTargetSnapshot && IsStructFieldStorage(snapshot.Target)))
                     {
                         _initializationSnapshots[snapshot.RefLocalId] = snapshot.Target;
+                    }
+                    if (Reservation(statement) is (var temp, var reserved))
+                    {
+                        _twoPhaseReservations[temp] = reserved;
                     }
                 }
             }
@@ -2364,7 +2369,7 @@ public static class BorrowAndMoveAnalyzer
                         Emit(VibraniumDiagnosticIds.MutateThroughSharedBorrow, "Cannot take a mutable reference through a shared borrow.", br.Span);
                     }
 
-                    bool reserveTwoPhase = br.IsMutable && br.IsTwoPhaseBorrow;
+                    bool reserveTwoPhase = Reservation(br) is not null;
                     CheckBorrowCreationConflicts(
                         br.Target,
                         isExclusive: br.IsMutable && !reserveTwoPhase,
@@ -2656,26 +2661,11 @@ public static class BorrowAndMoveAnalyzer
                         break;
 
                     case MirIntrinsicKind.VecIndexRef:
-                    {
-                        bool reserveTwoPhase = intr.RefDestIsMutable && intr.IsTwoPhaseBorrow;
-                        CheckBorrowCreationConflicts(receiverPlace, isExclusive: intr.RefDestIsMutable && !reserveTwoPhase, destCarrier, prov, liveAfter, intr.Span, emitDiagnostics);
-                        producedLoans.UnionWith(ComputeLoansForPlaceBorrow(
-                            new MirPlace(receiverPlace.LocalId, receiverPlace.Projections.Concat(new MirProjection[] { new MirProjection.Index(intr.ValueArgs.FirstOrDefault() ?? new MirOperand.Const(new MirConstant.Int32Const(0), MirType.Int32, intr.Span), MirType.Int32) }).ToList()),
-                            isExclusive: intr.RefDestIsMutable,
-                            prov,
-                            reserveTwoPhase));
-                        break;
-                    }
-
                     case MirIntrinsicKind.SpanIndexRef:
                     {
-                        bool reserveTwoPhase = intr.RefDestIsMutable && intr.IsTwoPhaseBorrow;
+                        bool reserveTwoPhase = Reservation(intr) is not null;
                         CheckBorrowCreationConflicts(receiverPlace, isExclusive: intr.RefDestIsMutable && !reserveTwoPhase, destCarrier, prov, liveAfter, intr.Span, emitDiagnostics);
-                        producedLoans.UnionWith(ComputeLoansForPlaceBorrow(
-                            new MirPlace(receiverPlace.LocalId, receiverPlace.Projections.Concat(new MirProjection[] { new MirProjection.Index(intr.ValueArgs.FirstOrDefault() ?? new MirOperand.Const(new MirConstant.Int32Const(0), MirType.Int32, intr.Span), MirType.Int32) }).ToList()),
-                            isExclusive: intr.RefDestIsMutable,
-                            prov,
-                            reserveTwoPhase));
+                        producedLoans.UnionWith(ComputeLoansForPlaceBorrow(ElementPlace(intr), isExclusive: intr.RefDestIsMutable, prov, reserveTwoPhase));
                         break;
                     }
 
@@ -3457,6 +3447,47 @@ public static class BorrowAndMoveAnalyzer
         private bool IsBorrowAncestor(int liveId, HashSet<int> ancestors) =>
             ancestors.Contains(liveId) || _fn.Locals[liveId].RefRepointSnapshotOf is int source && ancestors.Contains(source);
 
+        // The loans of the live carrier `liveId` that a use of `place` must respect. An ancestor of the place's carrier is
+        // suspended by that use, except for the loans it holds on the carrier itself: those were taken through the
+        // carrier (N105: a ref local re-pointed into a borrow made through it), so the carrier is frozen by them.
+        // A step loan has no path: a cursor that the ancestor was stepped from is frozen as a whole.
+        // A two-phase reservation (an assignment-target snapshot, a reserved receiver or element) is a use of the place it reserved.
+        private IEnumerable<Loan> LoansInForce(int liveId, MirPlace place, HashSet<int>? ancestors, ProvenanceState prov)
+        {
+            var loans = prov.GetLoans(liveId);
+            if (ancestors is null || !IsBorrowAncestor(liveId, ancestors)) return loans;
+            int carrier = ResolveReservations(place).LocalId;
+            if (!ancestors.Contains(liveId) || liveId == place.LocalId || liveId == carrier) return Array.Empty<Loan>();
+            var onCarrier = loans.Where(loan => loan.CursorOrStackLocalId == carrier);
+            return onCarrier.Any(loan => loan.Kind == LoanKind.StepCursor) ? loans : onCarrier;
+        }
+
+        // A two-phase reservation: a mutable two-phase BindRef reserves its target, a mutable two-phase element reference the element,
+        // and the call-operand reborrow of a mutable Span argument (checked as a read, used exclusively by the call) the span.
+        private static (int Temp, MirPlace Reserved)? Reservation(MirStatement statement) => statement switch
+        {
+            MirStatement.BindRef { IsMutable: true, IsTwoPhaseBorrow: true } bind => (bind.RefLocalId, bind.Target),
+            MirStatement.Intrinsic { Kind: MirIntrinsicKind.VecIndexRef or MirIntrinsicKind.SpanIndexRef, RefDestIsMutable: true,
+                IsTwoPhaseBorrow: true, RefDestLocalId: int element, PlaceArgs.Count: > 0 } elementRef => (element, ElementPlace(elementRef)),
+            MirStatement.Assign { Target: { Projections.Count: 0 } dest, Rvalue: MirRvalue.Use { IsCallOperandReborrow: true,
+                Operand: MirOperand.CopyOrMove { Type: MirType.SpanType { IsReadOnly: false } } span } } => (dest.LocalId, span.Place),
+            _ => null,
+        };
+
+        private static MirPlace ElementPlace(MirStatement.Intrinsic intr) =>
+            new(intr.PlaceArgs[0].LocalId, intr.PlaceArgs[0].Projections.Concat(new MirProjection[] { new MirProjection.Index(intr.ValueArgs.FirstOrDefault() ?? new MirOperand.Const(new MirConstant.Int32Const(0), MirType.Int32, intr.Span), MirType.Int32) }).ToList());
+
+        // The place a use of `place` reaches: a reserving temp stands for the place it reserved, hop by hop (a store's snapshot
+        // of a flow capture's reservation, an element of a reserved receiver), keeping the projections after each temp's deref.
+        private MirPlace ResolveReservations(MirPlace place)
+        {
+            for (int hop = 0; hop < _localCount && _twoPhaseReservations.TryGetValue(place.LocalId, out var reserved); hop++)
+            {
+                place = new MirPlace(reserved.LocalId, reserved.Projections.Concat(place.Projections.Skip(1)).ToList());
+            }
+            return place;
+        }
+
         private void CheckWriteConflictsWithActiveLoans(
             MirPlace targetPlace,
             ProvenanceState prov,
@@ -3478,6 +3509,12 @@ public static class BorrowAndMoveAnalyzer
                 : (writesWholeLocal
                     ? new List<PlacePath> { PlacePath.FromPlace(targetPlace) }
                     : ExpandEffectivePaths(targetPlace, prov));
+            var reservedPlace = ResolveReservations(targetPlace);
+            // Only a write through a reserving temp reaches the place it reserved; a whole write sets the temp (the reborrow's Assign).
+            if (!writesWholeLocal && reservedPlace.LocalId != targetPlace.LocalId)
+            {
+                targetPaths.Add(PlacePath.FromPlace(reservedPlace));
+            }
 
             HashSet<int>? ancestorCarriers = null;
             if (!writesWholeLocal && targetPlace.LocalId >= 0 && targetPlace.LocalId < _localCount && _isBorrowCarrier[targetPlace.LocalId])
@@ -3501,12 +3538,11 @@ public static class BorrowAndMoveAnalyzer
                     ancestorCarriers.Any(id => _isSharedPatternBinding[id]));
             foreach (int liveId in liveAfter)
             {
-                if ((invalidSharedWrite && IsSwitchMatchBorrow(liveId)) || liveId == excludedCarrierId ||
-                    (ancestorCarriers is not null && IsBorrowAncestor(liveId, ancestorCarriers)))
+                if ((invalidSharedWrite && IsSwitchMatchBorrow(liveId)) || liveId == excludedCarrierId)
                 {
                     continue;
                 }
-                foreach (var loan in prov.GetLoans(liveId))
+                foreach (var loan in LoansInForce(liveId, targetPlace, ancestorCarriers, prov))
                 {
                     if (writesWholeLocal && loan.Kind == LoanKind.StepCursor && loan.CursorOrStackLocalId == targetPlace.LocalId)
                     {
@@ -3592,9 +3628,9 @@ public static class BorrowAndMoveAnalyzer
             bool cursorConflict = false;
             foreach (int liveId in liveAfter)
             {
-                if (liveId == selectingSwitchMatchBorrowId || IsBorrowAncestor(liveId, ancestors)) continue;
+                if (liveId == selectingSwitchMatchBorrowId) continue;
                 bool retained = IsRetainedCallOperand(liveId, span);
-                foreach (var loan in prov.GetLoans(liveId))
+                foreach (var loan in LoansInForce(liveId, movedPlace, ancestors, prov))
                 {
                     bool cursor = movedPlace.Projections.Count == 0 && loan.Kind == LoanKind.StepCursor &&
                         loan.CursorOrStackLocalId == movedPlace.LocalId;
@@ -3665,13 +3701,8 @@ public static class BorrowAndMoveAnalyzer
             var ancestorCarriers = CollectAncestorCarriers(readPlace, prov);
             foreach (int liveId in liveAfter)
             {
-                if (IsBorrowAncestor(liveId, ancestorCarriers))
-                {
-                    // Reading through `r` (or a derived carrier chain) does not conflict with its own ancestor loans
-                    continue;
-                }
                 var checkedPaths = IsRetainedCallOperand(liveId, span) ? operandPaths : readPaths;
-                foreach (var loan in prov.GetLoans(liveId))
+                foreach (var loan in LoansInForce(liveId, readPlace, ancestorCarriers, prov))
                 {
                     if (loan.Kind == LoanKind.PlaceBorrow && loan.IsActiveExclusive && loan.Path is not null)
                     {
@@ -3710,7 +3741,7 @@ public static class BorrowAndMoveAnalyzer
             {
                 // Reborrowing from `targetPlace.LocalId` (or a carrier chain) suspends ancestor carriers rather than conflicting with them;
                 // and overwriting `destCarrierId` kills `destCarrierId`'s old borrow.
-                if (liveId == destCarrierId || liveId == selectingSwitchMatchBorrowId || IsBorrowAncestor(liveId, ancestorCarriers))
+                if (liveId == destCarrierId || liveId == selectingSwitchMatchBorrowId)
                 {
                     continue;
                 }
@@ -3721,7 +3752,7 @@ public static class BorrowAndMoveAnalyzer
                 {
                     continue;
                 }
-                foreach (var loan in prov.GetLoans(liveId))
+                foreach (var loan in LoansInForce(liveId, targetPlace, ancestorCarriers, prov))
                 {
                     if (loan.Kind == LoanKind.PlaceBorrow && loan.Path is not null &&
                         (isExclusive || loan.IsActiveExclusive))
