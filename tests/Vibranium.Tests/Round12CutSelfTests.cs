@@ -250,6 +250,7 @@ public sealed class Round12CutSelfTests
     [InlineData("Vibranium.Core", "Program", "", "Program.cs")]
     [InlineData("Vibranium.Bootstrap", "VibraniumAppBootstrap", "", "Program.cs")]
     [InlineData("Vibranium.Std.Sys", "Generated", "", "Sys.cs")]
+    [InlineData("App", "Generated", "[System.Diagnostics.CodeAnalysis.SuppressMessage(\"Vibranium\",\"VIB001\")]", "Program.g.cs")]
     [InlineData("App", "Generated", "[System.Runtime.CompilerServices.CompilerGenerated]", "Program.g.cs")]
     [InlineData("App", "Generated", "[System.CodeDom.Compiler.GeneratedCode(\"probe\",\"1\")]", "Program.designer.cs")]
     [InlineData("App", "VibraniumAppBootstrap", "[System.Runtime.CompilerServices.CompilerGenerated]", "VibraniumAppBootstrap.cs")]
@@ -266,6 +267,16 @@ public sealed class Round12CutSelfTests
             var self = Round11AuditAssertions.Run(Round11AuditAssertions.DotnetExe, Round11AuditAssertions.SelfCompiler,
                 "check", path, "--sysroot", Path.Combine(Round11AuditAssertions.RepoRoot, "src"));
             Assert.Equal(1, self.Exit);
+            // Attributes are denied by F15. Secondary IDs after that subset
+            // rejection are not compared (CONFORMANCE §7.1); keep the ownership control.
+            if (attribute.Length != 0)
+            {
+                Assert.Contains("error VIB000:", self.Err, StringComparison.Ordinal);
+                File.WriteAllText(path, source.Replace(attribute, "", StringComparison.Ordinal));
+                self = Round11AuditAssertions.Run(Round11AuditAssertions.DotnetExe, Round11AuditAssertions.SelfCompiler,
+                    "check", path, "--sysroot", Path.Combine(Round11AuditAssertions.RepoRoot, "src"));
+                Assert.Equal(1, self.Exit);
+            }
             Assert.Contains("error VIB001:", self.Err, StringComparison.Ordinal);
         }
         finally { Directory.Delete(temporary, recursive: true); }

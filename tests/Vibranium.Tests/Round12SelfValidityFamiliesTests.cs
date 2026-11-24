@@ -289,6 +289,10 @@ public sealed class Round12SelfValidityFamiliesTests
             var analyzer = compilation.WithAnalyzers(ImmutableArray.Create<DiagnosticAnalyzer>(new VibraniumDiagnosticAnalyzer()))
                 .GetAnalyzerDiagnosticsAsync().GetAwaiter().GetResult();
             Assert.Equal(new[] { "VIB000" }, analyzer.Select(diagnostic => diagnostic.Id).Distinct());
+            var self = RunSelf(path);
+            Assert.Equal(1, self.Exit);
+            Assert.Equal(new[] { "VIB000" }, Regex.Matches(self.Output + self.Error, @"VIB\d{3}")
+                .Select(match => match.Value).Distinct());
         });
     }
 

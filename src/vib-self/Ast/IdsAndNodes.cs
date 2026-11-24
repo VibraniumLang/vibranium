@@ -194,7 +194,6 @@ public static class DeclFlags
     public const int ReturnRefMut = 1 << 20;
     public const int IsConst = 1 << 21;
     public const int IsScoped = 1 << 22;
-    public const int HasObsoleteAttr = 1 << 23;
     public const int UnmanagedConstraint = 1 << 24;
     public const int ClassConstraint = 1 << 25;
     public const int IsCapturedPrimaryParam = 1 << 26;
@@ -212,7 +211,9 @@ public enum AstKind
     TypeNamed = 2,      // A = NameId (or qualified last), B = ExtraStart (type args), C = TypeArgCount, D = TypeRefIdx in AstArena.TypeRefs
     TypeArray = 3,      // A = ElemTypeNode (always rejected by gatekeeper, kept for accurate VIB006 vs VIB000)
     TypeNullable = 4,   // A = InnerTypeNode (rejected with VIB008)
-    FrameworkAttributeUse = 5, // A = written path NameId, B = TypeRefIdx, C = framework identity, D = rooted/alias-qualified flags and pending invalid option bit
+    FrameworkAttributeUse = 5, // A = written path NameId, B = TypeRefIdx, C = framework identity, D = rooted/alias-qualified flags and resolution bit
+
+    AttributeArgument = 6, // A = value expression, B = name (-1 for positional), C = 1 for a named member
 
     // Statements
     StmtBlock = 10,     // A = ExtraStart, B = StmtCount
@@ -428,8 +429,9 @@ public struct FuncDecl
     public int BodyNode;
     public int Flags;
     public int NativeSymLitIdx;
-    public int LifetimeExtraStart;
-    public int LifetimeCount;
+    public int LifetimeExtraStart; // AttributeArgument nodes before declaration binding, lifetime NameIds after
+    public int LifetimeCount; // -1 after an invalid attribute argument
+    public int LifetimeLexicalOwner; // local functions have no MIR receiver even inside a type
     public int LocalFuncExtraStart;
     public int LocalFuncCount;
     public int UsingExtraStart;
@@ -467,6 +469,7 @@ public struct FuncDecl
         NativeSymLitIdx = nativeSymLitIdx;
         LifetimeExtraStart = lifetimeExtraStart;
         LifetimeCount = lifetimeCount;
+        LifetimeLexicalOwner = ownerDeclId;
         LocalFuncExtraStart = 0;
         LocalFuncCount = 0;
         UsingExtraStart = 0;
@@ -506,6 +509,7 @@ public struct FuncDecl
         NativeSymLitIdx = nativeSymLitIdx;
         LifetimeExtraStart = lifetimeExtraStart;
         LifetimeCount = lifetimeCount;
+        LifetimeLexicalOwner = ownerDeclId;
         LocalFuncExtraStart = 0;
         LocalFuncCount = 0;
         UsingExtraStart = usingExtraStart;
@@ -546,6 +550,7 @@ public struct FuncDecl
         NativeSymLitIdx = nativeSymLitIdx;
         LifetimeExtraStart = lifetimeExtraStart;
         LifetimeCount = lifetimeCount;
+        LifetimeLexicalOwner = ownerDeclId;
         LocalFuncExtraStart = 0;
         LocalFuncCount = 0;
         UsingExtraStart = usingExtraStart;
@@ -806,6 +811,10 @@ public struct AstArena
     public Vec<ParamDecl> Params;
     public Vec<UsingEntry> Usings;
     public Vec<int> FrameworkAttributeUses;
+    // Parallel to FrameworkAttributeUses: contiguous ranges of parsed arguments.
+    public Vec<int> FrameworkAttributeArgStarts;
+    public Vec<int> FrameworkAttributeArgCounts;
+    public Vec<int> AttributeLocations;
     public Vec<int> DeclaredNamespaces;
     public Vec<int> TopStmts;
     public Vec<int> TopLocalFuncs;
@@ -826,6 +835,9 @@ public struct AstArena
         Params = new Vec<ParamDecl>(512);
         Usings = new Vec<UsingEntry>(64);
         FrameworkAttributeUses = new Vec<int>(32);
+        FrameworkAttributeArgStarts = new Vec<int>(32);
+        FrameworkAttributeArgCounts = new Vec<int>(32);
+        AttributeLocations = new Vec<int>(32);
         DeclaredNamespaces = new Vec<int>(32);
         TopStmts = new Vec<int>();
         TopLocalFuncs = new Vec<int>();

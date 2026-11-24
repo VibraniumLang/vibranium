@@ -1239,6 +1239,7 @@ public static class LlvmEmitter
         // Local allocas + drop flags
         for (int i = 0; i < fn.LocalCount; i++)
         {
+            if ((mir.Locals[fn.LocalStart + i].Flags & MirLocalFlags.IsAnalysisBorrow) != 0) continue;
             LocalSlot sl = fs.Slots[i];
             outIr.Append("  %loc_"u8);
             outIr.AppendInt(i);
@@ -1345,7 +1346,7 @@ public static class LlvmEmitter
 
         for (int i = 0; i < fn.LocalCount; i++)
         {
-            if (paramInited[i] != 0) continue;
+            if (paramInited[i] != 0 || (mir.Locals[fn.LocalStart + i].Flags & MirLocalFlags.IsAnalysisBorrow) != 0) continue;
             LocalSlot sl = fs.Slots[i];
             if (sl.IsRefSlot)
             {
@@ -1634,6 +1635,7 @@ public static class LlvmEmitter
 
             case MirOp.BindRef:
             {
+                if ((mir.Locals[fn.LocalStart + inst.A].Flags & MirLocalFlags.IsAnalysisBorrow) != 0) break;
                 ByteSlice targetPtr = EmitPlaceAddress(inst.B, in fn, in ast, in ta, in names, in types, in mir, ref ectx, ref fs, ref body, out _);
                 body.Append("  store ptr "u8);
                 body.Append(fs.Text(targetPtr));
@@ -1649,6 +1651,11 @@ public static class LlvmEmitter
 
             case MirOp.Intrinsic:
                 EmitIntrinsicInst(in inst, in fn, in ast, in ta, in names, in types, in mir, ref ectx, ref fs, ref body);
+                break;
+
+            case MirOp.KeepBorrowAlive:
+            case MirOp.SnapshotRefLoan:
+                // Loan liveness and provenance only; no runtime state.
                 break;
 
             case MirOp.DisposeResource:

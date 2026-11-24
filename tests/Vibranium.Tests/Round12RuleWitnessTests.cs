@@ -257,7 +257,7 @@ public sealed class Round12RuleWitnessSubsetTests
     private const string Resource = "sealed class R(int id) : IDisposable { public int Id = id; public void Dispose() { WriteLine(Id); } }";
 
     // R0-fail-closed-pragma: vib and vib-self must reject even when the SDK path is told to suppress.
-    private static async Task RejectDespiteSuppressionAsync(string source, string id, string fileName = "Program.cs", string? editorConfig = null)
+    private static async Task RejectDespiteSuppressionAsync(string source, string id, string fileName = "Program.cs", string? editorConfig = null, string? selfId = null)
     {
         string temp = Path.Combine(Path.GetTempPath(), $"vibranium-r12-witness-suppressed-{Guid.NewGuid():N}");
         Directory.CreateDirectory(temp);
@@ -271,8 +271,8 @@ public sealed class Round12RuleWitnessSubsetTests
             Assert.False(stage0.Success, "vib accepted a suppressed program");
             Assert.Contains(stage0.Errors, e => e.Contains(id, StringComparison.Ordinal));
             var self = Round12RuleWitness.Run(Round11AuditAssertions.DotnetExe, null, Round11AuditAssertions.SelfCompiler, "check", path, "--sysroot", Path.Combine(Round11AuditAssertions.RepoRoot, "src"));
-            Assert.NotEqual(0, self.Exit);
-            Assert.Contains(id, self.Out + self.Err, StringComparison.Ordinal);
+            Assert.Equal(1, self.Exit);
+            Assert.Contains($"error {selfId ?? id}:", self.Out + self.Err, StringComparison.Ordinal);
         }
         finally
         {
@@ -286,6 +286,8 @@ public sealed class Round12RuleWitnessSubsetTests
     public Task R0_FailClosedPragma_Reject_PragmaWarningDisable() =>
         RejectDespiteSuppressionAsync("#pragma warning disable VIB001\n" + UseAfterMove + "#pragma warning restore VIB001\n", "VIB001");
 
+    // Stage-0 still checks the underlying move; self fails closed on F15.
+    // CONFORMANCE §7.1 does not compare secondary IDs after a subset rejection.
     [Fact]
     public Task R0_FailClosedPragma_Reject_SuppressMessageAttribute() => RejectDespiteSuppressionAsync("""
         P.Run();
@@ -294,7 +296,7 @@ public sealed class Round12RuleWitnessSubsetTests
             [System.Diagnostics.CodeAnalysis.SuppressMessage("Vibranium", "VIB001")]
             public static void Run() { Vec<int> a = [1]; var b = a; WriteLine(a.Count); WriteLine(b.Count); }
         }
-        """, "VIB001");
+        """, "VIB001", selfId: "VIB000");
 
     [Fact]
     public Task R0_FailClosedPragma_Reject_GeneratedCodeMarkerAndName() =>

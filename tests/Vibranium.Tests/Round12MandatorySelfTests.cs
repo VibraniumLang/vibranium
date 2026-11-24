@@ -164,44 +164,20 @@ public sealed class Round12MandatorySelfTests
         yield return new object[] { "shadowing-user-type-alias", "using UR=Local.UnscopedRefAttribute;var box=new UR();WriteLine(box.X);namespace Local{public class UnscopedRefAttribute{public int X=5;}}" };
         yield return new object[] { "unscoped-unrelated-generic-nested", "using System.Diagnostics.CodeAnalysis;var s=new S();s.Get()=7;WriteLine(s.Value);struct S{public int Value;[UnscopedRef]public ref int Get()=>ref Value;public struct UnscopedRefAttribute<T>{}}" };
         yield return new object[] { "unscoped-relative-type-alias", "var s=new System.Diagnostics.CodeAnalysis.Nested.S();s.Get()=7;WriteLine(s.Value);namespace System.Diagnostics.CodeAnalysis{using UR=UnscopedRefAttribute;namespace Nested{public struct S{public int Value;[UR]public ref int Get()=>ref Value;}}}" };
-        yield return new object[] { "methodimpl-valid-alias-type", "using MI=System.Runtime.CompilerServices.MethodImplAttribute;WriteLine(F());[MI(8)]static int F()=>1;" };
         yield return new object[] { "unscoped-type-alias", "using UR=System.Diagnostics.CodeAnalysis.UnscopedRefAttribute;var s=new S();s.Get()=7;WriteLine(s.Value);struct S{public int Value;[UR] public ref int Get()=>ref Value;}" };
         yield return new object[] { "unscoped-relative-namespace-alias", "var s=new System.Diagnostics.Nested.S();s.Get()=7;WriteLine(s.Value);namespace System.Diagnostics{using CA=CodeAnalysis;namespace Nested{public struct S{public int Value;[CA.UnscopedRef]public ref int Get()=>ref Value;}}}" };
         yield return new object[] { "unscoped-enclosing-namespace", "var s=new System.Diagnostics.CodeAnalysis.Nested.S();s.Get()=7;WriteLine(s.Value);namespace System.Diagnostics.CodeAnalysis.Nested{public struct S{public int Value;[UnscopedRef]public ref int Get()=>ref Value;}}" };
         yield return new object[] { "unscoped-unrelated-namespace", "using System.Diagnostics.CodeAnalysis;var s=new S();s.Get()=7;WriteLine(s.Value);struct S{public int Value;[UnscopedRef]public ref int Get()=>ref Value;}namespace Other{struct UnscopedRefAttribute{}}" };
         yield return new object[] { "unscoped-unrelated-nested", "using System.Diagnostics.CodeAnalysis;var s=new S();s.Get()=7;WriteLine(s.Value);struct S{public int Value;[UnscopedRef]public ref int Get()=>ref Value;}class Other{public struct UnscopedRefAttribute{}}" };
-        yield return new object[] { "methodimpl-valid-(short)0", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl((short)0)]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid-(MethodImplOptions)0", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl((MethodImplOptions)0)]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid-", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl()]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid-4", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(4)]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid-8", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(8)]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid-1024", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(1024)]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid-16384", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(16384)]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid-1+3", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(1+3)]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid-(short)(1+3)", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl((short)(1+3))]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid-unchecked((short)65536)", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(unchecked((short)65536))]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid-(MethodImplOptions)32768", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl((MethodImplOptions)32768)]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid--8196", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(-8196)]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid--32768", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(-32768)]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid-4|8", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(4|8)]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid-1*8", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(1*8)]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid-(MethodImplOptions)(-2147483648 >> 32)", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl((MethodImplOptions)(-2147483648 >> 32))]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid-alias-namespace-dot", "using CS=System.Runtime.CompilerServices;WriteLine(F());[CS.MethodImpl(8)]static int F()=>1;" };
-        yield return new object[] { "methodimpl-valid-alias-namespace-colon", "using CS=System.Runtime.CompilerServices;WriteLine(F());[CS::MethodImpl(8)]static int F()=>1;" };
         yield return new object[] { "unscoped-global", "var s=new S();s.Get()=7;WriteLine(s.Value);struct S{public int Value;[global::System.Diagnostics.CodeAnalysis.UnscopedRef] public ref int Get()=>ref Value;}" };
         yield return new object[] { "unscoped-global-suffix", "var s=new S();s.Get()=7;WriteLine(s.Value);struct S{public int Value;[global::System.Diagnostics.CodeAnalysis.UnscopedRefAttribute] public ref int Get()=>ref Value;}" };
         yield return new object[] { "unscoped-qualified", "var s=new S();s.Get()=7;WriteLine(s.Value);struct S{public int Value;[System.Diagnostics.CodeAnalysis.UnscopedRef] public ref int Get()=>ref Value;}" };
         yield return new object[] { "unscoped-import", "using System.Diagnostics.CodeAnalysis;var s=new S();s.Get()=7;WriteLine(s.Value);struct S{public int Value;[UnscopedRef] public ref int Get()=>ref Value;}" };
         yield return new object[] { "unscoped-import-suffix", "using System.Diagnostics.CodeAnalysis;var s=new S();s.Get()=7;WriteLine(s.Value);struct S{public int Value;[UnscopedRefAttribute] public ref int Get()=>ref Value;}" };
         yield return new object[] { "unscoped-namespace-alias-dot", "using CA=System.Diagnostics.CodeAnalysis;var s=new S();s.Get()=7;WriteLine(s.Value);struct S{public int Value;[CA.UnscopedRef] public ref int Get()=>ref Value;}" };
-        yield return new object[] { "unscoped-namespace-alias-colon", "using CA=System.Diagnostics.CodeAnalysis;var s=new S();s.Get()=7;WriteLine(s.Value);struct S{public int Value;[CA::UnscopedRef] public ref int Get()=>ref Value;}" };
         yield return new object[] { "unscoped-global-alias", "global using CA=global::System.Diagnostics.CodeAnalysis;var s=new S();s.Get()=7;WriteLine(s.Value);struct S{public int Value;[CA.UnscopedRef] public ref int Get()=>ref Value;}" };
         yield return new object[] { "readonly-field-in-control", "var p=new Pair(new Box(1));Read(in p.Value);static void Read(in Box x){WriteLine(x.N);}struct Pair{public readonly Box Value;public Pair(Box value){Value=value;}}class Box{public int N;public Box(int n){N=n;}}" };
         yield return new object[] { "writable-field-out-control", "var p=new Pair(new Box(1));Set(out p.Value);WriteLine(p.Value.N);static void Set(out Box x){x=new Box(9);}struct Pair{public Box Value;public Pair(Box value){Value=value;}}class Box{public int N;public Box(int n){N=n;}}" };
-        yield return new object[] { "attribute-source-shadow", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(MethodImplOptions.Custom)]static int F()=>7;static class MethodImplOptions{public const short Custom=8;}" };
-        yield return new object[] { "methodimpl-member", "using System.Runtime.CompilerServices;WriteLine(F(1));[MethodImpl(MethodImplOptions.NoInlining)]static int F(int x)=>x+1;" };
-        yield return new object[] { "methodimpl-flags", "using System.Runtime.CompilerServices;WriteLine(F(1));[MethodImpl(MethodImplOptions.NoInlining|MethodImplOptions.NoOptimization)]static int F(int x)=>x+1;" };
-        yield return new object[] { "methodimpl-cast", "using System.Runtime.CompilerServices;WriteLine(F(1));[MethodImpl((MethodImplOptions)8)]static int F(int x)=>x+1;" };
         yield return new object[] { "single-ref-arg", "int x=1;F(ref x);WriteLine(x);static void F(ref int value){value+=1;}" };
         yield return new object[] { "struct-explicit-ctor-initializer", "var s=new S(7);WriteLine(s.X);struct S{public int X=4;public S(int x){X=x;}}" };
         yield return new object[] { "int-main", "static class Program{static int Main(){return 0;}}" };
@@ -285,6 +261,48 @@ public sealed class Round12MandatorySelfTests
         yield return new object[] { "class-forwarding", "var c=Outer(new C());WriteLine(c.Value);static T Outer<T>(T x) where T:class=>Inner(x);static T Inner<T>(T x) where T:class=>x;class C{public int Value=7;}" };
         yield return new object[] { "struct-type-constraint-control", "var value=new Box<int>();WriteLine(value.X);struct Box<T> where T:struct{public int X;}" };
         yield return new object[] { "class-type-constraint-control", "var value=new Box<C>();WriteLine(value.X);struct Box<T> where T:class{public int X;}class C{}" };
+    }
+
+    public static IEnumerable<object[]> F15FormerMethodImplAccepts()
+    {
+        yield return new object[] { "methodimpl-valid-alias-type", "using MI=System.Runtime.CompilerServices.MethodImplAttribute;WriteLine(F());[MI(8)]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid-(short)0", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl((short)0)]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid-(MethodImplOptions)0", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl((MethodImplOptions)0)]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid-", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl()]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid-4", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(4)]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid-8", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(8)]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid-1024", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(1024)]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid-16384", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(16384)]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid-1+3", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(1+3)]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid-(short)(1+3)", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl((short)(1+3))]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid-unchecked((short)65536)", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(unchecked((short)65536))]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid-(MethodImplOptions)32768", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl((MethodImplOptions)32768)]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid--8196", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(-8196)]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid--32768", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(-32768)]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid-4|8", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(4|8)]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid-1*8", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(1*8)]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid-(MethodImplOptions)(-2147483648 >> 32)", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl((MethodImplOptions)(-2147483648 >> 32))]static int F()=>1;" };
+        yield return new object[] { "methodimpl-valid-alias-namespace-dot", "using CS=System.Runtime.CompilerServices;WriteLine(F());[CS.MethodImpl(8)]static int F()=>1;" };
+        yield return new object[] { "attribute-source-shadow", "using System.Runtime.CompilerServices;WriteLine(F());[MethodImpl(MethodImplOptions.Custom)]static int F()=>7;static class MethodImplOptions{public const short Custom=8;}" };
+        yield return new object[] { "methodimpl-member", "using System.Runtime.CompilerServices;WriteLine(F(1));[MethodImpl(MethodImplOptions.NoInlining)]static int F(int x)=>x+1;" };
+        yield return new object[] { "methodimpl-flags", "using System.Runtime.CompilerServices;WriteLine(F(1));[MethodImpl(MethodImplOptions.NoInlining|MethodImplOptions.NoOptimization)]static int F(int x)=>x+1;" };
+        yield return new object[] { "methodimpl-cast", "using System.Runtime.CompilerServices;WriteLine(F(1));[MethodImpl((MethodImplOptions)8)]static int F(int x)=>x+1;" };
+    }
+
+    [Theory]
+    [MemberData(nameof(F15FormerMethodImplAccepts))]
+    public void CSharpValidMethodImplApplicationsAreOutsideTheF15List(string name, string source)
+    {
+        WithSource(name, source, path =>
+        {
+            var compilation = VibraniumCompilerDriver.CreateCompilationFromPath(path, "MandatoryF15", includeStd: true);
+            Assert.DoesNotContain(compilation.GetDiagnostics(), diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+            var self = RunSelf(path);
+            Assert.Equal(1, self.Exit);
+            Assert.Equal(new[] { "VIB000" }, Regex.Matches(self.Error + self.Output, @"error (VIB\d{3}):")
+                .Select(match => match.Groups[1].Value).Distinct());
+            Assert.Contains("Attribute is not permitted in Vibranium", self.Error, StringComparison.Ordinal);
+        });
     }
 
     [Theory]

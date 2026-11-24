@@ -136,7 +136,7 @@ public static class Parser
             ast.SourceUsingCounts.Push(ctx.UsingCount);
             ParseCompilationUnit(ref ctx, in ta, ref names, ref ast, ref diags);
         }
-        ValidateFrameworkAttributeUses(in ast, in ta, in names, ref diags);
+        ValidateFrameworkAttributeUses(ref ast, in ta, in names, ref diags);
         SubsetCutChecker.Check(in ast, in ta, in names, in ctx.ExpressionStarts, ref diags);
         if (!diags.HasErrors) CheckTypeDeclarationIdentities(in ast, in ta, ref diags);
     }
@@ -479,6 +479,12 @@ public static class Parser
                 continue;
             }
 
+            if (IsGlobalAttributeList(in ctx, in ta, in names))
+            {
+                diags.ReportTok(VibCodes.Unsupported, Peek(in ctx, in ta, 1), "Assembly and module-level attributes are not supported in Vibranium v0.2."u8);
+                ctx.Pos = SkipBracketBalanced(in ta, ctx.Pos, ctx.EndPos);
+                continue;
+            }
             if (k == TokKind.KwNamespace)
             {
                 ParseNamespaceDeclaration(ref ctx, in ta, ref names, ref ast, ref diags);
@@ -968,300 +974,296 @@ public static class Parser
         while (PeekKind(in ctx, in ta, 0) == TokKind.LBracket)
         {
             Advance(ref ctx, in ta);
+            int explicitTarget = 0;
+            if (PeekKind(in ctx, in ta, 1) == TokKind.Colon)
+            {
+                Token target = Advance(ref ctx, in ta);
+                Advance(ref ctx, in ta);
+                explicitTarget = ReadAttributeTarget(target, in names);
+            }
+            if (PeekKind(in ctx, in ta, 0) == TokKind.RBracket)
+                diags.ReportTok(VibCodes.Unsupported, Peek(in ctx, in ta, 0), "Attribute list must contain at least one attribute (CS1001)."u8);
             while (PeekKind(in ctx, in ta, 0) != TokKind.RBracket && PeekKind(in ctx, in ta, 0) != TokKind.Eof)
             {
-                bool isReturnTarget = false;
-                if (PeekKind(in ctx, in ta, 0) == TokKind.KwReturn && PeekKind(in ctx, in ta, 1) == TokKind.Colon)
-                {
-                    isReturnTarget = true;
-                    Advance(ref ctx, in ta);
-                    Advance(ref ctx, in ta);
-                }
-                else if (PeekKind(in ctx, in ta, 0) == TokKind.Ident && PeekKind(in ctx, in ta, 1) == TokKind.Colon)
-                {
-                    Advance(ref ctx, in ta);
-                    Advance(ref ctx, in ta);
-                }
-
                 Token attrTok = Peek(in ctx, in ta, 0);
-                int lastAttrNameId = ParseAttributeName(ref ctx, in ta, ref names, ref ast, ref diags,
-                    out int frameworkAttribute, out int frameworkUse);
-                ReadOnlySpan<byte> attrName = lastAttrNameId >= 0 ? names.Text(lastAttrNameId) : ""u8;
-
-                if (Bytes.Eq(attrName, "Mut"u8) || Bytes.Eq(attrName, "MutAttribute"u8))
+                ParseAttributeName(ref ctx, in ta, ref names, ref ast, ref diags, out int identity);
+                int useIndex = ast.FrameworkAttributeUses.Count - 1;
+                ast.AttributeLocations.Push(explicitTarget);
+                if (identity == 0 || !AttributePermitted(identity, ctx.UnitKind))
                 {
-                    flags |= DeclFlags.MutAttr;
-                    SkipOptionalAttrArgs(ref ctx, in ta, in names, ref diags);
+                    diags.ReportTok(VibCodes.Unsupported, attrTok, "Attribute is not permitted in Vibranium at this location."u8);
+                    if (Match(ref ctx, in ta, TokKind.LParen)) SkipUntilRParen(ref ctx, in ta);
                 }
-                else if (Bytes.Eq(attrName, "UnscopedRef"u8) || Bytes.Eq(attrName, "UnscopedRefAttribute"u8))
+                else if (identity == AttributeLifetimeOf)
                 {
-                    if (frameworkAttribute == 1)
-                        flags |= DeclFlags.UnscopedRefAttr;
-                    else
-                        diags.ReportTok(VibCodes.Unsupported, attrTok, "Cannot resolve the UnscopedRef attribute type (CS0400)."u8);
-                    SkipOptionalAttrArgs(ref ctx, in ta, in names, ref diags);
-                }
-                else if ((Bytes.Eq(attrName, "MethodImpl"u8) || Bytes.Eq(attrName, "MethodImplAttribute"u8)) &&
-                    frameworkAttribute == 2)
-                {
-                    int argumentStart = ctx.Pos;
-                    if (Match(ref ctx, in ta, TokKind.LParen) && PeekKind(in ctx, in ta, 0) != TokKind.RParen)
-                    {
-                        int argument = ParseExpression(ref ctx, in ta, ref names, ref ast, ref diags);
-                        // MethodImpl's positional options cannot encode the two
-                        // MethodCodeType bits (CS0591), and C# reserves the
-                        // MethodImplOptions.Async bit 0x2000 for the compiler
-                        // (CS9330). Do not reject unrelated/unknown flag bits,
-                        // or infer the value of a source constant.
-                        if (TryEvalMethodImplOptions(argument, in ctx, in ast, in ta, in names, out long options))
-                        {
-                            int invalid = (options & 3L) != 0 ? 4 : (options & 0x2000L) != 0 ? 8 : 0;
-                            if (invalid != 0)
-                            {
-                                // Check only after all source declarations can participate in name lookup.
-                                AstNode use = ast.Nodes[frameworkUse];
-                                ast.Nodes[frameworkUse] = new AstNode(use.Kind, use.TokIdx, use.A, use.B, use.C, use.D | invalid);
-                            }
-                        }
-                    }
-                    ctx.Pos = argumentStart;
-                    SkipOptionalAttrArgs(ref ctx, in ta, in names, ref diags);
-                }
-                else if (Bytes.Eq(attrName, "Obsolete"u8) || Bytes.Eq(attrName, "ObsoleteAttribute"u8))
-                {
-                    flags |= DeclFlags.HasObsoleteAttr;
-                    SkipOptionalAttrArgs(ref ctx, in ta, in names, ref diags);
-                }
-                else if (Bytes.Eq(attrName, "Native"u8) || Bytes.Eq(attrName, "NativeAttribute"u8))
-                {
-                    flags |= DeclFlags.HasNativeAttr;
-                    if (targetKind != 1 || isReturnTarget)
-                    {
-                        diags.ReportTok(VibCodes.Unsupported, attrTok, "'[Native]' is only valid on Vibranium.Std.Sys catalog methods."u8);
-                    }
-                    if (Match(ref ctx, in ta, TokKind.LParen))
-                    {
-                        if (PeekKind(in ctx, in ta, 0) == TokKind.StrLit)
-                        {
-                            nativeSymLitIdx = Advance(ref ctx, in ta).AuxId;
-                        }
-                        SkipUntilRParen(ref ctx, in ta);
-                    }
-                }
-                else if (Bytes.Eq(attrName, "LifetimeOf"u8) || Bytes.Eq(attrName, "LifetimeOfAttribute"u8))
-                {
-                    if (targetKind != 1 || !isReturnTarget)
-                    {
+                    int count = ParseCheckedAttributeArguments(ref ctx, in ta, ref names, ref ast, ref diags, useIndex);
+                    if (targetKind != AttrMethod || explicitTarget != AttrReturn)
                         diags.ReportTok(VibCodes.Unsupported, attrTok, "'[LifetimeOf]' is only supported as '[return: LifetimeOf(...)]' on methods in Vibranium."u8);
-                        SkipOptionalAttrArgs(ref ctx, in ta, in names, ref diags);
-                    }
                     else
                     {
                         flags |= DeclFlags.HasReturnLifetimeAttr;
-                        if (Match(ref ctx, in ta, TokKind.LParen))
+                        int start = ast.FrameworkAttributeArgStarts[useIndex];
+                        for (int j = 0; j < count; j++)
                         {
-                            while (PeekKind(in ctx, in ta, 0) != TokKind.RParen && PeekKind(in ctx, in ta, 0) != TokKind.Eof)
-                            {
-                                if (PeekKind(in ctx, in ta, 0) == TokKind.StrLit)
-                                {
-                                    Token st = Advance(ref ctx, in ta);
-                                    returnLifetimes.Push(names.Intern(ta.GetLit(st.AuxId)));
-                                }
-                                else if (PeekKind(in ctx, in ta, 0) == TokKind.Ident &&
-                                         Bytes.Eq(names.Text(Peek(in ctx, in ta, 0).AuxId), "nameof"u8) &&
-                                         PeekKind(in ctx, in ta, 1) == TokKind.LParen)
-                                {
-                                    Advance(ref ctx, in ta);
-                                    Advance(ref ctx, in ta);
-                                    if (IsIdentLike(PeekKind(in ctx, in ta, 0)))
-                                    {
-                                        returnLifetimes.Push(TokenIdentId(Advance(ref ctx, in ta), ref names));
-                                    }
-                                    else if (PeekKind(in ctx, in ta, 0) == TokKind.KwThis)
-                                    {
-                                        Advance(ref ctx, in ta);
-                                        returnLifetimes.Push(names.Intern("this"u8));
-                                    }
-                                    Match(ref ctx, in ta, TokKind.RParen);
-                                }
-                                else
-                                {
-                                    Advance(ref ctx, in ta);
-                                }
-                                Match(ref ctx, in ta, TokKind.Comma);
-                            }
-                            Match(ref ctx, in ta, TokKind.RParen);
+                            int argId = ast.Extra[start + j];
+                            AstNode arg = ast.Nodes[argId];
+                            if (arg.C != 0 || (arg.B >= 0 && (count != 1 || !Bytes.Eq(names.Text(arg.B), "parameters"u8))))
+                                diags.ReportTok(VibCodes.Unsupported, ta.Tokens[arg.TokIdx], "Invalid argument name for LifetimeOf."u8);
+                            else returnLifetimes.Push(argId);
                         }
                     }
                 }
-                else if (Bytes.Eq(attrName, "Union"u8) || Bytes.Eq(attrName, "UnionAttribute"u8) ||
-                         Bytes.Eq(attrName, "InlineArray"u8) || Bytes.Eq(attrName, "InlineArrayAttribute"u8))
+                else if (IsCoreOnlyAttribute(identity) || identity == AttributeStructLayout)
                 {
-                    if (ctx.UnitKind != UnitKinds.Core)
-                    {
-                        diags.ReportTok(VibCodes.Unsupported, attrTok, "Union and InlineArray attributes on user types are not supported in Vibranium."u8);
-                    }
-                    SkipOptionalAttrArgs(ref ctx, in ta, in names, ref diags);
-                }
-                else if (Bytes.Eq(attrName, "FieldOffset"u8) || Bytes.Eq(attrName, "FieldOffsetAttribute"u8))
-                {
-                    diags.ReportTok(VibCodes.Unsupported, attrTok, "'[FieldOffset]' is banned in Vibranium."u8);
-                    SkipOptionalAttrArgs(ref ctx, in ta, in names, ref diags);
-                }
-                else if (Bytes.Eq(attrName, "StructLayout"u8) || Bytes.Eq(attrName, "StructLayoutAttribute"u8))
-                {
-                    if (Match(ref ctx, in ta, TokKind.LParen))
-                    {
-                        while (PeekKind(in ctx, in ta, 0) != TokKind.RParen && PeekKind(in ctx, in ta, 0) != TokKind.Eof)
-                        {
-                            Token tk = Advance(ref ctx, in ta);
-                            if ((tk.Kind == TokKind.Ident && Bytes.Eq(names.Text(tk.AuxId), "Explicit"u8)) ||
-                                (tk.Kind == TokKind.IntLit && tk.IntVal == 2))
-                            {
-                                diags.ReportTok(VibCodes.Unsupported, attrTok, "'[StructLayout(LayoutKind.Explicit)]' is banned in Vibranium."u8);
-                            }
-                        }
-                        Match(ref ctx, in ta, TokKind.RParen);
-                    }
-                }
-                else if (Bytes.Eq(attrName, "DllImport"u8) || Bytes.Eq(attrName, "DllImportAttribute"u8) ||
-                         Bytes.Eq(attrName, "LibraryImport"u8) || Bytes.Eq(attrName, "LibraryImportAttribute"u8) ||
-                         Bytes.Eq(attrName, "UnmanagedCallersOnly"u8) || Bytes.Eq(attrName, "UnmanagedCallersOnlyAttribute"u8))
-                {
-                    diags.ReportTok(VibCodes.Unsupported, attrTok, "P/Invoke and unmanaged callback attributes are banned in Vibranium."u8);
-                    SkipOptionalAttrArgs(ref ctx, in ta, in names, ref diags);
+                    // Core definitions are an audited sysroot input (some metadata uses
+                    // typeof and framework enums outside the ordinary expression catalog).
+                    if (Match(ref ctx, in ta, TokKind.LParen)) SkipUntilRParen(ref ctx, in ta);
                 }
                 else
                 {
-                    SkipOptionalAttrArgs(ref ctx, in ta, in names, ref diags);
+                    int count = ParseCheckedAttributeArguments(ref ctx, in ta, ref names, ref ast, ref diags, useIndex);
+                    if (identity == AttributeUnscopedRef || identity == AttributeMut || identity == AttributeDoesNotReturn)
+                    {
+                        if (count != 0)
+                            diags.ReportTok(VibCodes.Unsupported, attrTok, "This attribute has no constructor or named arguments (CS1729)."u8);
+                        else if (identity == AttributeUnscopedRef && (explicitTarget == 0 || explicitTarget == AttrMethod ||
+                                 explicitTarget == AttrProperty || (explicitTarget == AttrParam && targetKind == AttrParam))) flags |= DeclFlags.UnscopedRefAttr;
+                        else if (explicitTarget != AttrReturn && identity == AttributeMut) flags |= DeclFlags.MutAttr;
+                    }
+                    else if (identity == AttributeNative)
+                    {
+                        flags |= DeclFlags.HasNativeAttr;
+                        if (count == 1)
+                        {
+                            AstNode arg = ast.Nodes[ast.Extra[ast.FrameworkAttributeArgStarts[useIndex]]];
+                            AstNode value = ast.Nodes[arg.A];
+                            if (arg.C == 0 && (arg.B < 0 || Bytes.Eq(names.Text(arg.B), "symbol"u8)) && value.Kind == AstKind.ExprStrLit)
+                                nativeSymLitIdx = value.A;
+                        }
+                        if (nativeSymLitIdx < 0)
+                            diags.ReportTok(VibCodes.Unsupported, attrTok, "Native requires a catalog symbol string."u8);
+                    }
                 }
 
-                Match(ref ctx, in ta, TokKind.Comma);
+                if (!Match(ref ctx, in ta, TokKind.Comma)) break;
             }
             Expect(ref ctx, in ta, TokKind.RBracket, ref diags, "Expected ']' after attribute."u8);
         }
     }
 
-    // Folds a MethodImpl positional argument to its constant value with C#'s
-    // unchecked integer semantics. The options checks read only bits 0..13,
-    // and +, -, *, unary -, ~, &, |, ^ and << by a count below 32 compute
-    // those bits from the operands' bits 0..13 alone, independently of the
-    // operand width; casts truncate or sign-extend as the target type does.
-    private static bool TryEvalMethodImplOptions(int exprId, in ParserCtx ctx, in AstArena ast,
-        in TokenArena ta, in Interner names, out long value)
+    private const int AttrType = 1;
+    private const int AttrStruct = 2;
+    private const int AttrMethod = 4;
+    private const int AttrProperty = 8;
+    private const int AttrField = 16;
+    private const int AttrCtor = 32;
+    private const int AttrParam = 64;
+    private const int AttrReturn = 128;
+    private const int AttrTypeParam = 256;
+    private const int AttrAssembly = 512;
+    private const int AttrModule = 1024;
+    private const int AttrEnum = 2048;
+
+    private static int ReadAttributeTarget(Token tok, in Interner names)
     {
-        value = 0;
-        if (exprId < 0) return false;
-        AstNode node = ast.Nodes[exprId];
-        if (node.Kind == AstKind.ExprIntLit)
+        if (tok.Kind == TokKind.KwReturn) return AttrReturn;
+        if (tok.Kind != TokKind.Ident) return -1;
+        ReadOnlySpan<byte> name = names.Text(tok.AuxId);
+        if (Bytes.Eq(name, "return"u8)) return AttrReturn;
+        if (Bytes.Eq(name, "assembly"u8)) return AttrAssembly;
+        if (Bytes.Eq(name, "module"u8)) return AttrModule;
+        if (Bytes.Eq(name, "type"u8)) return AttrType;
+        if (Bytes.Eq(name, "method"u8)) return AttrMethod;
+        if (Bytes.Eq(name, "property"u8)) return AttrProperty;
+        if (Bytes.Eq(name, "field"u8)) return AttrField;
+        if (Bytes.Eq(name, "param"u8)) return AttrParam;
+        if (Bytes.Eq(name, "typevar"u8)) return AttrTypeParam;
+        return -1;
+    }
+
+    private static bool IsGlobalAttributeList(in ParserCtx ctx, in TokenArena ta, in Interner names)
+    {
+        if (PeekKind(in ctx, in ta, 0) != TokKind.LBracket || PeekKind(in ctx, in ta, 2) != TokKind.Colon) return false;
+        int target = ReadAttributeTarget(Peek(in ctx, in ta, 1), in names);
+        return target == AttrAssembly || target == AttrModule;
+    }
+
+    private static void CompleteAttributeTargets(int start, int end, int target, int otherTargets,
+        in AstArena ast, in TokenArena ta, ref DiagnosticBag diags)
+    {
+        int replaceType = target == AttrStruct || target == AttrEnum ? target : AttrType;
+        int replaceMethod = target == AttrCtor ? AttrCtor : AttrMethod;
+        int used = 0;
+        int returnUsed = 0;
+        int paramUsed = 0;
+        for (int i = start; i < end; i++)
         {
-            value = ta.Tokens[node.A].IntVal;
+            AstNode use = ast.Nodes[ast.FrameworkAttributeUses[i]];
+            int identity = use.C;
+            if (identity == 0 || identity == AttributeDenied) continue;
+            int actual = ast.AttributeLocations[i];
+            if (actual == 0) actual = target;
+            else if (actual == AttrType) actual = replaceType;
+            else if (actual == AttrMethod) actual = replaceMethod;
+            int allowed = AttributeTargetMask(identity);
+            Token tok = ta.Tokens[use.TokIdx];
+            if (actual < 0 || ((target | otherTargets) & actual) == 0 || (allowed & actual) == 0)
+            {
+                diags.ReportTok(VibCodes.Unsupported, tok, "Attribute is not valid on this declaration type (CS0592)."u8);
+                continue;
+            }
+            if (AttributeAllowsMultiple(identity)) continue;
+            int bit = 1 << identity;
+            int seen = actual == AttrReturn ? returnUsed : actual == AttrParam ? paramUsed : used;
+            if ((seen & bit) != 0) diags.ReportTok(VibCodes.Unsupported, tok, "Duplicate attribute (CS0579)."u8);
+            if (actual == AttrReturn) returnUsed |= bit;
+            else if (actual == AttrParam) paramUsed |= bit;
+            else used |= bit;
+        }
+    }
+
+    private static int ParseCheckedAttributeArguments(ref ParserCtx ctx, in TokenArena ta, ref Interner names,
+        ref AstArena ast, ref DiagnosticBag diags, int useIndex)
+    {
+        if (!Match(ref ctx, in ta, TokKind.LParen)) return 0;
+        bool lifetime = ast.Nodes[ast.FrameworkAttributeUses[useIndex]].C == AttributeLifetimeOf;
+        var arguments = new Vec<int>();
+        while (PeekKind(in ctx, in ta, 0) != TokKind.RParen && PeekKind(in ctx, in ta, 0) != TokKind.Eof)
+        {
+            int tok = ctx.Pos;
+            int name = -1;
+            int member = 0;
+            TokKind sep = PeekKind(in ctx, in ta, 1);
+            if (PeekKind(in ctx, in ta, 0) == TokKind.Ident && (sep == TokKind.Colon || sep == TokKind.Eq))
+            {
+                name = Advance(ref ctx, in ta).AuxId;
+                Advance(ref ctx, in ta);
+                member = sep == TokKind.Eq ? 1 : 0;
+            }
+            int value = ParseExpression(ref ctx, in ta, ref names, ref ast, ref diags);
+            if (lifetime)
+            {
+                AstNode expr = ast.Nodes[value];
+                if (expr.Kind == AstKind.ExprNewArray)
+                {
+                    // The general parser skips unsupported array initializers. Keep their subset
+                    // rejection and parse elements so null, postfix '!', and string defaults keep VIB008.
+                    diags.ReportTok(VibCodes.Unsupported, ta.Tokens[expr.TokIdx], "LifetimeOf arguments must be string literals or constant string names."u8);
+                    ParseSkippedLifetimeArrayInitializer(ref ctx, expr.TokIdx, ctx.Pos, in ta, ref names, ref ast, ref diags);
+                }
+                else if (ScanLifetimeArgNullDefaults(value, in ast, in ta, in names, ref diags, 0) &&
+                         expr.Kind != AstKind.ExprDefault && expr.Kind != AstKind.ExprUnary && expr.Kind != AstKind.ExprCast)
+                {
+                    diags.ReportTok(VibCodes.Unsupported, ta.Tokens[expr.TokIdx], "LifetimeOf arguments must be string literals or constant string names."u8);
+                }
+            }
+            arguments.Push(ast.AddNode(AstKind.AttributeArgument, tok, value, name, member, 0));
+            if (!Match(ref ctx, in ta, TokKind.Comma)) break;
+            if (PeekKind(in ctx, in ta, 0) == TokKind.RParen)
+                diags.ReportTok(VibCodes.Unsupported, Peek(in ctx, in ta, 0), "Expected an attribute argument after the comma (CS1525)."u8);
+        }
+        Expect(ref ctx, in ta, TokKind.RParen, ref diags, "Expected ')' after attribute arguments."u8);
+        ast.FrameworkAttributeArgStarts[useIndex] = ast.Extra.Count;
+        ast.FrameworkAttributeArgCounts[useIndex] = arguments.Count;
+        for (int i = 0; i < arguments.Count; i++) ast.Extra.Push(arguments[i]);
+        return arguments.Count;
+    }
+
+    private static void ParseSkippedLifetimeArrayInitializer(ref ParserCtx ctx, int startTok, int endTok,
+        in TokenArena ta, ref Interner names, ref AstArena ast, ref DiagnosticBag diags)
+    {
+        int bracePos = startTok;
+        while (bracePos < endTok && ta.Tokens[bracePos].Kind != TokKind.LBrace) bracePos += 1;
+        if (bracePos >= endTok) return;
+        int savedPos = ctx.Pos;
+        int savedPending = ctx.PendingGt;
+        ctx.Pos = bracePos;
+        ctx.PendingGt = 0;
+        SkipBraceBalanced(ref ctx, in ta);
+        int closePos = ctx.Pos - 1;
+        ctx.Pos = bracePos + 1;
+        if (closePos > bracePos && ta.Tokens[closePos].Kind == TokKind.RBrace)
+        {
+            while (ctx.Pos < closePos && PeekKind(in ctx, in ta, 0) != TokKind.RBrace && PeekKind(in ctx, in ta, 0) != TokKind.Eof)
+            {
+                int before = ctx.Pos;
+                int elem = ParseExpression(ref ctx, in ta, ref names, ref ast, ref diags);
+                _ = ScanLifetimeArgNullDefaults(elem, in ast, in ta, in names, ref diags, 0);
+                if (!Match(ref ctx, in ta, TokKind.Comma) || ctx.Pos <= before) break;
+            }
+        }
+        ctx.Pos = savedPos;
+        ctx.PendingGt = savedPending;
+    }
+
+    private static bool ScanLifetimeArgNullDefaults(int exprId, in AstArena ast, in TokenArena ta,
+        in Interner names, ref DiagnosticBag diags, int depth)
+    {
+        if (exprId < 0 || depth > 64) return false;
+        AstNode n = ast.Nodes[exprId];
+        switch (n.Kind)
+        {
+            case AstKind.ExprDefault:
+                if (n.A >= 0 && !IsLifetimeNullDefaultType(n.A, in ast, in names, 0)) return false;
+                diags.ReportTok(VibCodes.NullOrZeroUnsafe, ta.Tokens[n.TokIdx], "LifetimeOf cannot use a null name or array."u8);
+                return true;
+            case AstKind.ExprBinary:
+            case AstKind.ExprAssign:
+            {
+                bool l = ScanLifetimeArgNullDefaults(n.B, in ast, in ta, in names, ref diags, depth + 1);
+                bool r = ScanLifetimeArgNullDefaults(n.C, in ast, in ta, in names, ref diags, depth + 1);
+                return l || r;
+            }
+            case AstKind.ExprUnary:
+            case AstKind.ExprCast:
+                return ScanLifetimeArgNullDefaults(n.B, in ast, in ta, in names, ref diags, depth + 1);
+            case AstKind.ExprCond:
+            {
+                bool c = ScanLifetimeArgNullDefaults(n.A, in ast, in ta, in names, ref diags, depth + 1);
+                bool t = ScanLifetimeArgNullDefaults(n.B, in ast, in ta, in names, ref diags, depth + 1);
+                bool e = ScanLifetimeArgNullDefaults(n.C, in ast, in ta, in names, ref diags, depth + 1);
+                return c || t || e;
+            }
+            case AstKind.ExprCollLit:
+            {
+                bool found = false;
+                for (int i = 0; i < n.B; i++)
+                    if (ScanLifetimeArgNullDefaults(ast.Extra[n.A + i], in ast, in ta, in names, ref diags, depth + 1)) found = true;
+                return found;
+            }
+            default:
+                return false;
+        }
+    }
+
+    private static bool IsLifetimeNullDefaultType(int typeNodeId, in AstArena ast, in Interner names, int depth)
+    {
+        if (typeNodeId < 0 || depth > 16) return false;
+        AstNode tn = ast.Nodes[typeNodeId];
+        if (tn.Kind == AstKind.TypeArray) return true;
+        if (tn.Kind == AstKind.TypePrim)
+            return (TokKind)tn.A == TokKind.KwString || (TokKind)tn.A == TokKind.KwObject;
+        if (tn.Kind != AstKind.TypeNamed || tn.C != 0) return false;
+        TypeRefContext trc = ast.TypeRefs[tn.D];
+        if ((trc.PrefixNsId < 0 || Bytes.Eq(names.Text(trc.PrefixNsId), "System"u8) || Bytes.Eq(names.Text(trc.PrefixNsId), "global::System"u8)) &&
+            (Bytes.Eq(names.Text(tn.A), "String"u8) || Bytes.Eq(names.Text(tn.A), "Object"u8)))
             return true;
-        }
-        if (node.Kind == AstKind.ExprCharLit)
+        if (trc.PrefixNsId >= 0) return false;
+        ReadOnlySpan<byte> current = trc.CurrentNsId >= 0 ? names.Text(trc.CurrentNsId) : default;
+        int prefixLength = current.Length;
+        while (true)
         {
-            value = node.A;
-            return true;
+            int alias = FindAttributeAliasAtScope(names.Text(tn.A), current.Slice(0, prefixLength), trc.UsingExtraStart, trc.UsingCount, in ast, in names);
+            if (alias >= 0) return IsLifetimeNullDefaultType(ast.Usings[alias].TargetNode, in ast, in names, depth + 1);
+            if (prefixLength == 0) break;
+            prefixLength -= 1;
+            while (prefixLength > 0 && current[prefixLength] != (byte)'.') prefixLength -= 1;
         }
-        if (node.Kind == AstKind.ExprMember && node.D == 0)
-            return TryEvalMethodImplOptionsMember(node, in ctx, in ast, in names, out value);
-        if (node.Kind == AstKind.ExprCast)
-        {
-            AstNode type = ast.Nodes[node.A];
-            bool options = type.Kind == AstKind.TypeNamed && Bytes.Eq(names.Text(type.A), "MethodImplOptions"u8) &&
-                !ctx.KnownTypes.Get(type.A).IsSome;
-            if (!options && type.Kind != AstKind.TypePrim) return false;
-            if (!TryEvalMethodImplOptions(node.B, in ctx, in ast, in ta, in names, out long operand)) return false;
-            if (options) { value = unchecked((int)operand); return true; }
-            TokKind prim = (TokKind)type.A;
-            if (prim == TokKind.KwSByte) value = (sbyte)operand;
-            else if (prim == TokKind.KwByte) value = (byte)operand;
-            else if (prim == TokKind.KwShort) value = (short)operand;
-            else if (prim == TokKind.KwUShort || prim == TokKind.KwChar) value = (ushort)operand;
-            else if (prim == TokKind.KwInt) value = (int)operand;
-            else if (prim == TokKind.KwUInt) value = (uint)operand;
-            else if (prim == TokKind.KwLong || prim == TokKind.KwULong) value = operand;
-            else return false;
-            return true;
-        }
-        if (node.Kind == AstKind.ExprUnary && node.C == 0 &&
-            TryEvalMethodImplOptions(node.B, in ctx, in ast, in ta, in names, out long operand1))
-        {
-            TokKind op = (TokKind)node.A;
-            if (op == TokKind.Minus) { value = unchecked(-operand1); return true; }
-            if (op == TokKind.Tilde) { value = ~operand1; return true; }
-            if (op == TokKind.Plus || op == TokKind.KwUnchecked || op == TokKind.KwChecked) { value = operand1; return true; }
-        }
-        if (node.Kind == AstKind.ExprBinary &&
-            TryEvalMethodImplOptions(node.B, in ctx, in ast, in ta, in names, out long left) &&
-            TryEvalMethodImplOptions(node.C, in ctx, in ast, in ta, in names, out long right))
-        {
-            TokKind op = (TokKind)node.A;
-            if (op == TokKind.Plus) { value = unchecked(left + right); return true; }
-            if (op == TokKind.Minus) { value = unchecked(left - right); return true; }
-            if (op == TokKind.Star) { value = unchecked(left * right); return true; }
-            if (op == TokKind.Pipe) { value = left | right; return true; }
-            if (op == TokKind.Amp) { value = left & right; return true; }
-            if (op == TokKind.Caret) { value = left ^ right; return true; }
-            if (op == TokKind.LtLt && right >= 0 && right < 32) { value = left << (int)right; return true; }
-        }
-        // Division, remainder and right shifts need the full typed constant
-        // semantics. Leaving them unknown is safer than rejecting a legal
-        // attribute by guessing.
         return false;
     }
 
-    // MethodImplOptions.Member, also written System.Runtime.CompilerServices.MethodImplOptions.Member,
-    // when no source declaration of that name shadows the framework enum.
-    private static bool TryEvalMethodImplOptionsMember(in AstNode node, in ParserCtx ctx, in AstArena ast,
-        in Interner names, out long value)
-    {
-        value = 0;
-        if (node.A < 0) return false;
-        AstNode target = ast.Nodes[node.A];
-        if (target.Kind == AstKind.ExprIdent)
-        {
-            if (target.C != 0 || !Bytes.Eq(names.Text(target.A), "MethodImplOptions"u8) ||
-                ctx.KnownTypes.Get(target.A).IsSome) return false;
-        }
-        else
-        {
-            var path = new StringBuf();
-            if (!AppendSimpleMemberPath(node.A, in ast, in names, ref path) ||
-                !Bytes.Eq(path.AsUtf8(), "System.Runtime.CompilerServices.MethodImplOptions"u8)) return false;
-        }
-        ReadOnlySpan<byte> member = names.Text(node.B);
-        if (Bytes.Eq(member, "Unmanaged"u8)) value = 0x0004;
-        else if (Bytes.Eq(member, "NoInlining"u8)) value = 0x0008;
-        else if (Bytes.Eq(member, "ForwardRef"u8)) value = 0x0010;
-        else if (Bytes.Eq(member, "Synchronized"u8)) value = 0x0020;
-        else if (Bytes.Eq(member, "NoOptimization"u8)) value = 0x0040;
-        else if (Bytes.Eq(member, "PreserveSig"u8)) value = 0x0080;
-        else if (Bytes.Eq(member, "AggressiveInlining"u8)) value = 0x0100;
-        else if (Bytes.Eq(member, "AggressiveOptimization"u8)) value = 0x0200;
-        else if (Bytes.Eq(member, "InternalCall"u8)) value = 0x1000;
-        else if (Bytes.Eq(member, "Async"u8)) value = 0x2000;
-        else return false;
-        return true;
-    }
-
-    private static bool AppendSimpleMemberPath(int exprId, in AstArena ast, in Interner names, ref StringBuf path)
-    {
-        AstNode node = ast.Nodes[exprId];
-        if (node.Kind == AstKind.ExprIdent && node.C == 0)
-        {
-            path.Append(names.Text(node.A));
-            return true;
-        }
-        if (node.Kind != AstKind.ExprMember || node.D != 0 || node.A < 0 ||
-            !AppendSimpleMemberPath(node.A, in ast, in names, ref path)) return false;
-        path.AppendAscii((byte)'.');
-        path.Append(names.Text(node.B));
-        return true;
-    }
-
     private static int ParseAttributeName(ref ParserCtx ctx, in TokenArena ta, ref Interner names,
-        ref AstArena ast, ref DiagnosticBag diags, out int frameworkAttribute, out int frameworkUse)
+        ref AstArena ast, ref DiagnosticBag diags, out int frameworkAttribute)
     {
         int attributeTok = ctx.Pos;
         var written = new StringBuf();
@@ -1272,13 +1274,13 @@ public static class Parser
             Advance(ref ctx, in ta);
             flags = 1;
         }
-        int firstName = -1;
         int lastName = -1;
+        bool lastVerbatim = false;
         while (PeekKind(in ctx, in ta, 0) == TokKind.Ident)
         {
             Token part = Advance(ref ctx, in ta);
-            if (firstName < 0) firstName = part.AuxId;
             lastName = part.AuxId;
+            lastVerbatim = part.IntVal != 0;
             if (written.Length > 0) written.AppendAscii((byte)'.');
             written.Append(names.Text(lastName));
             if (written.Length == names.Text(lastName).Length && Match(ref ctx, in ta, TokKind.ColonColon))
@@ -1290,21 +1292,25 @@ public static class Parser
         }
         if (lastName < 0 && PeekKind(in ctx, in ta, 0) != TokKind.Eof) Advance(ref ctx, in ta);
         var context = new TypeRefContext(-1, ctx.UnitKind, ctx.CurrentNsId, ctx.CurrentOwnerDeclId, ctx.UsingExtraStart, ctx.UsingCount);
-        int alias = firstName >= 0 ? FindAttributeAlias(names.Text(firstName), context.CurrentNsId,
-            context.UsingExtraStart, context.UsingCount, in ast, in names) : -1;
-        if (flags == 2 && alias < 0)
-            diags.ReportTok(VibCodes.Unsupported, ta.Tokens[attributeTok], "Attribute namespace alias was not found (CS0432)."u8);
-
-        frameworkUse = -1;
         var resolved = new StringBuf();
-        frameworkAttribute = ResolveFrameworkAttributeName(written.AsUtf8(), flags, in context, allowSuffix: true,
-            in ast, in names, ref resolved);
+        frameworkAttribute = 0;
+        if (flags == 2)
+        {
+            diags.ReportTok(VibCodes.Unsupported, ta.Tokens[attributeTok], "A user alias followed by '::' is not supported in Vibranium; 'global::' is allowed."u8);
+        }
+        else
+        {
+            frameworkAttribute = ResolveFrameworkAttributeName(written.AsUtf8(), flags, in context, allowSuffix: !lastVerbatim,
+                in ast, in names, ref resolved);
+        }
+        int writtenId = names.Intern(written.AsUtf8());
+        int contextId = ast.AddTypeRef(context);
+        int use = ast.AddNode(AstKind.FrameworkAttributeUse, attributeTok, writtenId, contextId, frameworkAttribute, flags | (lastVerbatim ? FrameworkAttributeExact : 0));
+        ast.FrameworkAttributeUses.Push(use);
+        ast.FrameworkAttributeArgStarts.Push(0);
+        ast.FrameworkAttributeArgCounts.Push(0);
         if (frameworkAttribute != 0)
         {
-            int writtenId = names.Intern(written.AsUtf8());
-            int contextId = ast.AddTypeRef(context);
-            frameworkUse = ast.AddNode(AstKind.FrameworkAttributeUse, attributeTok, writtenId, contextId, frameworkAttribute, flags);
-            ast.FrameworkAttributeUses.Push(frameworkUse);
             ReadOnlySpan<byte> full = resolved.AsUtf8();
             int lastDot = full.Length - 1;
             while (lastDot >= 0 && full[lastDot] != (byte)'.') lastDot -= 1;
@@ -1315,9 +1321,10 @@ public static class Parser
 
     // Metadata-only identities. They never become runtime TypeIds, and using
     // alias targets do not get attribute suffix fallback.
-    public static bool TryResolveFrameworkAttributeAlias(int targetNodeId, in AstArena ast, in Interner names, out int identity)
+    public static bool TryResolveFrameworkAttributeAlias(int targetNodeId, in AstArena ast, in Interner names, out int identity, out bool permitted)
     {
         identity = 0;
+        permitted = false;
         AstNode target = ast.Nodes[targetNodeId];
         if (target.Kind != AstKind.TypeNamed || target.C != 0) return false;
         TypeRefContext context = ast.TypeRefs[target.D];
@@ -1325,30 +1332,39 @@ public static class Parser
         int flags = AppendAttributeTypePath(in target, in context, in names, ref path);
         var resolved = new StringBuf();
         identity = ResolveFrameworkAttributeName(path.AsUtf8(), flags, in context, allowSuffix: false, in ast, in names, ref resolved);
+        permitted = AttributePermitted(identity, context.UnitKind);
         return identity != 0;
     }
 
-    private static void ValidateFrameworkAttributeUses(in AstArena ast, in TokenArena ta, in Interner names, ref DiagnosticBag diags)
+    // Flag on a FrameworkAttributeUse node: the name resolves to the framework attribute.
+    public const int FrameworkAttributeResolved = 16;
+    private const int FrameworkAttributeExact = 32;
+
+    private static void ValidateFrameworkAttributeUses(ref AstArena ast, in TokenArena ta, in Interner names, ref DiagnosticBag diags)
     {
         for (int i = 0; i < ast.FrameworkAttributeUses.Count; i++)
         {
-            AstNode use = ast.Nodes[ast.FrameworkAttributeUses[i]];
+            int useId = ast.FrameworkAttributeUses[i];
+            AstNode use = ast.Nodes[useId];
+            if (use.C == 0 || use.C == AttributeDenied) continue; // already rejected when parsed
             TypeRefContext context = ast.TypeRefs[use.B];
             var resolved = new StringBuf();
             int identity = ResolveFrameworkAttributeName(names.Text(use.A), use.D & 3, in context,
-                allowSuffix: true, in ast, in names, ref resolved);
-            if (identity != use.C)
+                allowSuffix: (use.D & FrameworkAttributeExact) == 0, in ast, in names, ref resolved);
+            if (identity == 0)
             {
-                // A source MethodImplAttribute is not the framework attribute; do not
-                // impose framework options on its constructor. UnscopedRef affects
-                // ref-return safety, so never leave a superseded grant in a clean AST.
-                if (use.C == 1 || AttributeAbsolutePathKind(resolved.AsUtf8(), in ast, in names) != 2)
-                    diags.ReportTok(VibCodes.Unsupported, ta.Tokens[use.TokIdx], "The attribute name does not resolve to the supported framework attribute in this scope."u8);
+                // Source types can shadow metadata types but cannot derive from System.Attribute
+                // in this subset. Check names after all declarations are available.
+                diags.ReportTok(VibCodes.Unsupported, ta.Tokens[use.TokIdx], "Attribute name does not bind to an allowed attribute type."u8);
             }
-            else if ((use.D & 4) != 0)
-                diags.ReportTok(VibCodes.Unsupported, ta.Tokens[use.TokIdx], "Invalid MethodImpl options: the low two bits must be zero (CS0591)."u8);
-            else if ((use.D & 8) != 0)
-                diags.ReportTok(VibCodes.Unsupported, ta.Tokens[use.TokIdx], "MethodImplOptions.Async cannot be applied manually (CS9330)."u8);
+            else if (identity != use.C)
+            {
+                diags.ReportTok(VibCodes.Unsupported, ta.Tokens[use.TokIdx], "The attribute name resolves differently after binding all declarations."u8);
+            }
+            else
+            {
+                ast.Nodes[useId] = new AstNode(use.Kind, use.TokIdx, use.A, use.B, use.C, use.D | FrameworkAttributeResolved);
+            }
         }
     }
 
@@ -1366,10 +1382,79 @@ public static class Parser
         return flags;
     }
 
+    public const int AttributeUnscopedRef = 1;
+    public const int AttributeMut = 2;
+    public const int AttributeLifetimeOf = 3;
+    public const int AttributeNative = 4;
+    public const int AttributeDoesNotReturn = 5;
+    public const int AttributeStructLayout = 6;
+    public const int AttributeCollectionBuilder = 7;
+    public const int AttributeUsage = 8;
+    public const int AttributeSuppressMessage = 9;
+    public const int AttributeEditorBrowsable = 10;
+    public const int AttributeObsolete = 11;
+    public const int AttributeModuleInitializer = 12;
+    public const int AttributeUnion = 13;
+    private const int AttributeDenied = 14;
+
+    private static bool IsCoreOnlyAttribute(int identity) => identity >= AttributeCollectionBuilder && identity <= AttributeUnion;
+
+    private static bool AttributePermitted(int identity, int unitKind)
+    {
+        if (identity == AttributeUnscopedRef || identity == AttributeMut || identity == AttributeLifetimeOf) return true;
+        if (identity == AttributeNative) return unitKind == UnitKinds.Std;
+        if (identity == AttributeDoesNotReturn || identity == AttributeStructLayout || IsCoreOnlyAttribute(identity))
+            return unitKind == UnitKinds.Core;
+        return false;
+    }
+
+    private static int AttributeTargetMask(int identity)
+    {
+        if (identity == AttributeUnscopedRef) return AttrMethod | AttrProperty | AttrParam;
+        if (identity == AttributeMut) return AttrMethod | AttrProperty;
+        if (identity == AttributeLifetimeOf) return AttrReturn;
+        if (identity == AttributeNative || identity == AttributeDoesNotReturn || identity == AttributeModuleInitializer) return AttrMethod;
+        if (identity == AttributeStructLayout) return AttrType | AttrStruct;
+        if (identity == AttributeUsage) return AttrType;
+        if (identity == AttributeUnion) return AttrType | AttrStruct;
+        if (identity == AttributeCollectionBuilder) return AttrType | AttrStruct;
+        return AttrType | AttrStruct | AttrEnum | AttrMethod | AttrProperty | AttrField | AttrCtor | AttrParam | AttrReturn | AttrTypeParam | AttrAssembly | AttrModule;
+    }
+
+    private static bool AttributeAllowsMultiple(int identity) =>
+        identity == AttributeLifetimeOf || identity == AttributeSuppressMessage;
+
+    // Match the complete resolved identity; a matching final segment is not enough.
     private static int FrameworkAttributeIdentity(ReadOnlySpan<byte> path)
     {
-        if (Bytes.Eq(path, "System.Diagnostics.CodeAnalysis.UnscopedRefAttribute"u8)) return 1;
-        if (Bytes.Eq(path, "System.Runtime.CompilerServices.MethodImplAttribute"u8)) return 2;
+        if (Bytes.Eq(path, "System.Diagnostics.CodeAnalysis.UnscopedRefAttribute"u8)) return AttributeUnscopedRef;
+        if (Bytes.Eq(path, "Vibranium.MutAttribute"u8)) return AttributeMut;
+        if (Bytes.Eq(path, "Vibranium.LifetimeOfAttribute"u8)) return AttributeLifetimeOf;
+        if (Bytes.Eq(path, "Vibranium.NativeAttribute"u8)) return AttributeNative;
+        if (Bytes.Eq(path, "System.Diagnostics.CodeAnalysis.DoesNotReturnAttribute"u8)) return AttributeDoesNotReturn;
+        if (Bytes.Eq(path, "System.Runtime.InteropServices.StructLayoutAttribute"u8)) return AttributeStructLayout;
+        if (Bytes.Eq(path, "System.Runtime.CompilerServices.CollectionBuilderAttribute"u8)) return AttributeCollectionBuilder;
+        if (Bytes.Eq(path, "System.AttributeUsageAttribute"u8)) return AttributeUsage;
+        if (Bytes.Eq(path, "System.Diagnostics.CodeAnalysis.SuppressMessageAttribute"u8)) return AttributeSuppressMessage;
+        if (Bytes.Eq(path, "System.ComponentModel.EditorBrowsableAttribute"u8)) return AttributeEditorBrowsable;
+        if (Bytes.Eq(path, "System.ObsoleteAttribute"u8)) return AttributeObsolete;
+        if (Bytes.Eq(path, "System.Runtime.CompilerServices.ModuleInitializerAttribute"u8)) return AttributeModuleInitializer;
+        if (Bytes.Eq(path, "System.Runtime.CompilerServices.UnionAttribute"u8)) return AttributeUnion;
+        if (Bytes.Eq(path, "System.Runtime.CompilerServices.MethodImplAttribute"u8)) return AttributeDenied;
+        if (Bytes.Eq(path, "System.FlagsAttribute"u8)) return AttributeDenied;
+        if (Bytes.Eq(path, "System.Diagnostics.ConditionalAttribute"u8)) return AttributeDenied;
+        if (Bytes.Eq(path, "System.CodeDom.Compiler.GeneratedCodeAttribute"u8)) return AttributeDenied;
+        if (Bytes.Eq(path, "System.Runtime.CompilerServices.CompilerGeneratedAttribute"u8)) return AttributeDenied;
+        if (Bytes.Eq(path, "System.Runtime.CompilerServices.InlineArrayAttribute"u8)) return AttributeDenied;
+        if (Bytes.Eq(path, "System.Runtime.CompilerServices.SkipLocalsInitAttribute"u8)) return AttributeDenied;
+        if (Bytes.Eq(path, "System.Runtime.InteropServices.FieldOffsetAttribute"u8)) return AttributeDenied;
+        if (Bytes.Eq(path, "System.Runtime.InteropServices.OptionalAttribute"u8)) return AttributeDenied;
+        if (Bytes.Eq(path, "System.Runtime.InteropServices.DefaultParameterValueAttribute"u8)) return AttributeDenied;
+        if (Bytes.Eq(path, "System.Runtime.InteropServices.DllImportAttribute"u8)) return AttributeDenied;
+        if (Bytes.Eq(path, "System.Runtime.InteropServices.LibraryImportAttribute"u8)) return AttributeDenied;
+        if (Bytes.Eq(path, "System.Runtime.InteropServices.UnmanagedCallersOnlyAttribute"u8)) return AttributeDenied;
+        if (Bytes.Eq(path, "System.Runtime.CompilerServices.InterpolatedStringHandlerAttribute"u8)) return AttributeDenied;
+        if (Bytes.Eq(path, "System.Runtime.CompilerServices.InterpolatedStringHandlerArgumentAttribute"u8)) return AttributeDenied;
         return 0;
     }
 
@@ -1378,7 +1463,7 @@ public static class Parser
     {
         int kind = ResolveAttributePath(written, flags, in context, 0, in ast, in names, ref resolved);
         if (kind == 3) return FrameworkAttributeIdentity(resolved.AsUtf8());
-        if (kind != 0 || !allowSuffix) return 0;
+        if (!allowSuffix) return 0;
         var suffixed = new StringBuf();
         suffixed.Append(written);
         suffixed.Append("Attribute"u8);
@@ -1473,6 +1558,14 @@ public static class Parser
             prefixLength -= 1;
             while (prefixLength > 0 && current[prefixLength] != (byte)'.') prefixLength -= 1;
         }
+        if (flags == 0 && dot < 0)
+        {
+            var prelude = new StringBuf();
+            prelude.Append("Vibranium."u8);
+            prelude.Append(path);
+            int kind = AttributeAbsolutePathKind(prelude.AsUtf8(), in ast, in names);
+            if (kind != 0) return FinishAttributePath(prelude.AsUtf8(), kind, default, in ast, in names, ref resolved);
+        }
         return 0;
     }
 
@@ -1500,21 +1593,6 @@ public static class Parser
 
     private static bool AttributeScopeEquals(int namespaceId, ReadOnlySpan<byte> scope, in Interner names) =>
         namespaceId < 0 ? scope.Length == 0 : Bytes.Eq(names.Text(namespaceId), scope);
-
-    private static int FindAttributeAlias(ReadOnlySpan<byte> name, int currentNs, int usingStart, int usingCount,
-        in AstArena ast, in Interner names)
-    {
-        ReadOnlySpan<byte> current = currentNs >= 0 ? names.Text(currentNs) : default;
-        int length = current.Length;
-        while (true)
-        {
-            int found = FindAttributeAliasAtScope(name, current.Slice(0, length), usingStart, usingCount, in ast, in names);
-            if (found >= 0) return found;
-            if (length == 0) return -1;
-            length -= 1;
-            while (length > 0 && current[length] != (byte)'.') length -= 1;
-        }
-    }
 
     private static int FindAttributeAliasAtScope(ReadOnlySpan<byte> name, ReadOnlySpan<byte> scope, int usingStart, int usingCount,
         in AstArena ast, in Interner names)
@@ -1556,52 +1634,17 @@ public static class Parser
             if (type.TypeParamCount != 0 || !Bytes.Eq(names.Text(type.NameId), leaf)) continue;
             var qualified = new StringBuf();
             AppendAttributeSourcePath(i, in ast, in names, ref qualified);
-            if (Bytes.Eq(qualified.AsUtf8(), path)) return 2;
+            if (Bytes.Eq(qualified.AsUtf8(), path))
+                return type.UnitKind == UnitKinds.Core && FrameworkAttributeIdentity(path) != 0 ? 3 : 2;
         }
         for (int i = 0; i < ast.DeclaredNamespaces.Count; i++)
             if (Bytes.Eq(names.Text(ast.DeclaredNamespaces[i]), path)) return 1;
-        if (Bytes.Eq(path, "System"u8) || Bytes.Eq(path, "System.Diagnostics"u8) ||
+        if (Bytes.Eq(path, "Vibranium"u8) || Bytes.Eq(path, "System"u8) || Bytes.Eq(path, "System.Diagnostics"u8) ||
+            Bytes.Eq(path, "System.CodeDom"u8) || Bytes.Eq(path, "System.CodeDom.Compiler"u8) ||
+            Bytes.Eq(path, "System.Runtime.InteropServices"u8) || Bytes.Eq(path, "System.ComponentModel"u8) ||
             Bytes.Eq(path, "System.Diagnostics.CodeAnalysis"u8) || Bytes.Eq(path, "System.Runtime"u8) ||
             Bytes.Eq(path, "System.Runtime.CompilerServices"u8)) return 1;
         return FrameworkAttributeIdentity(path) != 0 ? 3 : 0;
-    }
-
-    private static void SkipOptionalAttrArgs(ref ParserCtx ctx, in TokenArena ta, in Interner names, ref DiagnosticBag diags)
-    {
-        if (!Match(ref ctx, in ta, TokKind.LParen)) return;
-        int depth = 1;
-        while (depth > 0 && PeekKind(in ctx, in ta, 0) != TokKind.Eof)
-        {
-            Token token = Peek(in ctx, in ta, 0);
-            if (token.Kind == TokKind.Ident && PeekKind(in ctx, in ta, 1) == TokKind.Dot &&
-                PeekKind(in ctx, in ta, 2) == TokKind.Ident && !ctx.KnownTypes.Get(token.AuxId).IsSome)
-            {
-                // Runtime implementation attributes do not affect native code,
-                // but their enum member references must still bind. A source
-                // declaration/alias of the same name is not this framework enum.
-                ReadOnlySpan<byte> typeName = names.Text(token.AuxId);
-                Token member = Peek(in ctx, in ta, 2);
-                if (!IsKnownFrameworkAttributeEnumMember(typeName, names.Text(member.AuxId)))
-                    diags.ReportTok(VibCodes.Unsupported, member, "Unknown framework attribute enum member (CS0117)."u8);
-            }
-            TokKind kind = Advance(ref ctx, in ta).Kind;
-            if (kind == TokKind.LParen) depth += 1;
-            else if (kind == TokKind.RParen) depth -= 1;
-        }
-    }
-
-    private static bool IsKnownFrameworkAttributeEnumMember(ReadOnlySpan<byte> typeName, ReadOnlySpan<byte> memberName)
-    {
-        if (Bytes.Eq(typeName, "MethodImplOptions"u8))
-            return Bytes.Eq(memberName, "Unmanaged"u8) || Bytes.Eq(memberName, "NoInlining"u8) ||
-                Bytes.Eq(memberName, "ForwardRef"u8) || Bytes.Eq(memberName, "Synchronized"u8) ||
-                Bytes.Eq(memberName, "NoOptimization"u8) || Bytes.Eq(memberName, "PreserveSig"u8) ||
-                Bytes.Eq(memberName, "AggressiveInlining"u8) || Bytes.Eq(memberName, "AggressiveOptimization"u8) ||
-                Bytes.Eq(memberName, "Async"u8) || Bytes.Eq(memberName, "InternalCall"u8);
-        if (Bytes.Eq(typeName, "MethodCodeType"u8))
-            return Bytes.Eq(memberName, "IL"u8) || Bytes.Eq(memberName, "Native"u8) ||
-                Bytes.Eq(memberName, "OPTIL"u8) || Bytes.Eq(memberName, "Runtime"u8);
-        return true;
     }
 
     private static void SkipUntilRParen(ref ParserCtx ctx, in TokenArena ta)
@@ -1819,7 +1862,9 @@ public static class Parser
         int flags = 0;
         int unusedNat = -1;
         var unusedLt = new Vec<int>();
-        ParseAttributes(ref ctx, in ta, ref names, ref ast, ref diags, 0, ref flags, ref unusedNat, ref unusedLt);
+        int attrStart = ast.FrameworkAttributeUses.Count;
+        ParseAttributes(ref ctx, in ta, ref names, ref ast, ref diags, AttrType, ref flags, ref unusedNat, ref unusedLt);
+        int attrEnd = ast.FrameworkAttributeUses.Count;
         while (IsModifierKeyword(PeekKind(in ctx, in ta, 0)) || IsFileModifier(Peek(in ctx, in ta, 0), in names))
         {
             if (IsFileModifier(Peek(in ctx, in ta, 0), in names))
@@ -1873,6 +1918,8 @@ public static class Parser
             return;
         }
 
+        int attrTarget = kindTok.Kind == TokKind.KwStruct ? AttrStruct : kindTok.Kind == TokKind.KwEnum ? AttrEnum : AttrType;
+        CompleteAttributeTargets(attrStart, attrEnd, attrTarget, 0, in ast, in ta, ref diags);
         int declKind = TypeDeclKinds.Class;
         if (kindTok.Kind == TokKind.KwStruct)
         {
@@ -1917,7 +1964,7 @@ public static class Parser
 
         var tpNames = new Vec<int>();
         var tpFlags = new Vec<int>();
-        ParseOptionalTypeParamList(ref ctx, in ta, ref names, ref diags, ref tpNames, ref tpFlags);
+        ParseOptionalTypeParamList(ref ctx, in ta, ref names, ref ast, ref diags, ref tpNames, ref tpFlags);
 
         var primaryParams = new Vec<ParamDecl>();
         bool hasPrimaryCtor = false;
@@ -2083,7 +2130,7 @@ public static class Parser
             }
             if (pd.Mode != PassMode.ByValue)
             {
-                diags.ReportTok(VibCodes.Unsupported, ta.Tokens[pd.TokIdx], "By-reference primary-constructor parameters cannot be captured by instance members."u8);
+                diags.ReportTok(VibCodes.Unsupported, ta.Tokens[pd.TokIdx], "By-reference primary-constructor parameters cannot be captured by instance members (CS9109)."u8);
             }
             var sb = new StringBuf(32);
             sb.Append("__pctor_"u8);
@@ -2317,13 +2364,16 @@ public static class Parser
 
             case AstKind.StmtIf:
             {
-                int mark = shadowed.Count;
-                if (AstSubtreeCapturesIdent(n.A, targetNameId, in ast, ref shadowed)) { shadowed.Truncate(mark); return true; }
-                if (AstSubtreeCapturesIdent(n.B, targetNameId, in ast, ref shadowed)) { shadowed.Truncate(mark); return true; }
-                shadowed.Truncate(mark);
-                if (n.C >= 0 && AstSubtreeCapturesIdent(n.C, targetNameId, in ast, ref shadowed)) { shadowed.Truncate(mark); return true; }
-                shadowed.Truncate(mark);
-                return false;
+                if (AstSubtreeCapturesIdent(n.A, targetNameId, in ast, ref shadowed)) return true;
+                // Condition declarations are scoped to the containing block, not the
+                // true arm. Each arm's own declarations must still stay in that arm.
+                int conditionEnd = shadowed.Count;
+                bool trueCaptures = AstSubtreeCapturesIdent(n.B, targetNameId, in ast, ref shadowed);
+                shadowed.Truncate(conditionEnd);
+                if (trueCaptures) return true;
+                bool falseCaptures = n.C >= 0 && AstSubtreeCapturesIdent(n.C, targetNameId, in ast, ref shadowed);
+                shadowed.Truncate(conditionEnd);
+                return falseCaptures;
             }
 
             case AstKind.StmtWhile:
@@ -2472,6 +2522,12 @@ public static class Parser
 
         while (PeekKind(in ctx, in ta, 0) != TokKind.RBrace && PeekKind(in ctx, in ta, 0) != TokKind.Eof)
         {
+            int attrStart = ast.FrameworkAttributeUses.Count;
+            int attrFlags = 0;
+            int native = -1;
+            var lifetimes = new Vec<int>();
+            ParseAttributes(ref ctx, in ta, ref names, ref ast, ref diags, AttrField, ref attrFlags, ref native, ref lifetimes);
+            CompleteAttributeTargets(attrStart, ast.FrameworkAttributeUses.Count, AttrField, 0, in ast, in ta, ref diags);
             int mTokIdx = ctx.Pos;
             int rawMName = ExpectDeclaredIdent(ref ctx, in ta, ref names, ref diags, "Expected enum member name."u8, out _);
             int mName = rawMName >= 0 ? rawMName : names.Intern("_ErrEnum"u8);
@@ -2571,7 +2627,9 @@ public static class Parser
         int mFlags = 0;
         int nativeSymLit = -1;
         var retLifetimes = new Vec<int>();
-        ParseAttributes(ref ctx, in ta, ref names, ref ast, ref diags, 1, ref mFlags, ref nativeSymLit, ref retLifetimes);
+        int attrStart = ast.FrameworkAttributeUses.Count;
+        ParseAttributes(ref ctx, in ta, ref names, ref ast, ref diags, AttrMethod, ref mFlags, ref nativeSymLit, ref retLifetimes);
+        int attrEnd = ast.FrameworkAttributeUses.Count;
         mFlags |= ParseModifiers(ref ctx, in ta, ref diags);
         TypeDecl owner = ast.Types[ownerDeclId];
         if (partialToken >= 0 && !((mFlags & DeclFlags.HasNativeAttr) != 0 && IsTrustedSysType(in ctx, ownerNameId, owner.OwnerDeclId, in names)))
@@ -2590,6 +2648,7 @@ public static class Parser
 
         if (Match(ref ctx, in ta, TokKind.KwConst))
         {
+            CompleteAttributeTargets(attrStart, attrEnd, AttrField, 0, in ast, in ta, ref diags);
             if ((mFlags & DeclFlags.HasNativeAttr) != 0)
             {
                 diags.ReportTok(VibCodes.Unsupported, Peek(in ctx, in ta, 0), "'[Native]' is only valid on Vibranium.Std.Sys catalog methods."u8);
@@ -2616,6 +2675,7 @@ public static class Parser
             LookupTokenKnownId(Peek(in ctx, in ta, 0), in names) == ownerNameId &&
             PeekKind(in ctx, in ta, 1) == TokKind.LParen)
         {
+            CompleteAttributeTargets(attrStart, attrEnd, AttrCtor, 0, in ast, in ta, ref diags);
             int ctorTokIdx = ctx.Pos;
             Token cTok = Advance(ref ctx, in ta);
             if ((mFlags & DeclFlags.Static) != 0)
@@ -2675,6 +2735,7 @@ public static class Parser
 
         if (Match(ref ctx, in ta, TokKind.KwThis))
         {
+            CompleteAttributeTargets(attrStart, attrEnd, AttrProperty, 0, in ast, in ta, ref diags);
             Expect(ref ctx, in ta, TokKind.LBracket, ref diags, "Expected '[' for indexer."u8);
             var idxParams = new Vec<ParamDecl>();
             ParseParamListUntil(ref ctx, in ta, ref names, ref ast, ref diags, TokKind.RBracket, ref idxParams);
@@ -2686,6 +2747,7 @@ public static class Parser
 
         if (Match(ref ctx, in ta, TokKind.KwOperator))
         {
+            CompleteAttributeTargets(attrStart, attrEnd, AttrMethod, AttrReturn, in ast, in ta, ref diags);
             Token opTok = Advance(ref ctx, in ta);
             if (opTok.Kind != TokKind.PlusEq)
             {
@@ -2708,9 +2770,10 @@ public static class Parser
 
         if (PeekKind(in ctx, in ta, 0) == TokKind.LAngle || PeekKind(in ctx, in ta, 0) == TokKind.LParen)
         {
+            CompleteAttributeTargets(attrStart, attrEnd, AttrMethod, AttrReturn, in ast, in ta, ref diags);
             var mTpNames = new Vec<int>();
             var mTpFlags = new Vec<int>();
-            ParseOptionalTypeParamList(ref ctx, in ta, ref names, ref diags, ref mTpNames, ref mTpFlags);
+            ParseOptionalTypeParamList(ref ctx, in ta, ref names, ref ast, ref diags, ref mTpNames, ref mTpFlags);
 
             var mParams = new Vec<ParamDecl>();
             ParseParamList(ref ctx, in ta, ref names, ref ast, ref diags, ref mParams);
@@ -2760,6 +2823,7 @@ public static class Parser
 
         if (PeekKind(in ctx, in ta, 0) == TokKind.FatArrow || PeekKind(in ctx, in ta, 0) == TokKind.LBrace)
         {
+            CompleteAttributeTargets(attrStart, attrEnd, AttrProperty, 0, in ast, in ta, ref diags);
             if ((mFlags & DeclFlags.HasNativeAttr) != 0)
             {
                 diags.ReportTok(VibCodes.Unsupported, memberNameTok, "'[Native]' is only valid on Vibranium.Std.Sys catalog methods."u8);
@@ -2769,6 +2833,7 @@ public static class Parser
             return;
         }
 
+        CompleteAttributeTargets(attrStart, attrEnd, AttrField, 0, in ast, in ta, ref diags);
         if ((mFlags & DeclFlags.HasNativeAttr) != 0)
         {
             diags.ReportTok(VibCodes.Unsupported, memberNameTok, "'[Native]' is only valid on Vibranium.Std.Sys catalog methods."u8);
@@ -2846,7 +2911,9 @@ public static class Parser
             int accOwnFlags = 0;
             int unusedNat = -1;
             var accLt = new Vec<int>();
-            ParseAttributes(ref ctx, in ta, ref names, ref ast, ref diags, 1, ref accOwnFlags, ref unusedNat, ref accLt);
+            int attrStart = ast.FrameworkAttributeUses.Count;
+            ParseAttributes(ref ctx, in ta, ref names, ref ast, ref diags, AttrMethod, ref accOwnFlags, ref unusedNat, ref accLt);
+            int attrEnd = ast.FrameworkAttributeUses.Count;
             int accessorModifierStart = ctx.Pos;
             accOwnFlags |= ParseModifiers(ref ctx, in ta, ref diags);
             for (int am = accessorModifierStart; am < ctx.Pos; am++)
@@ -2857,10 +2924,21 @@ public static class Parser
                     diags.ReportTok(VibCodes.Unsupported, ta.Tokens[am], "The modifier is not valid for this accessor (CS0106)."u8);
             }
 
-            Token accTok = Expect(ref ctx, in ta, TokKind.Ident, ref diags, "Expected 'get' or 'set'."u8);
+            Token accTok = Expect(ref ctx, in ta, TokKind.Ident, ref diags, "Expected 'get', 'set', or 'init'."u8);
             ReadOnlySpan<byte> accWord = accTok.Kind == TokKind.Ident ? names.Text(accTok.AuxId) : ""u8;
             bool isGet = Bytes.Eq(accWord, "get"u8);
-            bool isSet = Bytes.Eq(accWord, "set"u8);
+            bool isInit = Bytes.Eq(accWord, "init"u8);
+            bool isSet = isInit || Bytes.Eq(accWord, "set"u8);
+            CompleteAttributeTargets(attrStart, attrEnd, AttrMethod, AttrReturn | (isSet ? AttrParam : 0), in ast, in ta, ref diags);
+            if (isSet)
+            {
+                for (int ai = attrStart; ai < attrEnd; ai++)
+                {
+                    AstNode use = ast.Nodes[ast.FrameworkAttributeUses[ai]];
+                    if (use.C == AttributeUnscopedRef && ast.AttributeLocations[ai] == AttrParam)
+                        diags.ReportTok(VibCodes.Unsupported, ta.Tokens[use.TokIdx], "UnscopedRef requires a by-reference parameter (CS9063)."u8);
+                }
+            }
 
             if (Match(ref ctx, in ta, TokKind.Semi))
             {
@@ -2899,7 +2977,15 @@ public static class Parser
                 int voidNode = ast.AddNode(AstKind.TypePrim, memberTokIdx, (int)TokKind.KwVoid, 0, 0, 0);
                 int setterNameId = MakeAccessorName(ref names, "set_"u8, propNameId);
                 int sFlags = ((mFlags | accOwnFlags) & ~(DeclFlags.ReturnsByRef | DeclFlags.ReturnRefMut)) | DeclFlags.IsPropSet;
-                var sFd = new FuncDecl(ownerDeclId, setterNameId, voidNode, 0, 0, 0, pStart, idxParams.Count + 1, accBody, sFlags, -1, 0, 0, ctx.SourceId, memberTokIdx, ctx.UsingExtraStart, ctx.UsingCount);
+                // Bind return-target arguments on every accessor, including a void setter.
+                // An init accessor still fails the declaration gate; it is not a writable setter.
+                if (isInit)
+                {
+                    diags.ReportTok(VibCodes.Unsupported, accTok, "Init accessors are banned in Vibranium; use an explicit backing field and accessors."u8);
+                    accBody = -1; // Bind attributes, but do not lower a banned initializer as an ordinary setter.
+                }
+                int sLtStart = ast.PushExtraSpan(accLt.AsReadOnlySpan());
+                var sFd = new FuncDecl(ownerDeclId, setterNameId, voidNode, 0, 0, 0, pStart, idxParams.Count + 1, accBody, sFlags, -1, sLtStart, accLt.Count, ctx.SourceId, memberTokIdx, ctx.UsingExtraStart, ctx.UsingCount);
                 AttachPendingLocalFuncs(ref ctx, ref ast, ref sFd);
                 localFuncs.Push(sFd);
             }
@@ -2952,6 +3038,7 @@ public static class Parser
         ref ParserCtx ctx,
         in TokenArena ta,
         ref Interner names,
+        ref AstArena ast,
         ref DiagnosticBag diags,
         ref Vec<int> tpNames,
         ref Vec<int> tpFlags)
@@ -2959,6 +3046,12 @@ public static class Parser
         if (!Match(ref ctx, in ta, TokKind.LAngle)) return;
         while (!IsAtTypeArgClose(in ctx, in ta) && PeekKind(in ctx, in ta, 0) != TokKind.Eof)
         {
+            int attrStart = ast.FrameworkAttributeUses.Count;
+            int flags = 0;
+            int native = -1;
+            var lifetimes = new Vec<int>();
+            ParseAttributes(ref ctx, in ta, ref names, ref ast, ref diags, AttrTypeParam, ref flags, ref native, ref lifetimes);
+            CompleteAttributeTargets(attrStart, ast.FrameworkAttributeUses.Count, AttrTypeParam, 0, in ast, in ta, ref diags);
             int rawTpId = ExpectDeclaredIdent(ref ctx, in ta, ref names, ref diags, "Expected type parameter name."u8, out _);
             tpNames.Push(rawTpId >= 0 ? rawTpId : 0);
             tpFlags.Push(0);
@@ -3057,7 +3150,9 @@ public static class Parser
             int pFlags = 0;
             int unusedNat = -1;
             var unusedLt = new Vec<int>();
-            ParseAttributes(ref ctx, in ta, ref names, ref ast, ref diags, 3, ref pFlags, ref unusedNat, ref unusedLt);
+            int attributeStart = ast.FrameworkAttributeUses.Count;
+            ParseAttributes(ref ctx, in ta, ref names, ref ast, ref diags, AttrParam, ref pFlags, ref unusedNat, ref unusedLt);
+            CompleteAttributeTargets(attributeStart, ast.FrameworkAttributeUses.Count, AttrParam, 0, in ast, in ta, ref diags);
             for (int attributeToken = parameterStart; attributeToken < ctx.Pos; attributeToken++)
             {
                 Token attribute = ta.Tokens[attributeToken];
@@ -3326,7 +3421,11 @@ public static class Parser
         int lfFlags = DeclFlags.IsLocalFunc;
         int nativeSym = -1;
         var retLt = new Vec<int>();
-        ParseAttributes(ref ctx, in ta, ref names, ref ast, ref diags, 1, ref lfFlags, ref nativeSym, ref retLt);
+        int attrStart = ast.FrameworkAttributeUses.Count;
+        ParseAttributes(ref ctx, in ta, ref names, ref ast, ref diags, AttrMethod, ref lfFlags, ref nativeSym, ref retLt);
+        CompleteAttributeTargets(attrStart, ast.FrameworkAttributeUses.Count, AttrMethod, AttrReturn, in ast, in ta, ref diags);
+        if ((lfFlags & DeclFlags.UnscopedRefAttr) != 0)
+            diags.ReportTok(VibCodes.Unsupported, Peek(in ctx, in ta, 0), "UnscopedRef is not valid on a local function (CS9101)."u8);
         lfFlags |= ParseModifiers(ref ctx, in ta, ref diags);
 
         if ((lfFlags & DeclFlags.HasNativeAttr) != 0)
@@ -3352,7 +3451,7 @@ public static class Parser
 
         var tpNames = new Vec<int>();
         var tpFlags = new Vec<int>();
-        ParseOptionalTypeParamList(ref ctx, in ta, ref names, ref diags, ref tpNames, ref tpFlags);
+        ParseOptionalTypeParamList(ref ctx, in ta, ref names, ref ast, ref diags, ref tpNames, ref tpFlags);
 
         var lfParams = new Vec<ParamDecl>();
         ParseParamList(ref ctx, in ta, ref names, ref ast, ref diags, ref lfParams);
@@ -3378,6 +3477,10 @@ public static class Parser
         int ltStart = ast.PushExtraSpan(retLt.AsReadOnlySpan());
 
         var fd = new FuncDecl(-1, nameId, retType, tpStart, tpNames.Count, tpFlagsStart, pStart, lfParams.Count, lfBody, lfFlags, -1, ltStart, retLt.Count, ctx.SourceId, nameTokIdx, ctx.UsingExtraStart, ctx.UsingCount);
+        if (retLt.Count > 0)
+        {
+            fd.LifetimeLexicalOwner = ctx.CurrentOwnerDeclId;
+        }
         AttachPendingLocalFuncs(ref ctx, ref ast, ref fd);
 
         for (int i = 0; i < savedPending.Count; i++) ctx.PendingLocalFuncs.Push(savedPending[i]);
@@ -4029,11 +4132,30 @@ public static class Parser
             {
                 diags.ReportTok(VibCodes.NullOrZeroUnsafe, opTok, "Null-coalescing '??=' operator is banned in Vibranium."u8);
             }
+            int refTok = ctx.Pos;
             int isRefAssign = (opTok.Kind == TokKind.Eq && Match(ref ctx, in ta, TokKind.KwRef)) ? 1 : 0;
+            int firstRhsNode = ast.Nodes.Count;
             int right = ParseAssignment(ref ctx, in ta, ref names, ref ast, ref diags);
+            if (isRefAssign != 0 && HasRefAssignmentControlFlow(in ast, firstRhsNode))
+                SubsetCuts.Report(25, ta.Tokens[refTok], ref diags);
             return ast.AddNode(AstKind.ExprAssign, opTokIdx, (int)opTok.Kind, left, right, isRefAssign);
         }
         return left;
+    }
+
+    // The RHS is an append-only slice of the syntax arena. Inspect every
+    // subexpression, not just the final target or the evaluated branch.
+    private static bool HasRefAssignmentControlFlow(in AstArena ast, int firstRhsNode)
+    {
+        for (int i = firstRhsNode; i < ast.Nodes.Count; i++)
+        {
+            AstNode node = ast.Nodes[i];
+            if (node.Kind == AstKind.ExprCond || node.Kind == AstKind.ExprSwitch || node.Kind == AstKind.ExprIsPattern)
+                return true;
+            if (node.Kind == AstKind.ExprBinary && ((TokKind)node.A == TokKind.AmpAmp || (TokKind)node.A == TokKind.PipePipe))
+                return true;
+        }
+        return false;
     }
 
     private static bool IsAssignOp(TokKind k) =>
@@ -4442,6 +4564,22 @@ public static class Parser
         return false;
     }
 
+    private static bool ParenthesizedConstantPatternContinues(in ParserCtx ctx, in TokenArena ta, int minPrec)
+    {
+        int depth = 1;
+        for (int p = ctx.Pos + 1; p + 1 < ctx.EndPos; p++)
+        {
+            TokKind kind = ta.Tokens[p].Kind;
+            if (kind == TokKind.LParen) depth += 1;
+            else if (kind == TokKind.RParen)
+            {
+                depth -= 1;
+                if (depth == 0) return GetBinaryPrec(ta.Tokens[p + 1].Kind) >= minPrec;
+            }
+        }
+        return false;
+    }
+
     private static int ParsePatternPrimary(
         ref ParserCtx ctx,
         in TokenArena ta,
@@ -4468,12 +4606,22 @@ public static class Parser
             return ast.AddNode(AstKind.PatRel, tokIdx, (int)t.Kind, boundExpr, 0, 0);
         }
 
-        if (t.Kind == TokKind.LParen && !IsCastExpression(in ctx, in ta, in names, inPatternContext: true))
+        if (t.Kind == TokKind.LParen && !IsCastExpression(in ctx, in ta, in names, inPatternContext: true) &&
+            !ParenthesizedConstantPatternContinues(in ctx, in ta, inIsExpr ? 11 : 1))
         {
             Advance(ref ctx, in ta);
             int innerPat = ParsePattern(ref ctx, in ta, ref names, ref ast, ref diags, inIsExpr: false, allowBareIsTypeFlag: false);
             Expect(ref ctx, in ta, TokKind.RParen, ref diags, "Expected ')' after pattern."u8);
             return innerPat;
+        }
+
+        if (t.Kind == TokKind.LBracket)
+        {
+            // This is a list pattern, not a constant collection expression.
+            // Reject it before lowering can analyze a fictional match/guard.
+            diags.ReportTok(VibCodes.Unsupported, t, "List patterns are not supported in Vibranium."u8);
+            ctx.Pos = SkipBracketBalanced(in ta, ctx.Pos, ctx.EndPos);
+            return ast.AddNode(AstKind.None, tokIdx, -1, 0, 0, 0);
         }
 
         if (t.Kind == TokKind.LBrace)
@@ -4592,7 +4740,12 @@ public static class Parser
             }
         }
 
-        int cExpr = ParseBinary(ref ctx, in ta, ref names, ref ast, ref diags, 11);
+        // A constant pattern right after 'is' is a shift-expression (it is an operand of the
+        // relational 'is'); in a case label, a switch-expression arm and a nested
+        // (parenthesized, positional or property) pattern it extends to the binary
+        // operators, as in 'case A | B:' or 'x is (1 | 2)'. 'and', 'or', 'not' and 'when'
+        // are pattern words, not operators, so they still end the expression.
+        int cExpr = ParseBinary(ref ctx, in ta, ref names, ref ast, ref diags, inIsExpr ? 11 : 1);
         AstKind ck = ast.Nodes[cExpr].Kind;
         int patConstBareIs = (allowBareIsTypeFlag && (ck == AstKind.ExprIdent || ck == AstKind.ExprMember)) ? 1 : 0;
         return ast.AddNode(AstKind.PatConst, tokIdx, cExpr, patConstBareIs, 0, 0);
@@ -4660,10 +4813,8 @@ public static class Parser
             uType = ast.AddNode(AstKind.TypeNullable, tokIdx, uType, 0, 0, 0);
         }
         int bindNameId = -1;
-        int hasExtraSubpattern = 0;
         int innerSubPat = -1;
         bool isNoneType = variantKind == 2;
-        bool isErrVariant = variantKind == 4;
 
         if (Match(ref ctx, in ta, TokKind.LParen))
         {
@@ -4692,56 +4843,8 @@ public static class Parser
 
         if (PeekKind(in ctx, in ta, 0) == TokKind.LBrace)
         {
-            Token braceTok = Advance(ref ctx, in ta); // '{'
-            if (Match(ref ctx, in ta, TokKind.RBrace))
-            {
-                if (!isNoneType)
-                {
-                    hasExtraSubpattern = 1;
-                }
-            }
-            else if (isNoneType)
-            {
-                diags.ReportTok(VibCodes.Unsupported, braceTok, "'NoneType' has no properties for property pattern matching."u8);
-                SkipRemainderOfOpenBrace(ref ctx, in ta);
-            }
-            else
-            {
-                hasExtraSubpattern = 1;
-                int propTokIdx = ctx.Pos;
-                int propNameId = ExpectIdent(ref ctx, in ta, ref names, ref diags, "Expected property name in '[Union]' property pattern."u8, out Token propTok);
-                if (PeekKind(in ctx, in ta, 0) == TokKind.Dot)
-                {
-                    diags.ReportTok(VibCodes.Unsupported, Peek(in ctx, in ta, 0), "Nested dotted property paths are not supported in '[Union]' property patterns."u8);
-                    SkipRemainderOfOpenBrace(ref ctx, in ta);
-                }
-                else
-                {
-                    ReadOnlySpan<byte> expectedProp = isErrVariant ? "Error"u8 : "Value"u8;
-                    if (propNameId < 0 || !Bytes.Eq(names.Text(propNameId), expectedProp))
-                    {
-                        diags.ReportTok(VibCodes.Unsupported, propTok, "Unknown or unsupported property in '[Union]' property pattern."u8);
-                        SkipRemainderOfOpenBrace(ref ctx, in ta);
-                    }
-                    else
-                    {
-                        Expect(ref ctx, in ta, TokKind.Colon, ref diags, "Expected ':' after property name in pattern."u8);
-                        int propSubPat = ParsePattern(ref ctx, in ta, ref names, ref ast, ref diags, inIsExpr: false, allowBareIsTypeFlag: false);
-                        if (Match(ref ctx, in ta, TokKind.Comma) && PeekKind(in ctx, in ta, 0) != TokKind.RBrace)
-                        {
-                            diags.ReportTok(VibCodes.Unsupported, Peek(in ctx, in ta, 0), "Multiple property subpatterns on a '[Union]' variant are not supported in Vibranium."u8);
-                            SkipRemainderOfOpenBrace(ref ctx, in ta);
-                        }
-                        else
-                        {
-                            Expect(ref ctx, in ta, TokKind.RBrace, ref diags, "Expected '}' after '[Union]' property pattern."u8);
-                        }
-                        innerSubPat = innerSubPat < 0
-                            ? propSubPat
-                            : ast.AddNode(AstKind.PatLogic, propTokIdx, 0, innerSubPat, propSubPat, 0);
-                    }
-                }
-            }
+            SubsetCuts.Report(24, Peek(in ctx, in ta, 0), ref diags);
+            SkipBraceBalanced(ref ctx, in ta);
         }
 
         if (IsIdentLike(PeekKind(in ctx, in ta, 0)) &&
@@ -4751,22 +4854,7 @@ public static class Parser
             int tvId = TokenIdentId(trailingVar, ref names);
             if (tvId >= 0 && !Bytes.Eq(names.Text(tvId), "_"u8)) bindNameId = tvId;
         }
-        return ast.AddNode(AstKind.PatUnion, tokIdx, uType, bindNameId, hasExtraSubpattern, innerSubPat);
-    }
-
-    private static void SkipRemainderOfOpenBrace(ref ParserCtx ctx, in TokenArena ta)
-    {
-        int depth = 1;
-        while (ctx.Pos < ctx.EndPos && PeekKind(in ctx, in ta, 0) != TokKind.Eof)
-        {
-            TokKind k = Advance(ref ctx, in ta).Kind;
-            if (k == TokKind.LBrace) depth += 1;
-            else if (k == TokKind.RBrace)
-            {
-                depth -= 1;
-                if (depth <= 0) return;
-            }
-        }
+        return ast.AddNode(AstKind.PatUnion, tokIdx, uType, bindNameId, 0, innerSubPat);
     }
 
     private static int ParseUnary(
@@ -5481,8 +5569,8 @@ public static class Parser
         for (int i = lparenIdx + 1; i + 1 < afterParenIdx; i++)
         {
             TokKind k = ta.Tokens[i].Kind;
-            if (k == TokKind.LParen || k == TokKind.LBracket) depth += 1;
-            else if (k == TokKind.RParen || k == TokKind.RBracket) depth -= 1;
+            if (k == TokKind.LParen || k == TokKind.LBracket || k == TokKind.LBrace) depth += 1;
+            else if (k == TokKind.RParen || k == TokKind.RBracket || k == TokKind.RBrace) depth -= 1;
             else if (depth == 0 && k == TokKind.Comma) return true;
         }
         // `(int x) =>` or `(MyType x) =>`

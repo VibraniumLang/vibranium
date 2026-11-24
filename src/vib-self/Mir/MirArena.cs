@@ -122,6 +122,13 @@ public static class MirLocalFlags
     public const int IsForeachLoan = 1 << 12;
     // A source operand loan retained until its invocation or assignment activates.
     public const int IsCallOperandLoan = 1 << 13;
+    // A synthetic ref carrier constrained by a source evaluation window,
+    // not a pointer slot used by the generated program.
+    public const int IsAnalysisBorrow = 1 << 14;
+    public const int IsSwitchGuardBorrow = 1 << 15;
+    public const int IsRepointLoanSnapshot = 1 << 16;
+    // Borrow window on a moved !Copy intrinsic receiver: writes conflict (VIB003), while uses of the moved place report only VIB001.
+    public const int IsMovedReceiverWindow = 1 << 17;
 }
 
 public readonly struct MirLocal
@@ -273,6 +280,8 @@ public enum MirOp
     Intrinsic = 18,
     DisposeResource = 19,
     ScopeExit = 20,
+    KeepBorrowAlive = 21, // A = reference carrier local ID (liveness only)
+    SnapshotRefLoan = 22, // A = analysis-only carrier local ID, B = source ref local ID
 }
 
 public readonly struct MirInst

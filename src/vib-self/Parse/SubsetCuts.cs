@@ -17,6 +17,8 @@ public static class SubsetCuts
         if (cut == 17) return "The native-sized integer types nint and nuint are not supported in Vibranium v0.2; use long or ulong."u8;
         if (cut == 18) return "Declarations directly in a switch section are not supported in Vibranium v0.2; wrap the section's statements in a block { }."u8;
         if (cut == 19) return "Constant conditions, guards and switch selectors are not supported in Vibranium v0.2; only while (true), do ... while (true) and for (;;) may use a constant condition."u8;
+        if (cut == 24) return "Property patterns on Option and Result cases are not supported in Vibranium v0.2; use the positional form, such as Some<T>(var x)."u8;
+        if (cut == 25) return "Conditional and short-circuit expressions in a ref reassignment are not supported in Vibranium v0.2; compute the value in a local first, or use an if statement."u8;
         return "Relational patterns and and-patterns are not supported in Vibranium v0.2; use a when guard or an if condition."u8;
     }
 
@@ -24,7 +26,7 @@ public static class SubsetCuts
     {
         for (int cut = 10; cut <= 20; cut++)
             if (Bytes.Eq(message, Message(cut))) return true;
-        return false;
+        return Bytes.Eq(message, Message(24)) || Bytes.Eq(message, Message(25));
     }
 
     public static void Normalize(ref DiagnosticBag diags)

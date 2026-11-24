@@ -329,7 +329,8 @@ public static class Lexer
             {
                 nameId = names.Intern(src.Slice(idStart, atConsumed));
             }
-            arena.Tokens.Push(new Token(TokKind.Ident, sourceId, start, end - start, nameId, 0));
+            // Ident tokens use IntVal to remember a leading @ after name interning.
+            arena.Tokens.Push(new Token(TokKind.Ident, sourceId, start, end - start, nameId, 1));
             return end;
         }
 

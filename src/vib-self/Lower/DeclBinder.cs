@@ -15,6 +15,9 @@ public struct BinderCtx
     public Vec<int> UsingBoundId;
     public Vec<int> UsingBoundTypeId;
     public Vec<int> ConstStrChunks;
+    // Set only while the binder evaluates a framework MethodImpl argument: the names
+    // MethodImplOptions and System.Runtime.CompilerServices.MethodImplOptions then denote
+    // the framework enum (an EnumDeclId of ast.Types.Count, outside the source decls).
 
     // Cached common interned NameIds
     public int IdThis;
@@ -370,6 +373,7 @@ public static class DeclBinder
         BindTypeBaseLists(ref ast, in ta, in names, ref bctx, ref types, ref diags);
 
         EvaluateConstFields(ref ast, in ta, in names, ref bctx, ref types, ref diags);
+        BindReturnLifetimeArguments(ref ast, in ta, ref names, in bctx, ref diags);
 
         DrainConcreteTypeQueue(in ast, in ta, in names, ref bctx, ref types, ref mir, ref diags);
 
@@ -654,6 +658,65 @@ public static class DeclBinder
             new ConstEvalVal(6, TypeIds.Void, -1, 0L, 0.0);
     }
 
+    private static void BindReturnLifetimeArguments(ref AstArena ast, in TokenArena ta, ref Interner names,
+        in BinderCtx bctx, ref DiagnosticBag diags)
+    {
+        var strChunks = new Vec<int>();
+        for (int c = 0; c < bctx.ConstStrChunks.Count; c++) strChunks.Push(bctx.ConstStrChunks[c]);
+        for (int f = 0; f < ast.Funcs.Count; f++)
+        {
+            FuncDecl fd = ast.Funcs[f];
+            if ((fd.Flags & DeclFlags.HasReturnLifetimeAttr) == 0 || fd.LifetimeCount == 0) continue;
+            var outerBindings = new Vec<SourceLexicalBinding>();
+            SourceLexicalScopeChecker.CollectEnclosingBindings(f, in ast, ref outerBindings);
+            var resolved = new Vec<int>(fd.LifetimeCount);
+            for (int j = 0; j < fd.LifetimeCount; j++)
+            {
+                AstNode arg = ast.Nodes[ast.Extra[fd.LifetimeExtraStart + j]];
+                bool hadDiag = false;
+                AstNode expr = ast.Nodes[arg.A];
+                ConstEvalVal value = ConstEvalVal.Invalid();
+                if (expr.Kind == AstKind.ExprDefault && expr.A >= 0 &&
+                    (ast.Nodes[expr.A].Kind == AstKind.TypeArray ||
+                     (TryResolveConstTypeSyntaxInBinder(expr.A, fd.LifetimeLexicalOwner, in ast, in names, in bctx,
+                         out int target, out _, out _, out _) && target == TypeIds.Str)))
+                {
+                    // Typed string or array default is a null name; the parser handles bare default.
+                    diags.ReportTok(VibCodes.NullOrZeroUnsafe, ta.Tokens[expr.TokIdx], "LifetimeOf cannot use a null name or array."u8);
+                    hadDiag = true;
+                }
+                else if (expr.Kind == AstKind.ExprStrLit || expr.Kind == AstKind.ExprIdent || expr.Kind == AstKind.ExprMember)
+                {
+                    value = EvalConstNode(arg.A, fd.LifetimeLexicalOwner, 0, emitDiags: true,
+                        in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag,
+                        outerBindings.AsReadOnlySpan(), -1, primaryParamsFirstInOwner: false);
+                }
+                if (value.Kind != 5)
+                {
+                    if (!hadDiag)
+                        diags.ReportTok(VibCodes.Unsupported, ta.Tokens[arg.TokIdx], "LifetimeOf arguments must be string literals or constant string names (CS1503 for non-string arguments)."u8);
+                }
+                else
+                {
+                    var text = new StringBuf();
+                    AppendConstStringBytes(in ta, in strChunks, value.IntVal, ref text);
+                    resolved.Push(names.Intern(text.AsUtf8()));
+                }
+            }
+            if (resolved.Count == fd.LifetimeCount)
+            {
+                fd.LifetimeExtraStart = ast.PushExtraSpan(resolved.AsReadOnlySpan());
+            }
+            else
+            {
+                // Preserve the distinction between an invalid contract and no
+                // contract. Do not run elision and demand a second annotation.
+                fd.LifetimeCount = -1;
+            }
+            ast.Funcs[f] = fd;
+        }
+    }
+
     private static void EvaluateConstFields(
         ref AstArena ast,
         in TokenArena ta,
@@ -710,21 +773,10 @@ public static class DeclBinder
                                 continue;
                             }
                             bool dummyHadDiag = false;
-                            ConstEvalVal ev = EvalConstNode(fd.InitExpr, t, 0, emitDiags: false, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref dummyHadDiag);
+                            ConstEvalVal ev = EvalConstNode(fd.InitExpr, t, 0, emitDiags: false, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref dummyHadDiag, default, -1, primaryParamsFirstInOwner: false);
                             long convE = 0;
-                            bool okEnum = false;
-                            if (ev.Kind != 0)
-                            {
-                                if (ev.Kind == 1 && ev.EnumDeclId == t)
-                                {
-                                    convE = (int)ev.IntVal;
-                                    okEnum = true;
-                                }
-                                else
-                                {
-                                    okEnum = TryConvertConstToFieldTarget(ev, TypeIds.I32, -1, ta.Tokens[fd.TokIdx], emitDiags: false, in types, ref diags, out convE);
-                                }
-                            }
+                            bool okEnum = ev.Kind != 0 && ev.EnumDeclId < 0 &&
+                                TryConvertConstToFieldTarget(ev, TypeIds.I32, -1, ta.Tokens[fd.TokIdx], emitDiags: false, in types, ref diags, out convE);
                             if (okEnum)
                             {
                                 ast.Fields[idx] = new FieldDecl(fd.NameId, fd.TypeNode, fd.InitExpr, fd.Flags, (int)convE, 1, fd.TokIdx);
@@ -769,7 +821,7 @@ public static class DeclBinder
                         continue;
                     }
                     bool dummyHadDiag = false;
-                    ConstEvalVal ev = EvalConstNode(fd.InitExpr, t, 0, emitDiags: false, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref dummyHadDiag);
+                    ConstEvalVal ev = EvalConstNode(fd.InitExpr, t, 0, emitDiags: false, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref dummyHadDiag, default, -1, primaryParamsFirstInOwner: true);
                     if (ev.Kind != 0 && TryConvertConstToFieldTarget(ev, fPrimOrTypeId, fEnumDeclId, ta.Tokens[fd.TokIdx], emitDiags: false, in types, ref diags, out long storedBits))
                     {
                         ast.Fields[idx] = new FieldDecl(fd.NameId, fd.TypeNode, fd.InitExpr, fd.Flags, storedBits, 1, fd.TokIdx);
@@ -803,7 +855,7 @@ public static class DeclBinder
                     if (fd.InitExpr >= 0)
                     {
                         bool hadDiag = false;
-                        ConstEvalVal ev = EvalConstNode(fd.InitExpr, t, 0, emitDiags: true, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag);
+                        ConstEvalVal ev = EvalConstNode(fd.InitExpr, t, 0, emitDiags: true, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag, default, -1, primaryParamsFirstInOwner: false);
                         if (ev.Kind == 0)
                         {
                             if (!hadDiag)
@@ -811,7 +863,11 @@ public static class DeclBinder
                                 diags.ReportTok(VibCodes.Unsupported, ta.Tokens[fd.TokIdx], "Enum member initializer must be a compile-time constant expression (CS0133)."u8);
                             }
                         }
-                        else if (!(ev.Kind == 1 && ev.EnumDeclId == t) && !TryConvertConstToFieldTarget(ev, TypeIds.I32, -1, ta.Tokens[fd.TokIdx], emitDiags: true, in types, ref diags, out _))
+                        else if (ev.EnumDeclId >= 0)
+                        {
+                            diags.ReportTok(VibCodes.Unsupported, ta.Tokens[fd.TokIdx], "Cannot implicitly convert enum-typed initializer to the underlying type (CS0266)."u8);
+                        }
+                        else if (!TryConvertConstToFieldTarget(ev, TypeIds.I32, -1, ta.Tokens[fd.TokIdx], emitDiags: true, in types, ref diags, out _))
                         {
                             // Diagnostic already emitted
                         }
@@ -845,7 +901,7 @@ public static class DeclBinder
                 }
 
                 bool hadDiag = false;
-                ConstEvalVal ev = EvalConstNode(fd.InitExpr, t, 0, emitDiags: true, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag);
+                ConstEvalVal ev = EvalConstNode(fd.InitExpr, t, 0, emitDiags: true, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag, default, -1, primaryParamsFirstInOwner: true);
                 if (ev.Kind == 0)
                 {
                     if (!hadDiag)
@@ -1021,7 +1077,7 @@ public static class DeclBinder
         var dummyDiags = new DiagnosticBag(0);
         var scratchStrChunks = new Vec<int>();
         bool dummyHadDiag = false;
-        ConstEvalVal ev = EvalConstNode(exprId, currentOwnerDeclId, 0, emitDiags: false, in ast, in ta, in names, in bctx, ref scratchStrChunks, ref dummyDiags, ref dummyHadDiag);
+        ConstEvalVal ev = EvalConstNode(exprId, currentOwnerDeclId, 0, emitDiags: false, in ast, in ta, in names, in bctx, ref scratchStrChunks, ref dummyDiags, ref dummyHadDiag, default, -1, primaryParamsFirstInOwner: false);
         if (ev.Kind == 1 || ev.Kind == 2)
         {
             val = ev.IntVal;
@@ -1547,6 +1603,20 @@ public static class DeclBinder
         return false;
     }
 
+    // C# enum members: within an enum member initializer, the values of enum constants
+    // (of any enum type) are treated as having the enum's underlying type, so they
+    // combine with integers without casts. Vibranium enums always have underlying 'int'.
+    // Only a constant field access gets this typing; a cast '(E)k' keeps its enum type.
+    private static ConstEvalVal AsEnumInitializerOperand(ConstEvalVal v, int currentOwnerDeclId, in AstArena ast)
+    {
+        if (v.Kind == 1 && v.EnumDeclId >= 0 && currentOwnerDeclId >= 0 &&
+            ast.Types[currentOwnerDeclId].Kind == TypeDeclKinds.Enum)
+        {
+            return ConstEvalVal.MakeInt(TypeIds.I32, unchecked((int)v.IntVal));
+        }
+        return v;
+    }
+
     private static ConstEvalVal ReconstructConstFieldVal(
         int ownerDeclId,
         in FieldDecl fd,
@@ -1606,6 +1676,20 @@ public static class DeclBinder
         return -1;
     }
 
+    private static bool HasPrimaryCtorParam(in TypeDecl owner, int nameId, in AstArena ast)
+    {
+        for (int m = 0; m < owner.FuncCount; m++)
+        {
+            FuncDecl ctor = ast.Funcs[owner.FuncStart + m];
+            if ((ctor.Flags & DeclFlags.IsCtor) == 0 || (ctor.Flags & DeclFlags.Partial) != 0 || ctor.TokIdx != owner.TokIdx) continue;
+            for (int p = 0; p < ctor.ParamCount; p++)
+            {
+                if (ast.Params[ctor.ParamStart + p].NameId == nameId) return true;
+            }
+        }
+        return false;
+    }
+
     private static ConstEvalVal EvalConstNode(
         int exprId,
         int currentOwnerDeclId,
@@ -1617,7 +1701,10 @@ public static class DeclBinder
         in BinderCtx bctx,
         ref Vec<int> strChunks,
         ref DiagnosticBag diags,
-        ref bool hadDiag)
+        ref bool hadDiag,
+        ReadOnlySpan<SourceLexicalBinding> localBindings,
+        int localLimitTokIdx,
+        bool primaryParamsFirstInOwner)
     {
         if (exprId < 0) return ConstEvalVal.Invalid();
         AstNode n = ast.Nodes[exprId];
@@ -1713,26 +1800,61 @@ public static class DeclBinder
             case AstKind.ExprIdent:
             {
                 if (n.C != 0 || n.D != 0) return ConstEvalVal.Invalid();
+                int limitTok = localLimitTokIdx >= 0 ? localLimitTokIdx : n.TokIdx;
+                for (int i = localBindings.Length - 1; i >= 0; i--)
+                {
+                    SourceLexicalBinding binding = localBindings[i];
+                    if (binding.NameId != n.A) continue;
+                    if (!SourceLexicalScopeChecker.IsConstant(in binding, in ast) || binding.TokIdx >= limitTok)
+                        return ConstEvalVal.Invalid();
+                    int scopeEnd = i + 1;
+                    while (scopeEnd < localBindings.Length &&
+                           localBindings[scopeEnd].FunctionId == binding.FunctionId &&
+                           localBindings[scopeEnd].Scope == binding.Scope)
+                    {
+                        scopeEnd += 1;
+                    }
+                    // The initializer can only reference constants in this or outer scopes declared before this binding.
+                    return EvalConstNode(ast.Nodes[binding.NodeId].C, currentOwnerDeclId, uncheckedDepth, emitDiags,
+                        in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag,
+                        localBindings.Slice(0, scopeEnd), binding.TokIdx, primaryParamsFirstInOwner: false);
+                }
+                ReadOnlySpan<byte> identText = names.Text(n.A);
                 for (int d = currentOwnerDeclId; d >= 0; d = ast.Types[d].OwnerDeclId)
                 {
                     TypeDecl owner = ast.Types[d];
+                    bool primaryFirst = primaryParamsFirstInOwner && d == currentOwnerDeclId;
+                    if (primaryFirst && HasPrimaryCtorParam(in owner, n.A, in ast))
+                        return ConstEvalVal.Invalid();
                     for (int f = 0; f < owner.FieldCount; f++)
                     {
                         FieldDecl fd = ast.Fields[owner.FieldStart + f];
-                        if (fd.NameId == n.A && (fd.Flags & DeclFlags.IsConst) != 0)
-                        {
-                            if (fd.HasConstVal == 0) return ConstEvalVal.Invalid();
-                            return ReconstructConstFieldVal(d, in fd, in ast, in names, in bctx);
-                        }
+                        if ((fd.Flags & DeclFlags.IsCapturedPrimaryParam) != 0 || fd.NameId != n.A) continue;
+                        if ((fd.Flags & DeclFlags.IsConst) == 0 || fd.HasConstVal == 0) return ConstEvalVal.Invalid();
+                        return AsEnumInitializerOperand(ReconstructConstFieldVal(d, in fd, in ast, in names, in bctx), currentOwnerDeclId, in ast);
                     }
-                }
-                if (currentOwnerDeclId >= 0)
-                {
-                    TypeDecl curTd = ast.Types[currentOwnerDeclId];
-                    if (TryEvalImportedStaticConstMember(n.A, currentOwnerDeclId, curTd.NsId, curTd.UsingExtraStart, curTd.UsingCount, tok, emitDiags, in ast, in names, in bctx, ref diags, ref hadDiag, out ConstEvalVal staticVal))
+                    for (int m = 0; m < owner.FuncCount; m++)
                     {
-                        return staticVal;
+                        FuncDecl mf = ast.Funcs[owner.FuncStart + m];
+                        if ((mf.Flags & (DeclFlags.IsLocalFunc | DeclFlags.IsCtor | DeclFlags.IsTopLevelMain | DeclFlags.IsIndexer | DeclFlags.IsOpAddAssign)) != 0) continue;
+                        int kind = (mf.Flags & (DeclFlags.IsPropGet | DeclFlags.IsPropSet)) != 0 ? MemberProperty : MemberMethod;
+                        if (Bytes.Eq(MemberNameText(owner.FuncStart + m, kind, in ast, in names), identText))
+                            return ConstEvalVal.Invalid();
                     }
+                    if (!primaryFirst && HasPrimaryCtorParam(in owner, n.A, in ast))
+                        return ConstEvalVal.Invalid();
+                }
+                int identNs = currentOwnerDeclId >= 0 ? ast.Types[currentOwnerDeclId].NsId : -1;
+                int identSrcId = tok.SourceId;
+                int identUStart = currentOwnerDeclId >= 0
+                    ? ast.Types[currentOwnerDeclId].UsingExtraStart
+                    : (identSrcId >= 0 && identSrcId < ast.SourceUsingStarts.Count ? ast.SourceUsingStarts[identSrcId] : 0);
+                int identUCount = currentOwnerDeclId >= 0
+                    ? ast.Types[currentOwnerDeclId].UsingCount
+                    : (identSrcId >= 0 && identSrcId < ast.SourceUsingCounts.Count ? ast.SourceUsingCounts[identSrcId] : 0);
+                if (TryEvalImportedStaticConstMember(n.A, currentOwnerDeclId, identNs, identUStart, identUCount, tok, emitDiags, in ast, in names, in bctx, ref diags, ref hadDiag, out ConstEvalVal staticVal))
+                {
+                    return AsEnumInitializerOperand(staticVal, currentOwnerDeclId, in ast);
                 }
                 return ConstEvalVal.Invalid();
             }
@@ -1772,6 +1894,7 @@ public static class DeclBinder
                     int resolvedDecl = -1;
                     int resolvedPrimType = -1;
                     int resolvedBuiltinStatic = 0;
+                    int unqualifiedKind = 0;
 
                     if (target.D == 1)
                     {
@@ -1784,6 +1907,7 @@ public static class DeclBinder
                     else if (callerUnit == UnitKinds.App)
                     {
                         int rk = ResolveAppUnqualifiedName(target.A, 0, callerNs, currentOwnerDeclId, uStart, uCount, in ast, in names, in bctx, out int foundDecl, out int foundAliasIdx, out bool mSys, out _);
+                        unqualifiedKind = rk;
                         if (rk == -2)
                         {
                             if (emitDiags)
@@ -1823,31 +1947,20 @@ public static class DeclBinder
                         long bBits = 0;
                         bool bIsFloat = false;
                         bool matchedNumConst;
-                        bool isArrayTarget = false;
                         if (resolvedPrimType > 0)
                         {
                             matchedNumConst = TryEvalBuiltinNumericConstMember(PrimTypeIdBuiltinName(resolvedPrimType), names.Text(n.B), out bTid, out bBits, out bIsFloat);
-                        }
-                        else if (resolvedBuiltinStatic == BuiltinStaticIds.Array)
-                        {
-                            matchedNumConst = false;
-                            isArrayTarget = true;
                         }
                         else
                         {
                             ReadOnlySpan<byte> tgtTxt = names.Text(target.A);
                             matchedNumConst = TryEvalBuiltinNumericConstMember(tgtTxt, names.Text(n.B), out bTid, out bBits, out bIsFloat);
-                            isArrayTarget = Bytes.Eq(tgtTxt, "Array"u8);
                         }
                         if (matchedNumConst)
                         {
                             if (!bIsFloat) return ConstEvalVal.MakeInt(bTid, bBits);
                             if (bTid == TypeIds.F32) return ConstEvalVal.MakeF32Bits(unchecked((int)bBits));
                             return ConstEvalVal.MakeF64Bits(bBits);
-                        }
-                        if (isArrayTarget && Bytes.Eq(names.Text(n.B), "MaxLength"u8))
-                        {
-                            return ConstEvalVal.MakeInt(TypeIds.I32, 2147483591L);
                         }
                     }
                     else
@@ -1868,7 +1981,7 @@ public static class DeclBinder
                                     return ConstEvalVal.Invalid();
                                 }
                                 if (fd.HasConstVal == 0) return ConstEvalVal.Invalid();
-                                return ReconstructConstFieldVal(resolvedDecl, in fd, in ast, in names, in bctx);
+                                return AsEnumInitializerOperand(ReconstructConstFieldVal(resolvedDecl, in fd, in ast, in names, in bctx), currentOwnerDeclId, in ast);
                             }
                         }
                     }
@@ -1922,10 +2035,6 @@ public static class DeclBinder
                                 if (sTid == TypeIds.F32) return ConstEvalVal.MakeF32Bits(unchecked((int)sBits));
                                 return ConstEvalVal.MakeF64Bits(sBits);
                             }
-                            if (Bytes.Eq(names.Text(target.B), "Array"u8) && Bytes.Eq(names.Text(n.B), "MaxLength"u8))
-                            {
-                                return ConstEvalVal.MakeInt(TypeIds.I32, 2147483591L);
-                            }
                         }
                         if (qDecl >= 0)
                         {
@@ -1945,7 +2054,7 @@ public static class DeclBinder
                                         return ConstEvalVal.Invalid();
                                     }
                                     if (fd.HasConstVal == 0) return ConstEvalVal.Invalid();
-                                    return ReconstructConstFieldVal(qDecl, in fd, in ast, in names, in bctx);
+                                    return AsEnumInitializerOperand(ReconstructConstFieldVal(qDecl, in fd, in ast, in names, in bctx), currentOwnerDeclId, in ast);
                                 }
                             }
                         }
@@ -1960,7 +2069,7 @@ public static class DeclBinder
                 TokKind uop = (TokKind)n.A;
                 if (uop == TokKind.KwUnchecked)
                 {
-                    return EvalConstNode(n.B, currentOwnerDeclId, uncheckedDepth + 1, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag);
+                    return EvalConstNode(n.B, currentOwnerDeclId, uncheckedDepth + 1, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag, localBindings, localLimitTokIdx, primaryParamsFirstInOwner);
                 }
                 if (uop == TokKind.KwChecked)
                 {
@@ -1986,7 +2095,7 @@ public static class DeclBinder
                     }
                 }
 
-                ConstEvalVal inner = EvalConstNode(n.B, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag);
+                ConstEvalVal inner = EvalConstNode(n.B, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag, localBindings, localLimitTokIdx, primaryParamsFirstInOwner);
                 if (inner.Kind == 0) return ConstEvalVal.Invalid();
 
                 if (uop == TokKind.Bang)
@@ -2063,7 +2172,7 @@ public static class DeclBinder
                     return ConstEvalVal.Invalid();
                 }
 
-                ConstEvalVal src = EvalConstNode(n.B, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag);
+                ConstEvalVal src = EvalConstNode(n.B, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag, localBindings, localLimitTokIdx, primaryParamsFirstInOwner);
                 if (src.Kind == 0) return ConstEvalVal.Invalid();
 
                 if (dstEnum >= 0 || (dstPrim >= TypeIds.I8 && dstPrim <= TypeIds.NUInt))
@@ -2157,9 +2266,9 @@ public static class DeclBinder
 
             case AstKind.ExprCond:
             {
-                ConstEvalVal cond = EvalConstNode(n.A, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag);
-                ConstEvalVal whenTrue = EvalConstNode(n.B, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag);
-                ConstEvalVal whenFalse = EvalConstNode(n.C, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag);
+                ConstEvalVal cond = EvalConstNode(n.A, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag, localBindings, localLimitTokIdx, primaryParamsFirstInOwner);
+                ConstEvalVal whenTrue = EvalConstNode(n.B, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag, localBindings, localLimitTokIdx, primaryParamsFirstInOwner);
+                ConstEvalVal whenFalse = EvalConstNode(n.C, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag, localBindings, localLimitTokIdx, primaryParamsFirstInOwner);
                 if (cond.Kind != 2 || whenTrue.Kind == 0 || whenFalse.Kind == 0)
                 {
                     return ConstEvalVal.Invalid();
@@ -2172,7 +2281,7 @@ public static class DeclBinder
             }
 
             case AstKind.ExprBinary:
-                return EvalConstBinary(in n, tok, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag);
+                return EvalConstBinary(in n, tok, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag, localBindings, localLimitTokIdx, primaryParamsFirstInOwner);
 
             default:
                 return ConstEvalVal.Invalid();
@@ -2191,11 +2300,14 @@ public static class DeclBinder
         in BinderCtx bctx,
         ref Vec<int> strChunks,
         ref DiagnosticBag diags,
-        ref bool hadDiag)
+        ref bool hadDiag,
+        ReadOnlySpan<SourceLexicalBinding> localBindings,
+        int localLimitTokIdx,
+        bool primaryParamsFirstInOwner)
     {
         TokKind bop = (TokKind)n.A;
-        ConstEvalVal l = EvalConstNode(n.B, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag);
-        ConstEvalVal r = EvalConstNode(n.C, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag);
+        ConstEvalVal l = EvalConstNode(n.B, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag, localBindings, localLimitTokIdx, primaryParamsFirstInOwner);
+        ConstEvalVal r = EvalConstNode(n.C, currentOwnerDeclId, uncheckedDepth, emitDiags, in ast, in ta, in names, in bctx, ref strChunks, ref diags, ref hadDiag, localBindings, localLimitTokIdx, primaryParamsFirstInOwner);
         if (l.Kind == 0 || r.Kind == 0) return ConstEvalVal.Invalid();
 
         // String '+' and '=='/'!=' are banned in Vibranium (docs/SPEC.md:58)
@@ -2221,8 +2333,15 @@ public static class DeclBinder
                 case TokKind.Caret: return ConstEvalVal.MakeBool((l.IntVal ^ r.IntVal) != 0);
                 case TokKind.EqEq: return ConstEvalVal.MakeBool(l.IntVal == r.IntVal);
                 case TokKind.BangEq: return ConstEvalVal.MakeBool(l.IntVal != r.IntVal);
-                default: return ConstEvalVal.Invalid();
+                default: return ReportNoConstBinaryOperator(tok, emitDiags, ref diags, ref hadDiag);
             }
+        }
+
+        // 'bool' has no conversion to or from the numeric and enum types: '1 + true',
+        // 'true + 3' and 'E.A | false' have no applicable operator (CS0019).
+        if ((l.Kind == 2) != (r.Kind == 2) && l.Kind != 6 && r.Kind != 6)
+        {
+            return ReportNoConstBinaryOperator(tok, emitDiags, ref diags, ref hadDiag);
         }
 
         // Floating-point arithmetic and relational/equality
@@ -2278,48 +2397,42 @@ public static class DeclBinder
             }
         }
 
-        if (l.Kind != 1 || r.Kind != 1)
+        bool lFloatZeroAsEnum = r.EnumDeclId >= 0 && (l.Kind == 3 || l.Kind == 4) && l.FltVal == 0.0;
+        bool rFloatZeroAsEnum = l.EnumDeclId >= 0 && (r.Kind == 3 || r.Kind == 4) && r.FltVal == 0.0;
+        if ((l.Kind != 1 && !lFloatZeroAsEnum) || (r.Kind != 1 && !rFloatZeroAsEnum))
         {
+            if (l.Kind != 6 && r.Kind != 6) return ReportNoConstBinaryOperator(tok, emitDiags, ref diags, ref hadDiag);
             return ConstEvalVal.Invalid();
         }
 
-        // Enum binary operations
+        // Enum binary operations (C# predefined enum operators, Roslyn's binding):
+        //   E op E for &, |, ^ and comparisons; E - E -> int; E + U, U + E, E - U, U - E -> E,
+        //   where U is int and the operand converts to it implicitly. Numeric constant zero
+        //   also converts to E (including floating zero, but not char), which makes 'e | 0',
+        //   'e < 0', 'e - 0L' and '0f - e' (E - E -> int) valid.
         if (l.EnumDeclId >= 0 || r.EnumDeclId >= 0)
         {
-            if (l.EnumDeclId >= 0 && r.EnumDeclId == l.EnumDeclId)
+            bool lIsEnum = l.EnumDeclId >= 0;
+            bool rIsEnum = r.EnumDeclId >= 0;
+            bool lZeroToEnum = lFloatZeroAsEnum || (!lIsEnum && l.TypeId != TypeIds.Char && l.IntVal == 0L);
+            bool rZeroToEnum = rFloatZeroAsEnum || (!rIsEnum && r.TypeId != TypeIds.Char && r.IntVal == 0L);
+            bool lToInt = l.Kind == 1 && !lIsEnum && CanImplicitlyConvertConstInt(l.TypeId, l.IntVal, TypeIds.I32);
+            bool rToInt = r.Kind == 1 && !rIsEnum && CanImplicitlyConvertConstInt(r.TypeId, r.IntVal, TypeIds.I32);
+            int enumId = lIsEnum ? l.EnumDeclId : r.EnumDeclId;
+            bool asEnumPair = (lIsEnum && rIsEnum && l.EnumDeclId == r.EnumDeclId) ||
+                (lIsEnum && rZeroToEnum) || (rIsEnum && lZeroToEnum);
+            long li = lFloatZeroAsEnum ? 0L : (int)l.IntVal;
+            long ri = rFloatZeroAsEnum ? 0L : (int)r.IntVal;
+
+            if (bop == TokKind.Plus || bop == TokKind.Minus)
             {
-                int li = (int)l.IntVal;
-                int ri = (int)r.IntVal;
-                switch (bop)
-                {
-                    case TokKind.Pipe: return ConstEvalVal.MakeEnum(l.EnumDeclId, li | ri);
-                    case TokKind.Amp: return ConstEvalVal.MakeEnum(l.EnumDeclId, li & ri);
-                    case TokKind.Caret: return ConstEvalVal.MakeEnum(l.EnumDeclId, li ^ ri);
-                    case TokKind.Minus:
-                    {
-                        long diff = (long)li - (long)ri;
-                        if (uncheckedDepth == 0 && (diff < -2147483648L || diff > 2147483647L))
-                        {
-                            if (emitDiags) { diags.ReportTok(VibCodes.Unsupported, tok, "Compile-time constant enum subtraction overflows in checked mode (CS0220)."u8); hadDiag = true; }
-                            return ConstEvalVal.Invalid();
-                        }
-                        return ConstEvalVal.MakeInt(TypeIds.I32, unchecked(li - ri));
-                    }
-                    case TokKind.EqEq: return ConstEvalVal.MakeBool(li == ri);
-                    case TokKind.BangEq: return ConstEvalVal.MakeBool(li != ri);
-                    case TokKind.LAngle: return ConstEvalVal.MakeBool(li < ri);
-                    case TokKind.LtEq: return ConstEvalVal.MakeBool(li <= ri);
-                    case TokKind.RAngle: return ConstEvalVal.MakeBool(li > ri);
-                    case TokKind.GtEq: return ConstEvalVal.MakeBool(li >= ri);
-                    default: return ConstEvalVal.Invalid();
-                }
-            }
-            // Enum == 0 / Enum != 0 or Enum +/- int (including char -> int!)
-            if (l.EnumDeclId >= 0 && r.EnumDeclId < 0 && ConstIntBitWidth(r.TypeId) <= 32 && r.TypeId != TypeIds.U32)
-            {
-                long li = (int)l.IntVal;
-                long ri = (int)r.IntVal;
-                if (bop == TokKind.Plus || bop == TokKind.Minus)
+                // E + U / U + E / E - U / U - E: Roslyn prefers E - U for 'e - 0', and
+                // E - E for '0 - e' (its native-compiler-compatible operator priorities).
+                bool enumResult =
+                    (lIsEnum && rToInt) ||
+                    (rIsEnum && lToInt && (bop == TokKind.Plus || !lZeroToEnum));
+                bool intResult = !enumResult && bop == TokKind.Minus && asEnumPair;
+                if (enumResult || intResult)
                 {
                     long res = bop == TokKind.Plus ? (li + ri) : (li - ri);
                     if (uncheckedDepth == 0 && (res < -2147483648L || res > 2147483647L))
@@ -2327,33 +2440,26 @@ public static class DeclBinder
                         if (emitDiags) { diags.ReportTok(VibCodes.Unsupported, tok, "Compile-time constant enum arithmetic overflows in checked mode (CS0220)."u8); hadDiag = true; }
                         return ConstEvalVal.Invalid();
                     }
-                    return ConstEvalVal.MakeEnum(l.EnumDeclId, res);
-                }
-                if (r.TypeId != TypeIds.Char && ri == 0L && (bop == TokKind.EqEq || bop == TokKind.BangEq))
-                {
-                    return ConstEvalVal.MakeBool(bop == TokKind.EqEq ? li == 0L : li != 0L);
+                    int wrapped = unchecked((int)res);
+                    return enumResult ? ConstEvalVal.MakeEnum(enumId, wrapped) : ConstEvalVal.MakeInt(TypeIds.I32, wrapped);
                 }
             }
-            if (r.EnumDeclId >= 0 && l.EnumDeclId < 0 && ConstIntBitWidth(l.TypeId) <= 32 && l.TypeId != TypeIds.U32)
+            else if (asEnumPair)
             {
-                long li = (int)l.IntVal;
-                long ri = (int)r.IntVal;
-                if (bop == TokKind.Plus)
+                switch (bop)
                 {
-                    long res = li + ri;
-                    if (uncheckedDepth == 0 && (res < -2147483648L || res > 2147483647L))
-                    {
-                        if (emitDiags) { diags.ReportTok(VibCodes.Unsupported, tok, "Compile-time constant enum arithmetic overflows in checked mode (CS0220)."u8); hadDiag = true; }
-                        return ConstEvalVal.Invalid();
-                    }
-                    return ConstEvalVal.MakeEnum(r.EnumDeclId, res);
-                }
-                if (l.TypeId != TypeIds.Char && li == 0L && (bop == TokKind.EqEq || bop == TokKind.BangEq))
-                {
-                    return ConstEvalVal.MakeBool(bop == TokKind.EqEq ? ri == 0L : ri != 0L);
+                    case TokKind.Pipe: return ConstEvalVal.MakeEnum(enumId, li | ri);
+                    case TokKind.Amp: return ConstEvalVal.MakeEnum(enumId, li & ri);
+                    case TokKind.Caret: return ConstEvalVal.MakeEnum(enumId, li ^ ri);
+                    case TokKind.EqEq: return ConstEvalVal.MakeBool(li == ri);
+                    case TokKind.BangEq: return ConstEvalVal.MakeBool(li != ri);
+                    case TokKind.LAngle: return ConstEvalVal.MakeBool(li < ri);
+                    case TokKind.LtEq: return ConstEvalVal.MakeBool(li <= ri);
+                    case TokKind.RAngle: return ConstEvalVal.MakeBool(li > ri);
+                    case TokKind.GtEq: return ConstEvalVal.MakeBool(li >= ri);
                 }
             }
-            return ConstEvalVal.Invalid();
+            return ReportNoConstBinaryOperator(tok, emitDiags, ref diags, ref hadDiag);
         }
 
         // Shifts `<<`, `>>`, `>>>`
@@ -2517,6 +2623,16 @@ public static class DeclBinder
         }
 
         return ConstEvalVal.MakeInt(promT, result);
+    }
+
+    private static ConstEvalVal ReportNoConstBinaryOperator(Token tok, bool emitDiags, ref DiagnosticBag diags, ref bool hadDiag)
+    {
+        if (emitDiags)
+        {
+            diags.ReportTok(VibCodes.Unsupported, tok, "Operator cannot be applied to operands of these types (CS0019)."u8);
+            hadDiag = true;
+        }
+        return ConstEvalVal.Invalid();
     }
 
     private static int PromoteConstBinaryIntType(int lt, long lv, int rt, long rv)
@@ -3929,6 +4045,15 @@ public static class DeclBinder
                     continue;
                 }
 
+                // A known but denied framework attribute cannot enter the using
+                // table, even when no attribute application ever refers to it.
+                bool isAttribute = Parser.TryResolveFrameworkAttributeAlias(ue.TargetNode, in ast, in names, out int attributeIdentity, out bool attributePermitted);
+                if (isAttribute && !attributePermitted)
+                {
+                    diags.ReportTok(VibCodes.Unsupported, ta.Tokens[tn.TokIdx], "A 'using' alias cannot target an attribute that is not permitted in this source unit."u8);
+                    continue;
+                }
+
                 // Next check static/interface/user/builtin type target
                 if (tn.Kind == AstKind.TypeNamed &&
                     TryResolveStaticOrAliasSpecialTarget(ue.TargetNode, isUsingStatic: false, in ast, in ta, in names, ref bctx, ref types, ref diags, out int aKind, out int aId, out int aTid))
@@ -3939,10 +4064,9 @@ public static class DeclBinder
                     continue;
                 }
 
-                // Attribute aliases are metadata-only. Recognize only the two
-                // supported framework identities, after ordinary source types,
-                // and never manufacture a runtime TypeId for a framework class.
-                if (Parser.TryResolveFrameworkAttributeAlias(ue.TargetNode, in ast, in names, out int attributeIdentity))
+                // Permitted attribute aliases are metadata-only, after ordinary
+                // source types, and never acquire a runtime TypeId here.
+                if (isAttribute)
                 {
                     bctx.UsingBoundKind[uIdx] = 4;
                     bctx.UsingBoundId[uIdx] = attributeIdentity;
@@ -4253,7 +4377,6 @@ public static class DeclBinder
             if (nameId == bctx.IdIDisposable) return BuiltinStaticIds.IDisposable;
             if (nameId == bctx.IdConsole) return BuiltinStaticIds.Console;
             if (nameId == bctx.IdMemoryExtensions) return BuiltinStaticIds.MemoryExtensions;
-            if (nameId == bctx.IdArray) return BuiltinStaticIds.Array;
         }
         if (inVibranium)
         {
@@ -4402,6 +4525,11 @@ public static class DeclBinder
                     diags.ReportTok(VibCodes.Unsupported, tok, "Framework attribute aliases cannot be used with 'using static'."u8);
                     return false;
                 }
+                if (bk == 3 && isUsingStatic && bctx.UsingBoundId[fAliasIdx] == BuiltinStaticIds.IDisposable)
+                {
+                    diags.ReportTok(VibCodes.Unsupported, tok, "Interface type 'IDisposable' cannot be used with 'using static'."u8);
+                    return false;
+                }
                 outKind = bk;
                 outId = bctx.UsingBoundId[fAliasIdx];
                 outTypeId = bctx.UsingBoundTypeId[fAliasIdx];
@@ -4433,10 +4561,8 @@ public static class DeclBinder
                 {
                     if (isUsingStatic && sp == BuiltinStaticIds.IDisposable)
                     {
-                        outKind = 3;
-                        outId = sp;
-                        outTypeId = TypeIds.Error;
-                        return true;
+                        diags.ReportTok(VibCodes.Unsupported, tok, "Interface type 'IDisposable' cannot be used with 'using static'."u8);
+                        return false;
                     }
                     outKind = 3;
                     outId = sp;
@@ -4491,7 +4617,10 @@ public static class DeclBinder
         }
 
         TypeDecl td = ast.Types[declId];
-        if (!bctx.CompilingStdItself && trc.UnitKind == UnitKinds.App && td.UnitKind == UnitKinds.Std && (td.Flags & DeclFlags.Public) == 0)
+        // The Std.Sys catalog has public .NET metadata but is internal to Vibranium.
+        bool isStdSys = td.OwnerDeclId < 0 && td.NsId == bctx.IdVibraniumStd && Bytes.Eq(names.Text(td.NameId), "Sys"u8);
+        if (!bctx.CompilingStdItself && trc.UnitKind == UnitKinds.App && td.UnitKind == UnitKinds.Std &&
+            ((td.Flags & DeclFlags.Public) == 0 || isStdSys))
         {
             diags.ReportTok(VibCodes.Unsupported, tok, "Internal standard library type is inaccessible from user code."u8);
             return false;
@@ -5434,13 +5563,7 @@ public static class DeclBinder
                     if (dup) continue;
                     seenOwners.Push(dedupKey);
 
-                    if (bId == BuiltinStaticIds.Array && Bytes.Eq(names.Text(memberNameId), "MaxLength"u8))
-                    {
-                        matchCount += 1;
-                        hasBuiltinMatch = true;
-                        builtinMatch = ConstEvalVal.MakeInt(TypeIds.I32, 2147483591L);
-                    }
-                    else if (bTid > 0)
+                    if (bTid > 0)
                     {
                         if (TryEvalBuiltinNumericConstMember(PrimTypeIdBuiltinName(bTid), names.Text(memberNameId), out int pTid, out long pBits, out bool pIsFloat))
                         {
@@ -6219,6 +6342,14 @@ public static class DeclBinder
         {
             FieldDecl fld = ast.Fields[td.FieldStart + f];
             int fType = ResolveTypeNode(fld.TypeNode, tpNames.AsReadOnlySpan(), tpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags);
+            if (fType != TypeIds.Error && IsRefStructType(fType, in types))
+            {
+                if ((fld.Flags & DeclFlags.IsCapturedPrimaryParam) != 0)
+                    diags.ReportTok(VibCodes.Unsupported, ta.Tokens[fld.TokIdx], "A ref-like primary-constructor parameter cannot be used inside an instance member (CS9110)."u8);
+                else
+                    diags.ReportTok(VibCodes.Unsupported, ta.Tokens[fld.TokIdx], "A ref-like field is only permitted as an instance member of a ref struct (CS8345)."u8);
+                continue;
+            }
             if ((fld.Flags & DeclFlags.Static) != 0) continue;
             if (td.Kind == TypeDeclKinds.Struct && fld.InitExpr >= 0 && !hasExplicitCtor)
                 diags.ReportTok(VibCodes.Unsupported, ta.Tokens[fld.TokIdx], "A struct with instance field initializers requires an explicit constructor (CS8983)."u8);
@@ -6269,6 +6400,16 @@ public static class DeclBinder
                 allTpVals.Push(types.MakeTypeParam(mTpName, names.Text(mTpName), constraintFlags));
             }
 
+            if ((fd.Flags & DeclFlags.UnscopedRefAttr) != 0 &&
+                (td.Kind != TypeDeclKinds.Struct || (fd.Flags & (DeclFlags.Static | DeclFlags.IsCtor)) != 0))
+                diags.ReportTok(VibCodes.Unsupported, ta.Tokens[fd.TokIdx], "UnscopedRef is only valid on struct instance methods or properties (CS9101)."u8);
+
+            if (td.Kind == TypeDeclKinds.Struct && fd.ParamCount == 0 &&
+                (fd.Flags & (DeclFlags.IsCtor | DeclFlags.Static | DeclFlags.Public)) == DeclFlags.IsCtor)
+            {
+                diags.ReportTok(VibCodes.Unsupported, ta.Tokens[fd.TokIdx], "The parameterless struct constructor must be public."u8);
+            }
+
             int retType = ResolveTypeNode(fd.RetTypeNode, allTpNames.AsReadOnlySpan(), allTpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags);
             if ((fd.Flags & DeclFlags.IsOpAddAssign) != 0)
             {
@@ -6291,6 +6432,25 @@ public static class DeclBinder
                 int pType = ResolveTypeNode(pd.TypeNode, allTpNames.AsReadOnlySpan(), allTpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags);
                 DrainConcreteTypeQueue(in ast, in ta, in names, ref bctx, ref types, ref mir, ref diags);
                 CheckScopedParameter(in pd, pType, in ta, in types, ref diags);
+                if (p == 0 && (fd.Flags & DeclFlags.IsExtension) != 0 &&
+                    (pd.Mode == PassMode.Ref || pd.Mode == PassMode.In) && pType != TypeIds.Error)
+                {
+                    // A ref extension receiver must be statically known to be a value type.
+                    // Ref structs are value types too, though the view gate below can still reject them.
+                    TypeInfo receiver = types.Items[pType];
+                    bool referenceType = receiver.Kind == TypeKinds.Class || pType == TypeIds.Str;
+                    bool typeParam = receiver.Kind == TypeKinds.TypeParam;
+                    if (pd.Mode == PassMode.In && (referenceType || typeParam))
+                    {
+                        diags.ReportTok(VibCodes.Unsupported, ta.Tokens[pd.TokIdx], "The first 'in' or 'ref readonly' parameter of an extension method must be a concrete (non-generic) value type (CS8338)."u8);
+                    }
+                    else if (pd.Mode == PassMode.Ref && (referenceType ||
+                             (typeParam && (receiver.C & (DeclFlags.StructConstraint | DeclFlags.UnmanagedConstraint)) == 0)))
+                    {
+                        diags.ReportTok(VibCodes.Unsupported, ta.Tokens[pd.TokIdx], "The receiver of a ref extension method must be a value type or a type parameter constrained to struct (CS8337)."u8);
+                    }
+                }
+
                 if (pType == TypeIds.Utf8Lines || pType == TypeIds.Utf8ArgEnum)
                 {
                     diags.ReportTok(VibCodes.Unsupported, ta.Tokens[pd.TokIdx], "'Utf8Lines' and 'Utf8ArgEnumerator' cannot be used as method parameters."u8);
@@ -6686,6 +6846,13 @@ public static class DeclBinder
     // `scoped` applies to a ref, in or out parameter, or a by-value ref struct (CS9048).
     private static void CheckScopedParameter(in ParamDecl pd, int pType, in TokenArena ta, in TypeTable types, ref DiagnosticBag diags)
     {
+        if ((pd.Flags & DeclFlags.UnscopedRefAttr) != 0)
+        {
+            if (pd.Mode == PassMode.ByValue)
+                diags.ReportTok(VibCodes.Unsupported, ta.Tokens[pd.TokIdx], "UnscopedRef requires a by-reference parameter (CS9063)."u8);
+            else if ((pd.Flags & DeclFlags.IsScoped) != 0)
+                diags.ReportTok(VibCodes.Unsupported, ta.Tokens[pd.TokIdx], "UnscopedRef cannot be applied to a scoped parameter (CS9066)."u8);
+        }
         if ((pd.Flags & DeclFlags.IsScoped) == 0 || pd.Mode != PassMode.ByValue) return;
         if (IsRefStructType(pType, in types)) return;
         diags.ReportTok(VibCodes.Unsupported, ta.Tokens[pd.TokIdx], "The 'scoped' modifier can be used for refs and ref struct values only (CS9048)."u8);
@@ -6947,7 +7114,8 @@ public static class DeclBinder
             for (int p = 0; p < fd.ParamCount; p++)
             {
                 ParamDecl pd = ast.Params[fd.ParamStart + p];
-                if ((pd.Flags & DeclFlags.IsScoped) != 0) continue;
+                if ((pd.Flags & DeclFlags.IsScoped) != 0 ||
+                    (pd.Mode == PassMode.Out && (pd.Flags & DeclFlags.UnscopedRefAttr) == 0)) continue;
                 int pTid = ResolveTypeNode(pd.TypeNode, tpNames.AsReadOnlySpan(), tpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false);
                 if (pd.Mode == PassMode.In || pd.Mode == PassMode.Ref || pd.Mode == PassMode.Out || types.IsView(pTid))
                 {
@@ -6960,7 +7128,8 @@ public static class DeclBinder
         {
             ParamDecl pd = ast.Params[fd.ParamStart + p];
             int pTid = ResolveTypeNode(pd.TypeNode, tpNames.AsReadOnlySpan(), tpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false);
-            bool isScoped = (pd.Flags & DeclFlags.IsScoped) != 0;
+            bool isScoped = (pd.Flags & DeclFlags.IsScoped) != 0 ||
+                (pd.Mode == PassMode.Out && (pd.Flags & DeclFlags.UnscopedRefAttr) == 0);
             if (hasExplicitLifetimeAttr)
             {
                 if (!LifetimeListContains(in ast, in fd, pd.NameId))
@@ -6972,7 +7141,11 @@ public static class DeclBinder
             {
                 isScoped = true;
             }
-            paramSigs.Push(new MirParamSig(pd.NameId, pTid, pd.Mode, isScoped ? 1 : 0));
+            int sigFlags = isScoped ? 1 : 0;
+            // Bit 2 describes the C# declaration even when Vibranium's return
+            // lifetime excludes this parameter (bit 1).
+            if ((pd.Flags & DeclFlags.IsScoped) == 0 && (pd.Flags & DeclFlags.UnscopedRefAttr) != 0) sigFlags |= 2;
+            paramSigs.Push(new MirParamSig(pd.NameId, pTid, pd.Mode, sigFlags));
         }
 
         int mtaStart = mir.MethodTypeArgs.Count;
@@ -7017,6 +7190,8 @@ public static class DeclBinder
 
     private static bool LifetimeListContains(in AstArena ast, in FuncDecl fd, int nameId)
     {
+        // An already rejected annotation cannot constrain otherwise valid returns.
+        if (fd.LifetimeCount < 0) return true;
         for (int i = 0; i < fd.LifetimeCount; i++)
         {
             if (ast.Extra[fd.LifetimeExtraStart + i] == nameId) return true;

@@ -353,6 +353,11 @@ public sealed class Round12CutMatrixTests
             // not erase the original ownership error on either Roslyn frontend.
             Assert.Contains(stage0, diagnostic => diagnostic.Id == "VIB001");
             Assert.Contains(analyzer, diagnostic => diagnostic.Id == "VIB001");
+            var self = Round11AuditAssertions.Run(Round11AuditAssertions.DotnetExe, Round11AuditAssertions.SelfCompiler,
+                "check", path, "--sysroot", Path.Combine(Round11AuditAssertions.RepoRoot, "src"));
+            Assert.NotEqual(0, self.Exit);
+            Assert.Equal(new[] { "VIB000" }, Regex.Matches(self.Out + self.Err, @"\bVIB\d{3}(?=:)")
+                .Select(match => match.Value).Distinct().OrderBy(id => id, StringComparer.Ordinal));
         }
         finally
         {

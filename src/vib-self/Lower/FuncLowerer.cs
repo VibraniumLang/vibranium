@@ -20,6 +20,24 @@ public readonly struct VarBinding
     }
 }
 
+// The natural type of one arm of a conditional or switch expression, and the
+// bindings its inference had in scope for that arm (N106).
+public readonly struct BranchArmFact
+{
+    public readonly int TypeId;
+    public readonly int ScopeStart;
+    public readonly int ScopeCount;
+    public readonly int ScopeCap;
+
+    public BranchArmFact(int typeId, int scopeStart, int scopeCount, int scopeCap)
+    {
+        TypeId = typeId;
+        ScopeStart = scopeStart;
+        ScopeCount = scopeCount;
+        ScopeCap = scopeCap;
+    }
+}
+
 public readonly struct ScopeEntry
 {
     public readonly int ScopeDepth;
@@ -114,6 +132,15 @@ public struct FuncLowerCtx
     public int OutVarScopeOverride;
     public int UncheckedDepth;
     public int InferDepth;
+    // > 0 while the conversion classifier types a collection-literal element
+    // again for one candidate type: no operand is visited for its declarations
+    // only (they are lost with the element, N115; a visit per candidate is N112).
+    public int ElementRetypeDepth;
+    // Arm facts of the last natural-type inference of each conditional and
+    // switch expression; a conversion to a target type reads them (N106).
+    public IntMap<int> BranchFactSlots;
+    public Vec<BranchArmFact> BranchArmFacts;
+    public Vec<VarBinding> BranchArmScopes;
     public bool ForbidDirectUtf8ArgEnumNew;
     public Vec<int> ChildDeclNameIds;
     public Vec<int> ChildDeclDepths;
@@ -172,6 +199,10 @@ public struct FuncLowerCtx
         OutVarScopeOverride = -1;
         UncheckedDepth = 0;
         InferDepth = 0;
+        ElementRetypeDepth = 0;
+        BranchFactSlots = new IntMap<int>(0);
+        BranchArmFacts = new Vec<BranchArmFact>();
+        BranchArmScopes = new Vec<VarBinding>();
         ForbidDirectUtf8ArgEnumNew = false;
         ChildDeclNameIds = new Vec<int>();
         ChildDeclDepths = new Vec<int>();
@@ -195,6 +226,39 @@ public struct FuncLowerCtx
             }
             Vars.Truncate(writeIdx);
         }
+    }
+
+    // The arm slots of a conditional (two) or a switch expression (one per arm).
+    // Every inference of the same expression writes the same slots.
+    public int BranchFactsFor(int exprId, int armCount)
+    {
+        int entry = BranchFactSlots.Find(exprId);
+        if (entry >= 0) return BranchFactSlots.ValueAt(entry);
+        int slot = BranchArmFacts.Count;
+        for (int i = 0; i < armCount; i++) BranchArmFacts.Push(new BranchArmFact(TypeIds.Error, 0, 0, 0));
+        _ = BranchFactSlots.Set(exprId, slot);
+        return slot;
+    }
+
+    // Vars[scopeStart..scopeEnd) are the bindings the expression's inference had
+    // pushed when it reached this arm.
+    public void RecordBranchArm(int slot, int typeId, int scopeStart, int scopeEnd)
+    {
+        BranchArmFact old = BranchArmFacts[slot];
+        int count = scopeEnd - scopeStart;
+        int start = old.ScopeStart;
+        int cap = old.ScopeCap;
+        if (count > cap)
+        {
+            start = BranchArmScopes.Count;
+            cap = count;
+            for (int i = 0; i < count; i++) BranchArmScopes.Push(Vars[scopeStart + i]);
+        }
+        else
+        {
+            for (int i = 0; i < count; i++) BranchArmScopes[start + i] = Vars[scopeStart + i];
+        }
+        BranchArmFacts[slot] = new BranchArmFact(typeId, start, count, cap);
     }
 
     public int NewBlock()
@@ -782,11 +846,6 @@ public static class FuncLowerer
             else if (inst.ReturnTypeId == TypeIds.Void && !retByRef)
             {
                 fctx.Terminate(new MirTerm(MirTermKind.Return, -1, -1, 0, 0, 0, 0, fd.TokIdx));
-            }
-            else if ((fd.Flags & DeclFlags.IsTopLevelMain) != 0 && inst.ReturnTypeId == TypeIds.I32)
-            {
-                int zeroOp = mir.AddOperand(new MirOperand(MirOpKinds.IntConst, -1, 0, TypeIds.I32, fd.TokIdx));
-                fctx.Terminate(new MirTerm(MirTermKind.Return, zeroOp, -1, 0, 0, 0, 0, fd.TokIdx));
             }
             else
             {
@@ -1975,12 +2034,6 @@ public static class FuncLowerer
                             val = TruncateConstToType(bVal, bTid);
                             return true;
                         }
-                        if (Bytes.Eq(names.Text(target.A), "Array"u8) && Bytes.Eq(names.Text(n.B), "MaxLength"u8))
-                        {
-                            constTypeId = TypeIds.I32;
-                            val = 2147483591L;
-                            return true;
-                        }
                     }
                 }
                 if (TryResolveConstOwnerDeclFromMemberTarget(n.A, ownerDeclId, in fctx, in ast, in ta, in names, in bctx, in types, out int mOwnerDecl) && mOwnerDecl >= 0)
@@ -2138,10 +2191,27 @@ public static class FuncLowerer
             case AstKind.ExprBinary:
             {
                 TokKind bk = (TokKind)n.A;
-                if (!TryEvalTypedIntConstExpr(n.B, ownerDeclId, in fctx, in ast, in ta, in names, in bctx, in types, out int lt, out long lv) ||
-                    !TryEvalTypedIntConstExpr(n.C, ownerDeclId, in fctx, in ast, in ta, in names, in bctx, in types, out int rt, out long rv))
+                bool lInt = TryEvalTypedIntConstExpr(n.B, ownerDeclId, in fctx, in ast, in ta, in names, in bctx, in types, out int lt, out long lv);
+                bool rInt = TryEvalTypedIntConstExpr(n.C, ownerDeclId, in fctx, in ast, in ta, in names, in bctx, in types, out int rt, out long rv);
+                if (!lInt || !rInt)
                 {
-                    return false;
+                    // Preserve the enum conversion, not an implicit conversion to its
+                    // underlying int: float zero works for E - E, but not for E + int.
+                    if ((bk == TokKind.Minus || bk == TokKind.Amp || bk == TokKind.Pipe || bk == TokKind.Caret) &&
+                        lInt && types.Items[lt].Kind == TypeKinds.Enum &&
+                        IsZeroNumericConstExpr(n.C, ownerDeclId, in fctx, in ast, in ta, in names, in bctx, in types))
+                    {
+                        rt = lt;
+                        rv = 0L;
+                    }
+                    else if ((bk == TokKind.Minus || bk == TokKind.Amp || bk == TokKind.Pipe || bk == TokKind.Caret) &&
+                             rInt && types.Items[rt].Kind == TypeKinds.Enum &&
+                             IsZeroNumericConstExpr(n.B, ownerDeclId, in fctx, in ast, in ta, in names, in bctx, in types))
+                    {
+                        lt = rt;
+                        lv = 0L;
+                    }
+                    else return false;
                 }
                 if (bk == TokKind.LtLt || bk == TokKind.GtGt || bk == TokKind.GtGtGt)
                 {
@@ -2194,10 +2264,19 @@ public static class FuncLowerer
                         val = bk == TokKind.Plus ? unchecked(a32 + b32) : unchecked(a32 - b32);
                         return true;
                     }
-                    if (rEnum && bk == TokKind.Plus && CanConstImplicitConvertToInt32(lt, lv, in types))
+                    // An integral, non-char constant zero converts to the enum. Roslyn binds
+                    // '0 - e' (and 'e - 0L') as E - E -> int, and other 'k - e' as U - E -> E.
+                    bool zeroAsEnum = (lEnum && rt != TypeIds.Char && rv == 0) || (rEnum && lt != TypeIds.Char && lv == 0);
+                    if (bk == TokKind.Minus && zeroAsEnum && !(lEnum && CanConstImplicitConvertToInt32(rt, rv, in types)))
+                    {
+                        constTypeId = TypeIds.I32;
+                        val = unchecked((int)lv - (int)rv);
+                        return true;
+                    }
+                    if (rEnum && (bk == TokKind.Plus || bk == TokKind.Minus) && CanConstImplicitConvertToInt32(lt, lv, in types))
                     {
                         constTypeId = rt;
-                        val = unchecked((int)lv + (int)rv);
+                        val = bk == TokKind.Plus ? unchecked((int)lv + (int)rv) : unchecked((int)lv - (int)rv);
                         return true;
                     }
                     if ((bk == TokKind.Amp || bk == TokKind.Pipe || bk == TokKind.Caret) &&
@@ -3465,6 +3544,21 @@ public static class FuncLowerer
         return true;
     }
 
+    private static bool TryCompareConstEnum(TokKind op, long left, long right, out bool value)
+    {
+        value = false;
+        switch (op)
+        {
+            case TokKind.LAngle: value = left < right; return true;
+            case TokKind.LtEq: value = left <= right; return true;
+            case TokKind.RAngle: value = left > right; return true;
+            case TokKind.GtEq: value = left >= right; return true;
+            case TokKind.EqEq: value = left == right; return true;
+            case TokKind.BangEq: value = left != right; return true;
+            default: return false;
+        }
+    }
+
     private static bool TryEvalBoolConstExpr(
         int exprId,
         int ownerDeclId,
@@ -3628,6 +3722,20 @@ public static class FuncLowerer
                 {
                     bool lFlt = TryEvalFloatConstExpr(n.B, ownerDeclId, in fctx, in ast, in ta, in names, in bctx, in types, out int lft, out double ldv);
                     bool rFlt = TryEvalFloatConstExpr(n.C, ownerDeclId, in fctx, in ast, in ta, in names, in bctx, in types, out int rft, out double rdv);
+                    // C# implicitly converts a floating constant zero to the
+                    // int-based enum, not the enum to float (which can round).
+                    if (lFlt && ldv == 0.0 && !rFlt &&
+                        TryEvalTypedIntConstExpr(n.C, ownerDeclId, in fctx, in ast, in ta, in names, in bctx, in types, out int rEnum, out long rEnumValue) &&
+                        types.Items[rEnum].Kind == TypeKinds.Enum)
+                    {
+                        return TryCompareConstEnum(bk, 0L, rEnumValue, out val);
+                    }
+                    if (rFlt && rdv == 0.0 && !lFlt &&
+                        TryEvalTypedIntConstExpr(n.B, ownerDeclId, in fctx, in ast, in ta, in names, in bctx, in types, out int lEnum, out long lEnumValue) &&
+                        types.Items[lEnum].Kind == TypeKinds.Enum)
+                    {
+                        return TryCompareConstEnum(bk, lEnumValue, 0L, out val);
+                    }
                     if (lFlt || rFlt)
                     {
                         bool useF32Cmp = (!lFlt || lft == TypeIds.F32) && (!rFlt || rft == TypeIds.F32);
@@ -4595,6 +4703,172 @@ public static class FuncLowerer
         return id;
     }
 
+    private static int BorrowWindowSourcePlace(int expression, int operand, in FuncLowerCtx fctx, in AstArena ast, in MirModuleArena mir)
+    {
+        MirOperand op = mir.Operands[operand];
+        if (op.Kind != MirOpKinds.CopyOrMove || IsSourceValuePlace(op.PlaceOrLitIdx, in fctx, in mir)) return -1;
+        AstNode node = ast.Nodes[expression];
+        if (node.Kind == AstKind.ExprIdent || node.Kind == AstKind.ExprThis || node.Kind == AstKind.ExprMember || node.Kind == AstKind.ExprIndex)
+            return op.PlaceOrLitIdx;
+        // A ref assignment is itself a variable. Its operand dereferences
+        // the newly bound carrier; normal value assignments are not places.
+        if (node.Kind == AstKind.ExprAssign && node.D != 0) return op.PlaceOrLitIdx;
+        // An arbitrary value call or cast can also lower to an existing
+        // operand. Only a ref-returning call provides storage to borrow.
+        MirPlace place = mir.Places[op.PlaceOrLitIdx];
+        if (node.Kind == AstKind.ExprCall && place.ProjCount > 0 && mir.Projs[place.ProjStart].Kind == MirProjKinds.Deref &&
+            (fctx.Locals[place.LocalId].Flags & (MirLocalFlags.IsRefLocal | MirLocalFlags.IsTemp)) == (MirLocalFlags.IsRefLocal | MirLocalFlags.IsTemp))
+            return op.PlaceOrLitIdx;
+        return -1;
+    }
+
+    private static bool HasSwitchGuard(in AstNode node, bool expression, in AstArena ast)
+    {
+        for (int i = 0; i < node.C; i++)
+        {
+            AstNode arm = ast.Nodes[ast.Extra[node.B + i]];
+            if (expression)
+            {
+                if (arm.C >= 0) return true;
+            }
+            else
+            {
+                for (int j = 0; j < arm.B; j++) if (ast.Nodes[ast.Extra[arm.A + j]].B >= 0) return true;
+            }
+        }
+        return false;
+    }
+
+    // Evaluate a selector/receiver exactly once. A ref indexer is loaded
+    // into a value temporary by ordinary lowering, but its address still
+    // supplies the owner of the source evaluation loan.
+    private static int LowerBorrowWindowInput(int expression, int expectedTypeId, bool snapshotIndex, ref FuncLowerCtx fctx,
+        in AstArena ast, in TokenArena ta, ref Interner names, ref BinderCtx bctx, ref TypeTable types,
+        ref MirModuleArena mir, ref DiagnosticBag diags, out int sourcePlace)
+    {
+        AstNode node = ast.Nodes[expression];
+        if (node.Kind == AstKind.ExprIndex && (node.D < 0 || ast.Nodes[node.D].Kind != AstKind.ExprRange))
+        {
+            int before = diags.Items.Count;
+            int place;
+            int op;
+            if (snapshotIndex)
+                op = LowerIndexValue(expression, node.TokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out place);
+            else
+            {
+                place = LowerPlace(expression, isMut: false, isTwoPhase: false, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+                op = mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, place, 0, mir.Places[place].TypeId, node.TokIdx,
+                    SourceExpressionStartToken(expression, in ast)));
+            }
+            int converted = ConvertOperandIfNeeded(op, expectedTypeId, node.TokIdx, ref fctx, in ast, in ta,
+                in names, in bctx, in types, ref mir, ref diags, expression, diags.Items.Count > before);
+            sourcePlace = converted != op || IsSourceValuePlace(place, in fctx, in mir) ? -1 : place;
+            return converted;
+        }
+        int operand = LowerExprAsOperand(expression, expectedTypeId, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+        sourcePlace = BorrowWindowSourcePlace(expression, operand, in fctx, in ast, in mir);
+        return operand;
+    }
+
+    private static int LowerGenericSwitchInput(in AstNode node, bool isExpr, ref FuncLowerCtx fctx,
+        in AstArena ast, in TokenArena ta, ref Interner names, ref BinderCtx bctx, ref TypeTable types,
+        ref MirModuleArena mir, ref DiagnosticBag diags, out int type, out int sourcePlace)
+    {
+        int scrutOp;
+        if (HasSwitchGuard(in node, isExpr, in ast))
+            scrutOp = LowerBorrowWindowInput(node.A, -1, snapshotIndex: false, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out sourcePlace);
+        else
+        {
+            sourcePlace = -1;
+            scrutOp = LowerExprAsOperand(node.A, -1, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+        }
+        type = mir.Operands[scrutOp].TypeId;
+        // Merely testing a non-Copy place must not implicitly move it. A
+        // declaration pattern can still move it at the actual binding.
+        if (sourcePlace >= 0 && !types.IsCopy(type, in ast)) return sourcePlace;
+        int tmp = fctx.NewTemp(type, node.TokIdx, ref mir);
+        int place = mir.AddPlaceLocal(tmp, type);
+        fctx.Emit(new MirInst(MirOp.AssignUse, place, -1, 0, type, scrutOp, 0, 0, 0, node.TokIdx));
+        return place;
+    }
+
+    // Analysis-only shared borrow over a source evaluation window. Liveness
+    // is use-based as with other BindRef loans, but LLVM has no pointer slot
+    // or load/store for the synthetic carrier.
+    private static int BeginBorrowWindow(int place, int tokIdx, int windowFlag, ref FuncLowerCtx fctx, in MirModuleArena mir)
+    {
+        if (place < 0) return -1;
+        int type = mir.Places[place].TypeId;
+        int flags = MirLocalFlags.IsTemp | MirLocalFlags.IsRefLocal | MirLocalFlags.IsAnalysisBorrow | windowFlag;
+        int loan = fctx.AddLocal(-1, type, PassMode.ByValue, flags, tokIdx);
+        fctx.Emit(new MirInst(MirOp.BindRef, -1, loan, 0, type, loan, place, 0, 0, tokIdx));
+        return loan;
+    }
+
+    private static void EndBorrowWindow(int loan, int tokIdx, ref FuncLowerCtx fctx)
+    {
+        if (loan >= 0) fctx.Emit(new MirInst(MirOp.KeepBorrowAlive, -1, -1, 0, TypeIds.Void, loan, 0, 0, 0, tokIdx));
+    }
+
+    private static void CheckGuardedCursorPayloadBinding(int pat, int guard, TypeInfo scrutType,
+        in AstArena ast, in TokenArena ta, ref DiagnosticBag diags)
+    {
+        if (scrutType.Kind != TypeKinds.OptionMut || pat < 0 || guard < 0) return;
+        // The binding takes an exclusive payload borrow during matching,
+        // regardless of whether its name is used later in the arm.
+        AstNode pattern = ast.Nodes[pat];
+        if (pattern.Kind == AstKind.PatUnion && PatternHasDeclBind(pattern.D, in ast))
+            diags.ReportTok(VibCodes.ConflictActiveBorrow, ta.Tokens[pattern.TokIdx],
+                "Cannot bind a mutable cursor payload while the switch guard borrows the cursor."u8);
+    }
+
+    private static int BeginRvalueViewBorrowWindow(int scrutOp, int unionKind, int payloadLid, int tokIdx, ref FuncLowerCtx fctx, in MirModuleArena mir)
+    {
+        if (unionKind != TypeKinds.OptionRef && unionKind != TypeKinds.OptionMut) return -1;
+        MirOperand op = mir.Operands[scrutOp];
+        if (op.Kind != MirOpKinds.CopyOrMove) return -1;
+        int place = op.PlaceOrLitIdx;
+        int type = mir.Places[place].TypeId;
+        int flags = MirLocalFlags.IsTemp | MirLocalFlags.IsRefLocal | MirLocalFlags.IsAnalysisBorrow | MirLocalFlags.IsSwitchGuardBorrow;
+        if (payloadLid >= 0) flags |= MirLocalFlags.IsRepointLoanSnapshot;
+        int loan = fctx.AddLocal(-1, type, PassMode.ByValue, flags, tokIdx);
+        fctx.Emit(new MirInst(MirOp.BindRef, -1, loan, 4, type, loan, place, payloadLid + 1, 0, tokIdx));
+        return loan;
+    }
+
+    private static void LowerSwitchGuard(int guard, int scrutPlace, int yes, int no,
+        ref FuncLowerCtx fctx, in AstArena ast, in TokenArena ta, ref Interner names, ref BinderCtx bctx,
+        ref TypeTable types, ref MirModuleArena mir, ref DiagnosticBag diags, bool keepRefLive, int keepLoan)
+    {
+        // All patterns protect the original access path through their guard.
+        // A ref scrutinee's own loan (or an rvalue view's referent loan) stays
+        // alive across the guard iff a later arm still tests or binds it.
+        if (scrutPlace < 0 && keepLoan < 0)
+        {
+            LowerCondBranch(guard, yes, no, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, hoistOutVarsToParentScope: false);
+            return;
+        }
+        int tokIdx = ast.Nodes[guard].TokIdx;
+        int loan = scrutPlace >= 0 ? BeginBorrowWindow(scrutPlace, tokIdx, MirLocalFlags.IsSwitchGuardBorrow, ref fctx, in mir) : keepLoan;
+        int sourceRef = -1;
+        if (scrutPlace >= 0 && keepRefLive)
+        {
+            int root = mir.Places[scrutPlace].LocalId;
+            if ((fctx.Locals[root].Flags & MirLocalFlags.IsRefLocal) != 0) sourceRef = root;
+        }
+        int yesEnd = fctx.NewBlock();
+        int noEnd = fctx.NewBlock();
+        LowerCondBranch(guard, yesEnd, noEnd, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, hoistOutVarsToParentScope: false);
+        fctx.CurBlock = yesEnd;
+        EndBorrowWindow(loan, tokIdx, ref fctx);
+        EndBorrowWindow(sourceRef, tokIdx, ref fctx);
+        fctx.Terminate(new MirTerm(MirTermKind.Goto, yes, 0, 0, 0, 0, 0, tokIdx));
+        fctx.CurBlock = noEnd;
+        EndBorrowWindow(loan, tokIdx, ref fctx);
+        EndBorrowWindow(sourceRef, tokIdx, ref fctx);
+        fctx.Terminate(new MirTerm(MirTermKind.Goto, no, 0, 0, 0, 0, 0, tokIdx));
+    }
+
     private static void LowerSwitchStatementCore(
         in AstNode n,
         ref FuncLowerCtx fctx,
@@ -4618,7 +4892,6 @@ public static class FuncLowerer
         {
             CheckSourceScalarPatternCoverage(in n, scrutType, false, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
         }
-        CheckLinearUnionSwitchArms(in n, false, scrutType, sti, in fctx, in ast, in ta, in bctx, in types, ref diags);
         for (int i = 0; i < secCount; i++)
         {
             AstNode secT = ast.Nodes[ast.Extra[n.B + i]];
@@ -4662,13 +4935,10 @@ public static class FuncLowerer
             return;
         }
 
+        CheckLinearUnionSwitchArms(in n, false, scrutType, sti, IsPlaceExpression(n.A, in ast, in fctx, in types), in ast, in ta, in bctx, in types, ref diags);
         int curOwnerSwStmt = fctx.EnclosingOwnerDeclId;
         bool hasSourceConstant = TryGetSourceSwitchConstant(n.A, scrutType, curOwnerSwStmt, in fctx, in ast, in ta, in names, in bctx, in types, out ulong sourceValue, out bool sourceNaN);
-        int scrutOp = LowerExprAsOperand(n.A, -1, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
-        scrutType = mir.Operands[scrutOp].TypeId;
-        int scrutTmp = fctx.NewTemp(scrutType, tokIdx, ref mir);
-        int scrutPl = mir.AddPlaceLocal(scrutTmp, scrutType);
-        fctx.Emit(new MirInst(MirOp.AssignUse, scrutPl, -1, 0, scrutType, scrutOp, 0, 0, 0, tokIdx));
+        int scrutPl = LowerGenericSwitchInput(in n, false, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out scrutType, out int sourcePlace);
 
         int sourceEntry = fctx.CurBlock;
         int sourceAfterInst = fctx.BlockTail[sourceEntry];
@@ -4761,7 +5031,7 @@ public static class FuncLowerer
                 if (lbl.B >= 0)
                 {
                     fctx.CurBlock = patMatchBlk;
-                    LowerCondBranch(lbl.B, bodyBlk, nextLblBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, hoistOutVarsToParentScope: false);
+                    LowerSwitchGuard(lbl.B, sourcePlace, bodyBlk, nextLblBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, HasLaterScrutineeLabel(in n, i, l, in ast), -1);
                 }
                 fctx.CurBlock = nextLblBlk;
             }
@@ -4902,6 +5172,31 @@ public static class FuncLowerer
         return true;
     }
 
+    private static int LowerUnionSwitchInput(in AstNode node, bool isExpr, int scrutType, int unionKind,
+        ref FuncLowerCtx fctx, in AstArena ast, in TokenArena ta, ref Interner names, ref BinderCtx bctx,
+        ref TypeTable types, ref MirModuleArena mir, ref DiagnosticBag diags, out int termFlags)
+    {
+        termFlags = unionKind == TypeKinds.OptionMut ? 6 : unionKind == TypeKinds.OptionRef ? 4 : 0;
+        if (HasSwitchGuard(in node, isExpr, in ast))
+        {
+            // The actual lowering identifies ref-returning selectors without
+            // evaluating the selector twice. The same place drives dispatch,
+            // payload binding, and guard borrow provenance.
+            int operand = LowerBorrowWindowInput(node.A, scrutType, snapshotIndex: false, ref fctx,
+                in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out int place);
+            if (place < 0) return operand;
+            termFlags |= 1;
+            return place;
+        }
+        if (IsPlaceExpression(node.A, in ast, in fctx, in types))
+        {
+            termFlags |= 1;
+            return LowerPlace(node.A, isMut: isExpr && unionKind == TypeKinds.OptionMut, isTwoPhase: false,
+                ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+        }
+        return LowerExprAsOperand(node.A, scrutType, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+    }
+
     private static void LowerUnionSwitchStatement(
         in AstNode n,
         int scrutType,
@@ -4920,7 +5215,10 @@ public static class FuncLowerer
     {
         int tokIdx = n.TokIdx;
         int secCount = n.C;
-        bool isPlaceExpr = IsPlaceExpression(n.A, in ast, in fctx, in types);
+        int scrutPlaceOrOp = LowerUnionSwitchInput(in n, false, scrutType, sti.Kind, ref fctx, in ast, in ta,
+            ref names, ref bctx, ref types, ref mir, ref diags, out int termFlags);
+        bool isPlaceExpr = (termFlags & 1) != 0;
+        CheckLinearUnionSwitchArms(in n, false, scrutType, sti, isPlaceExpr, in ast, in ta, in bctx, in types, ref diags);
         bool isLinear = types.IsLinear(scrutType, in ast);
 
         int firstSecIdx = -1; // Some or Ok
@@ -4948,6 +5246,7 @@ public static class FuncLowerer
                     continue;
                 }
                 AstNode pat = ast.Nodes[lbl.A];
+                if (isPlaceExpr) CheckGuardedCursorPayloadBinding(lbl.A, lbl.B, sti, in ast, in ta, ref diags);
                 if (pat.Kind == AstKind.PatWildcard)
                 {
                     defaultSecIdx = i;
@@ -4998,23 +5297,6 @@ public static class FuncLowerer
             }
         }
         if (firstCount > 1 || secondCount > 1 || firstWhen >= 0 || secondWhen >= 0) hasComplexUnionPat = true;
-
-        int termFlags = 0;
-        int scrutPlaceOrOp;
-        if (isPlaceExpr)
-        {
-            bool mutCur = sti.Kind == TypeKinds.OptionMut;
-            scrutPlaceOrOp = LowerPlace(n.A, isMut: false, isTwoPhase: false, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
-            termFlags = 1 | (mutCur ? 2 : 0) | ((sti.Kind == TypeKinds.OptionRef || sti.Kind == TypeKinds.OptionMut) ? 4 : 0);
-        }
-        else
-        {
-            scrutPlaceOrOp = LowerExprAsOperand(n.A, scrutType, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
-            if (sti.Kind == TypeKinds.OptionRef || sti.Kind == TypeKinds.OptionMut)
-            {
-                termFlags = 4 | (sti.Kind == TypeKinds.OptionMut ? 2 : 0);
-            }
-        }
 
         BindSwitchDeclarations(in n, scrutType, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
 
@@ -5220,12 +5502,20 @@ public static class FuncLowerer
         int v1Entry = fctx.NewBlock();
         int v2Entry = fctx.NewBlock();
 
-        int v1Lid = fctx.AddLocal(-1, sti.A, PassMode.ByValue, MakePatternBindFlags(sti.A, -1, isBorrowed, isShared, in ast, in types), tokIdx);
+        bool hasGuard = HasSwitchGuard(in n, false, in ast);
+        bool deferCursorPayload = sti.Kind == TypeKinds.OptionMut && (termFlags & 1) != 0 && hasGuard;
+        int v1Lid = deferCursorPayload ? -1 : fctx.AddLocal(-1, sti.A, PassMode.ByValue, MakePatternBindFlags(sti.A, -1, isBorrowed, isShared, in ast, in types), tokIdx);
+        int rvalueViewLoan = (termFlags & 1) == 0 && hasGuard ? BeginRvalueViewBorrowWindow(scrutPlaceOrOp, sti.Kind, sti.Kind == TypeKinds.OptionMut ? v1Lid : -1, tokIdx, ref fctx, in mir) : -1;
         int v2Lid = -1;
         if (sti.Kind == TypeKinds.Result)
         {
             v2Lid = fctx.AddLocal(-1, sti.B, PassMode.ByValue, MakePatternBindFlags(sti.B, -1, isBorrowed, isShared, in ast, in types), tokIdx);
             fctx.Terminate(new MirTerm(MirTermKind.MatchResult, scrutPlaceOrOp, v1Lid, v1Entry, v2Lid, v2Entry, termFlags, tokIdx));
+        }
+        else if (deferCursorPayload)
+        {
+            int tag = EmitUnionTagRead(scrutPlaceOrOp, sti, tokIdx, ref fctx, ref mir);
+            fctx.Terminate(new MirTerm(MirTermKind.Branch, tag, v1Entry, v2Entry, 0, 0, 0, tokIdx));
         }
         else
         {
@@ -5235,8 +5525,9 @@ public static class FuncLowerer
         // A shared, in-place match of an owned union keeps its scrutinee place
         // intact, so whole-union labels can test that place directly.
         int scrutPlace = (termFlags & 1) != 0 && isShared && (sti.Kind == TypeKinds.Option || sti.Kind == TypeKinds.Result) ? scrutPlaceOrOp : -1;
-        EmitUnionVariantSwitchChain(in n, scrutType, sti, isFirstVariant: true, v1Lid, sti.A, isBorrowed, isShared, scrutPlace, v1Entry, defaultBlk, exitBlk, outerContinue, outerContinueDepth, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
-        EmitUnionVariantSwitchChain(in n, scrutType, sti, isFirstVariant: false, v2Lid, sti.Kind == TypeKinds.Result ? sti.B : TypeIds.Void, isBorrowed, isShared, scrutPlace, v2Entry, defaultBlk, exitBlk, outerContinue, outerContinueDepth, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+        int guardPlace = (termFlags & 1) != 0 ? scrutPlaceOrOp : -1;
+        EmitUnionVariantSwitchChain(in n, scrutType, sti, isFirstVariant: true, v1Lid, sti.A, isBorrowed, isShared, scrutPlace, guardPlace, rvalueViewLoan, v1Entry, defaultBlk, exitBlk, outerContinue, outerContinueDepth, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+        EmitUnionVariantSwitchChain(in n, scrutType, sti, isFirstVariant: false, v2Lid, sti.Kind == TypeKinds.Result ? sti.B : TypeIds.Void, isBorrowed, isShared, scrutPlace, guardPlace, rvalueViewLoan, v2Entry, defaultBlk, exitBlk, outerContinue, outerContinueDepth, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
 
         if (defaultSecIdx >= 0)
         {
@@ -5268,6 +5559,8 @@ public static class FuncLowerer
         bool isBorrowed,
         bool isShared,
         int scrutPlace,
+        int guardPlace,
+        int rvalueViewLoan,
         int entryBlk,
         int defaultBlk,
         int exitBlk,
@@ -5320,6 +5613,7 @@ public static class FuncLowerer
         bool subBorrow = isBorrowed || matchingPayloadUses > 1;
         bool subShared = subBorrow ? (isBorrowed ? isShared : true) : false;
 
+        bool wholePlaceMayHaveMoved = false;
         for (int i = 0; i < secCount; i++)
         {
             AstNode sec = ast.Nodes[ast.Extra[n.B + i]];
@@ -5330,6 +5624,8 @@ public static class FuncLowerer
                 AstNode pat = ast.Nodes[lbl.A];
                 if (pat.Kind == AstKind.PatWildcard && lbl.B < 0) continue;
 
+                int armPayloadLid = payloadLid;
+                int retestEntry = -1;
                 bool canMatchVariant = false;
                 int bindNameId = -1;
                 int wrapNameId = -1;
@@ -5340,7 +5636,16 @@ public static class FuncLowerer
                 {
                     headNameId = ast.Nodes[pat.A].A;
                     bool patIsFirst = (sti.Kind == TypeKinds.Result) ? (headNameId == bctx.IdOk) : (headNameId == bctx.IdSome);
-                    if (patIsFirst != isFirstVariant) continue;
+                    if (patIsFirst != isFirstVariant)
+                    {
+                        if (wholePlaceMayHaveMoved) EmitUnionTagRead(scrutPlace, sti, pat.TokIdx, ref fctx, ref mir);
+                        continue;
+                    }
+                    if (wholePlaceMayHaveMoved)
+                    {
+                        retestEntry = fctx.CurBlock;
+                        armPayloadLid = EmitUnionVariantRetest(scrutPlace, sti, isFirstVariant, payloadType, pat.TokIdx, ref fctx, in ast, in types);
+                    }
                     canMatchVariant = true;
                     UnpackPatUnion(in pat, payloadType, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out bindNameId, out wrapNameId, out innerSubPat);
                 }
@@ -5355,18 +5660,25 @@ public static class FuncLowerer
                     useWholeUnionFallback = true;
                 }
                 if (!canMatchVariant) continue;
+                if (payloadLid < 0 && isFirstVariant && (sti.Kind == TypeKinds.OptionMut || sti.Kind == TypeKinds.OptionRef) && guardPlace >= 0 &&
+                    (bindNameId >= 0 || wrapNameId >= 0 || innerSubPat >= 0 || (useWholeUnionFallback && CursorTagPatternMask(lbl.A, in ast, in bctx) < 0)))
+                {
+                    retestEntry = fctx.CurBlock;
+                    armPayloadLid = EmitUnionVariantRetest(guardPlace, sti, true, payloadType, pat.TokIdx, ref fctx, in ast, in types);
+                }
                 int labelStartBlk = fctx.CurBlock;
-                sourceTargets.Push(labelStartBlk);
+                // A nominal source edge must not bypass the Match that
+                // initializes the hidden binding for a retested payload.
+                sourceTargets.Push(retestEntry >= 0 ? retestEntry : labelStartBlk);
 
                 int nextLblBlk = fctx.NewBlock();
                 int bodyBlk = fctx.NewBlock();
                 sourceBodies.Push(bodyBlk);
                 PushScope(ref fctx);
-                if (bindNameId >= 0 && payloadLid >= 0)
-                {
-                    RegisterScopedName(bindNameId, fctx.ScopeDepth, lbl.TokIdx, ref fctx, in ast, in ta, in names, ref diags);
-                    fctx.Vars.Push(new VarBinding(bindNameId, payloadLid, fctx.ScopeDepth, 0, TypeIds.Void, 0));
-                }
+                bool laterTest = lbl.B >= 0 && HasLaterScrutineeLabel(in n, i, l, in ast);
+                bool sharedRetry = !isBorrowed && laterTest;
+                BindSwitchPayload(bindNameId, armPayloadLid, payloadType, pat.TokIdx, sharedRetry,
+                    ref fctx, in ast, in ta, in names, in types, ref mir, ref diags);
 
                 int wrapStageBlk = wrapNameId >= 0 ? fctx.NewBlock() : (lbl.B >= 0 ? fctx.NewBlock() : bodyBlk);
                 int afterInnerBlk = wrapNameId >= 0 ? (lbl.B >= 0 ? fctx.NewBlock() : bodyBlk) : wrapStageBlk;
@@ -5375,14 +5687,14 @@ public static class FuncLowerer
                 int failLblBlk = nextLblBlk;
                 if (useWholeUnionFallback)
                 {
-                    restorePayload = WholeUnionArmRestoresPayload(sti, isFirstVariant, payloadLid, payloadType, isBorrowed, lbl.A, in ast, in types);
+                    restorePayload = WholeUnionArmRestoresPayload(sti, isFirstVariant, armPayloadLid, payloadType, isBorrowed, lbl.A, in ast, in types);
                     if (restorePayload) failLblBlk = fctx.NewBlock();
-                    rebuildPl = EmitWholeUnionArmTest(sti, isFirstVariant, payloadLid, payloadType, scrutPlace, lbl.A, lbl.TokIdx, wrapStageBlk, failLblBlk, subBorrow, subShared, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+                    rebuildPl = EmitWholeUnionArmTest(sti, isFirstVariant, armPayloadLid, payloadType, scrutPlace, lbl.A, lbl.TokIdx, wrapStageBlk, failLblBlk, subBorrow, subShared, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
                 }
-                else if (innerSubPat >= 0 && payloadLid >= 0)
+                else if (innerSubPat >= 0 && armPayloadLid >= 0)
                 {
-                    int subPl = mir.AddPlaceLocal(payloadLid, payloadType);
-                    LowerPatternOnPlaceBranch(subPl, payloadType, innerSubPat, pat.TokIdx, wrapStageBlk, nextLblBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, subBorrow, subShared);
+                    int subPl = mir.AddPlaceLocal(armPayloadLid, payloadType);
+                    LowerPatternOnPlaceBranch(subPl, payloadType, innerSubPat, pat.TokIdx, wrapStageBlk, nextLblBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, subBorrow || sharedRetry, subShared || sharedRetry);
                 }
                 else
                 {
@@ -5391,11 +5703,11 @@ public static class FuncLowerer
                 if (wrapNameId >= 0)
                 {
                     fctx.CurBlock = wrapStageBlk;
-                    if (IsRejectedGuardedWrapperMove(wrapNameId, headNameId, lbl.B, payloadLid, payloadType, isBorrowed,
-                            HasLaterScrutineeLabel(in n, i, l, in ast), in ast, in bctx, in types))
+                    if (IsRejectedGuardedWrapperMove(wrapNameId, headNameId, lbl.B, armPayloadLid, payloadType, isBorrowed,
+                            laterTest, in ast, in bctx, in types))
                         EmitRejectedGuardedWrapperBind(wrapNameId, headNameId, payloadType, sti, pat.TokIdx, ref fctx, in ast, in ta, in names, in bctx, ref types, ref mir, ref diags);
                     else
-                        EmitUnionWrapperBind(wrapNameId, headNameId, payloadLid, payloadType, pat.TokIdx, ref fctx, in ast, in ta, in names, in bctx, ref types, ref mir, ref diags);
+                        EmitUnionWrapperBind(wrapNameId, headNameId, armPayloadLid, payloadType, pat.TokIdx, ref fctx, in ast, in ta, in names, in bctx, ref types, ref mir, ref diags);
                     fctx.Terminate(new MirTerm(MirTermKind.Goto, afterInnerBlk, 0, 0, 0, 0, 0, pat.TokIdx));
                 }
 
@@ -5407,7 +5719,8 @@ public static class FuncLowerer
                     // whose guard fails reaches later labels only nominally. A
                     // label that declares pattern variables is entered before
                     // its test, so the remainder also binds them.
-                    int remainderTarget = useWholeUnionFallback && PatternHasDeclBind(lbl.A, in ast) ? labelStartBlk : wrapStageBlk;
+                    int remainderTarget = retestEntry >= 0 ? retestEntry :
+                        (useWholeUnionFallback && PatternHasDeclBind(lbl.A, in ast) ? labelStartBlk : wrapStageBlk);
                     fctx.SourceSwitchContinuations.Push(new SourceSwitchAssignmentEdge(entryBlk, -1, remainderTarget));
                     if (IsSourceUnguardedPattern(lbl.A, lbl.B, ref fctx, in ast, in ta, in names, in bctx, in types))
                     {
@@ -5417,7 +5730,7 @@ public static class FuncLowerer
                 if (lbl.B >= 0)
                 {
                     fctx.CurBlock = afterInnerBlk;
-                    LowerCondBranch(lbl.B, bodyBlk, failLblBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, hoistOutVarsToParentScope: false);
+                    LowerSwitchGuard(lbl.B, guardPlace, bodyBlk, failLblBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, laterTest, laterTest ? rvalueViewLoan : -1);
                 }
                 if (restorePayload)
                 {
@@ -5445,6 +5758,7 @@ public static class FuncLowerer
                 }
                 PopScopeWithoutEmit(ref fctx);
 
+                if (scrutPlace >= 0 && lbl.B >= 0 && IsWholeUnionValueBinding(in pat) && !types.IsCopy(scrutType, in ast)) wholePlaceMayHaveMoved = true;
                 fctx.CurBlock = nextLblBlk;
             }
         }
@@ -6038,11 +6352,11 @@ public static class FuncLowerer
     // with a nested subpattern keeps only its nested-subpattern VIB006. Place
     // scrutinees keep the in-place VIB006 instead.
     private static void CheckLinearUnionSwitchArms(in AstNode n, bool isExpr, int scrutType, TypeInfo sti,
-        in FuncLowerCtx fctx, in AstArena ast, in TokenArena ta, in BinderCtx bctx, in TypeTable types, ref DiagnosticBag diags)
+        bool isPlace, in AstArena ast, in TokenArena ta, in BinderCtx bctx, in TypeTable types, ref DiagnosticBag diags)
     {
         if (sti.Kind != TypeKinds.Option && sti.Kind != TypeKinds.Result) return;
         if (!types.IsLinear(scrutType, in ast)) return;
-        if (IsPlaceExpression(n.A, in ast, in fctx, in types)) return;
+        if (isPlace) return;
         int firstSeen = 0;
         int secondSeen = 0;
         if (isExpr)
@@ -6524,8 +6838,11 @@ public static class FuncLowerer
         fctx.Emit(new MirInst(MirOp.AssignUse, wPl, -1, 0, wrapType, zOp, 0, 0, 0, tokIdx));
     }
 
+    private static bool IsDiscardPattern(in AstNode pat) =>
+        pat.Kind == AstKind.PatWildcard || (pat.Kind == AstKind.PatDecl && pat.A < 0 && pat.B < 0 && pat.C == 0);
+
     // Whether a case label after (secIdx, lblIdx) tests the scrutinee again:
-    // any label other than `default:` and a discard.
+    // any label other than `default:` and a discard (`_` or `var _`).
     private static bool HasLaterScrutineeLabel(in AstNode n, int secIdx, int lblIdx, in AstArena ast)
     {
         for (int i = secIdx; i < n.C; i++)
@@ -6536,7 +6853,7 @@ public static class FuncLowerer
             {
                 AstNode lbl = ast.Nodes[ast.Extra[sec.A + l]];
                 if (lbl.A < 0) continue;
-                if (ast.Nodes[lbl.A].Kind == AstKind.PatWildcard) continue;
+                if (IsDiscardPattern(in ast.Nodes[lbl.A])) continue;
                 return true;
             }
         }
@@ -6548,7 +6865,7 @@ public static class FuncLowerer
         for (int i = armIdx + 1; i < n.C; i++)
         {
             AstNode arm = ast.Nodes[ast.Extra[n.B + i]];
-            if (ast.Nodes[arm.A].Kind == AstKind.PatWildcard) continue;
+            if (IsDiscardPattern(in ast.Nodes[arm.A])) continue;
             return true;
         }
         return false;
@@ -6827,6 +7144,13 @@ public static class FuncLowerer
                 }
                 return;
             }
+            case AstKind.PatNot:
+            {
+                // `not P` declares what P declares; only the outcome that
+                // assigns it is the other one (C# scope).
+                CollectSpeculativePatternBindings(pat.A, scrutTypeId, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref outBinds);
+                return;
+            }
             case AstKind.PatLogic:
             {
                 if (pat.A == 0) // `and`
@@ -6858,74 +7182,34 @@ public static class FuncLowerer
             InferCondBranchSpeculative(n.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref falsePats, ref truePats);
             return;
         }
-        if (n.Kind == AstKind.ExprBinary && (TokKind)n.A == TokKind.AmpAmp)
+        if (n.Kind == AstKind.ExprBinary && ((TokKind)n.A == TokKind.AmpAmp || (TokKind)n.A == TokKind.PipePipe))
         {
-            var dummyF = new Vec<VarBinding>();
-            int beforeL = truePats.Count;
-            InferCondBranchSpeculative(n.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref truePats, ref dummyF);
-            int pushedForR = 0;
-            for (int i = beforeL; i < truePats.Count; i++)
-            {
-                fctx.Vars.Push(truePats[i]);
-                pushedForR += 1;
-            }
-            InferCondBranchSpeculative(n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref truePats, ref dummyF);
+            // The right operand is in the scope of every pattern variable the
+            // left one declares, whichever outcome assigns it (C# scope).
+            int beforeT = truePats.Count;
+            int beforeF = falsePats.Count;
+            InferCondBranchSpeculative(n.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref truePats, ref falsePats);
+            int endT = truePats.Count;
+            int endF = falsePats.Count;
+            for (int i = beforeT; i < endT; i++) fctx.Vars.Push(truePats[i]);
+            for (int i = beforeF; i < endF; i++) fctx.Vars.Push(falsePats[i]);
+            int pushedForR = (endT - beforeT) + (endF - beforeF);
+            InferCondBranchSpeculative(n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref truePats, ref falsePats);
             if (pushedForR > 0)
             {
-                // Keep any out-vars pushed after truePats, remove only the temporary pattern bindings we injected
+                // Keep any out-vars pushed after them, remove only the temporary pattern bindings we injected
                 var keptOuts = new Vec<VarBinding>();
                 while (fctx.Vars.Count > 0 && pushedForR > 0)
                 {
                     VarBinding top = fctx.Vars[fctx.Vars.Count - 1];
                     fctx.Vars.Pop();
                     bool matchPat = false;
-                    for (int k = beforeL; k < beforeL + pushedForR; k++)
-                    {
-                        if (top.NameId == truePats[k].NameId && top.LocalId == -2)
-                        {
-                            matchPat = true;
-                            break;
-                        }
-                    }
+                    for (int k = beforeT; k < endT && !matchPat; k++) matchPat = top.NameId == truePats[k].NameId && top.LocalId == -2;
+                    for (int k = beforeF; k < endF && !matchPat; k++) matchPat = top.NameId == falsePats[k].NameId && top.LocalId == -2;
                     if (matchPat) pushedForR -= 1;
                     else keptOuts.Push(top);
                 }
                 for (int k = keptOuts.Count - 1; k >= 0; k--) fctx.Vars.Push(keptOuts[k]);
-            }
-            return;
-        }
-        if (n.Kind == AstKind.ExprBinary && (TokKind)n.A == TokKind.PipePipe)
-        {
-            var dummyT = new Vec<VarBinding>();
-            int beforeF = falsePats.Count;
-            InferCondBranchSpeculative(n.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref dummyT, ref falsePats);
-            int pushedForOrR = 0;
-            for (int i = beforeF; i < falsePats.Count; i++)
-            {
-                fctx.Vars.Push(falsePats[i]);
-                pushedForOrR += 1;
-            }
-            InferCondBranchSpeculative(n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref dummyT, ref falsePats);
-            if (pushedForOrR > 0)
-            {
-                var keptOrOuts = new Vec<VarBinding>();
-                while (fctx.Vars.Count > 0 && pushedForOrR > 0)
-                {
-                    VarBinding top = fctx.Vars[fctx.Vars.Count - 1];
-                    fctx.Vars.Pop();
-                    bool matchPat = false;
-                    for (int k = beforeF; k < beforeF + pushedForOrR; k++)
-                    {
-                        if (top.NameId == falsePats[k].NameId && top.LocalId == -2)
-                        {
-                            matchPat = true;
-                            break;
-                        }
-                    }
-                    if (matchPat) pushedForOrR -= 1;
-                    else keptOrOuts.Push(top);
-                }
-                for (int k = keptOrOuts.Count - 1; k >= 0; k--) fctx.Vars.Push(keptOrOuts[k]);
             }
             return;
         }
@@ -6991,12 +7275,9 @@ public static class FuncLowerer
             case AstKind.ExprIsPattern:
             {
                 int isScrutT = InferExprType(n.A, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-                if (ast.Nodes[n.B].Kind != AstKind.PatNot)
-                {
-                    var isBinds = new Vec<VarBinding>();
-                    CollectSpeculativePatternBindings(n.B, isScrutT, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref isBinds);
-                    for (int i = 0; i < isBinds.Count; i++) fctx.Vars.Push(isBinds[i]);
-                }
+                var isBinds = new Vec<VarBinding>();
+                CollectSpeculativePatternBindings(n.B, isScrutT, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref isBinds);
+                for (int i = 0; i < isBinds.Count; i++) fctx.Vars.Push(isBinds[i]);
                 return TypeIds.Bool;
             }
             case AstKind.ExprCharLit:
@@ -7008,15 +7289,28 @@ public static class FuncLowerer
             case AstKind.ExprThis:
                 return fctx.OwnerTypeId >= 0 ? fctx.OwnerTypeId : TypeIds.Error;
             case AstKind.ExprCast:
+                InferOperandDeclarations(n.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                 return DeclBinder.ResolveTypeNode(n.A, fctx.TpNames.AsReadOnlySpan(), fctx.TpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false);
             case AstKind.ExprDefault:
                 return n.A >= 0
                     ? DeclBinder.ResolveTypeNode(n.A, fctx.TpNames.AsReadOnlySpan(), fctx.TpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false)
                     : TypeIds.Error;
             case AstKind.ExprNew:
-                return n.A >= 0
+            {
+                int newType = n.A >= 0
                     ? DeclBinder.ResolveTypeNode(n.A, fctx.TpNames.AsReadOnlySpan(), fctx.TpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false)
                     : TypeIds.Error;
+                // The arguments do not change the type, but the constructor's
+                // resolution types them and declares its out variables (N111).
+                TypeInfo newInfo = types.Items[newType];
+                var ctorCands = new Vec<int>();
+                if (fctx.ElementRetypeDepth == 0 && n.C > 0 && (newInfo.Kind == TypeKinds.Class || newInfo.Kind == TypeKinds.Struct))
+                    CollectTypeMethodCandidates(newInfo.A, -1, allowInstance: true, allowStatic: false, isCtor: true, ref fctx, in ast, in bctx, ref ctorCands);
+                if (ctorCands.Count > 0)
+                    _ = ResolveBestOverload(ctorCands.AsReadOnlySpan(), newType, -1, 0, 0, n.B, n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out _, out _);
+                else InferArgumentDeclarations(n.B, n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                return newType;
+            }
             case AstKind.ExprIdent:
             {
                 int lid = fctx.FindVar(n.A, out bool isConst, out int constTypeId, out _);
@@ -7087,7 +7381,11 @@ public static class FuncLowerer
             {
                 int t = InferExprType(n.A, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                 TypeInfo ti = types.Items[t];
-                if (n.D >= 0 && ast.Nodes[n.D].Kind == AstKind.ExprRange)
+                bool isRangeIndex = n.D >= 0 && ast.Nodes[n.D].Kind == AstKind.ExprRange;
+                // Only a user indexer's resolution types the index arguments.
+                if (isRangeIndex || (ti.Kind != TypeKinds.Struct && ti.Kind != TypeKinds.Class))
+                    InferArgumentDeclarations(n.B, n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                if (isRangeIndex)
                 {
                     if (ti.Kind == TypeKinds.Vec) return types.MakeSpan(ti.A, isReadOnly: false);
                     if (ti.Kind == TypeKinds.Span || ti.Kind == TypeKinds.ReadOnlySpan) return t;
@@ -7134,10 +7432,6 @@ public static class FuncLowerer
                     if (staticDeclId < 0 && Bytes.Eq(stTargetName, "Prelude"u8) && n.B == bctx.IdNone)
                     {
                         return TypeIds.NoneUnit;
-                    }
-                    if (staticDeclId < 0 && Bytes.Eq(stTargetName, "Array"u8) && Bytes.Eq(names.Text(n.B), "MaxLength"u8))
-                    {
-                        return TypeIds.I32;
                     }
                     if (staticDeclId >= 0 && ast.Types[staticDeclId].Kind == TypeDeclKinds.Enum)
                     {
@@ -7256,6 +7550,7 @@ public static class FuncLowerer
                 int lt = InferExprType(n.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                 if (bk == TokKind.LtLt || bk == TokKind.GtGt || bk == TokKind.GtGtGt)
                 {
+                    InferOperandDeclarations(n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                     return (types.IsInteger(lt) && types.IntBitWidth(lt) < 32) ? TypeIds.I32 : lt;
                 }
                 int rt = InferExprType(n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
@@ -7263,81 +7558,71 @@ public static class FuncLowerer
                 {
                     return TypeIds.Str;
                 }
-                if (types.Items[lt].Kind == TypeKinds.Enum || types.Items[rt].Kind == TypeKinds.Enum)
+                bool lEnum = types.Items[lt].Kind == TypeKinds.Enum;
+                bool rEnum = types.Items[rt].Kind == TypeKinds.Enum;
+                if (lEnum || rEnum)
                 {
-                    if (bk == TokKind.Pipe || bk == TokKind.Amp || bk == TokKind.Caret)
+                    int enumType = lEnum ? lt : rt;
+                    if (bk == TokKind.Pipe || bk == TokKind.Amp || bk == TokKind.Caret) return enumType;
+                    if (bk == TokKind.Minus)
                     {
-                        return types.Items[lt].Kind == TypeKinds.Enum ? lt : rt;
+                        if (lt == rt) return TypeIds.I32;
+                        // E - U wins over E - E only when the right operand
+                        // implicitly converts to int (e.g. 'e - 0', not 'e - 0f').
+                        int otherType = lEnum ? rt : lt;
+                        int otherExpr = lEnum ? n.C : n.B;
+                        if (!(lEnum && ClassifyByValueConversionWithCtx(otherExpr, otherType, TypeIds.I32, in fctx, in names, in bctx, in ast, in ta, in types) >= 0) &&
+                            ClassifyByValueConversionWithCtx(otherExpr, otherType, enumType, in fctx, in names, in bctx, in ast, in ta, in types) >= 0)
+                        {
+                            return TypeIds.I32;
+                        }
                     }
-                    if (bk == TokKind.Minus && lt == rt) return TypeIds.I32;
-                    if (bk == TokKind.Plus || bk == TokKind.Minus)
-                    {
-                        return types.Items[lt].Kind == TypeKinds.Enum ? lt : rt;
-                    }
+                    if (bk == TokKind.Plus || bk == TokKind.Minus) return enumType;
                 }
                 return PromoteBinaryNumericTypeWithCtx(n.B, lt, n.C, rt, in fctx, in names, in bctx, in ast, in ta, in types);
             }
             case AstKind.ExprCond:
             {
+                int scopeStart = fctx.Vars.Count;
                 var truePats = new Vec<VarBinding>();
                 var falsePats = new Vec<VarBinding>();
                 InferCondBranchSpeculative(n.A, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref truePats, ref falsePats);
 
+                // Both arms are in the scope of every variable the condition
+                // declares, whichever outcome assigns it (C# scope).
                 for (int i = 0; i < truePats.Count; i++) fctx.Vars.Push(truePats[i]);
+                for (int i = 0; i < falsePats.Count; i++) fctx.Vars.Push(falsePats[i]);
+                int trueScopeEnd = fctx.Vars.Count;
                 int t1 = InferExprType(n.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
 
-                for (int i = 0; i < falsePats.Count; i++) fctx.Vars.Push(falsePats[i]);
+                int falseScopeEnd = fctx.Vars.Count;
                 int t2 = InferExprType(n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
 
-                int natural = NaturalConditionalType(t1, n.B, t2, n.C, in fctx, in ast, in ta, in names, in bctx, in types);
-                return natural >= 0 && natural != TypeIds.Error ? natural : MergeCommonBranchType(t1, n.B, t2, n.C, in fctx, in ast, in ta, in names, in bctx, ref types);
+                int slot = fctx.BranchFactsFor(exprId, 2);
+                fctx.RecordBranchArm(slot, t1, scopeStart, trueScopeEnd);
+                fctx.RecordBranchArm(slot + 1, t2, scopeStart, falseScopeEnd);
+                int natural = NaturalConditionalType(t1, n.B, t2, n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                return natural >= 0 ? natural : TypeIds.Error;
             }
             case AstKind.ExprSwitch:
             {
-                int swScrutT = InferExprType(n.A, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-                int bestType = -1;
-                int bestExpr = -1;
-                for (int i = 0; i < n.C; i++)
-                {
-                    AstNode arm = ast.Nodes[ast.Extra[n.B + i]];
-                    int savedArmVars = fctx.Vars.Count;
-                    var armPats = new Vec<VarBinding>();
-                    CollectSpeculativePatternBindings(arm.A, swScrutT, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref armPats);
-                    for (int p = 0; p < armPats.Count; p++) fctx.Vars.Push(armPats[p]);
-                    if (arm.C >= 0)
-                    {
-                        var wgT = new Vec<VarBinding>();
-                        var wgF = new Vec<VarBinding>();
-                        InferCondBranchSpeculative(arm.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref wgT, ref wgF);
-                        for (int p = 0; p < wgT.Count; p++) fctx.Vars.Push(wgT[p]);
-                    }
-                    int at = InferExprType(arm.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-                    fctx.Vars.Truncate(savedArmVars);
-                    if (at == TypeIds.Error) continue;
-                    if (bestType < 0)
-                    {
-                        bestType = at;
-                        bestExpr = arm.B;
-                    }
-                    else
-                    {
-                        bestType = MergeCommonBranchType(bestType, bestExpr, at, arm.B, in fctx, in ast, in ta, in names, in bctx, ref types);
-                        bestExpr = -1;
-                    }
-                }
-                return bestType > 0 ? bestType : TypeIds.I32;
+                int natural = InferSwitchNaturalType(exprId, in n, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                return natural >= 0 ? natural : TypeIds.Error;
             }
             case AstKind.ExprAssign:
             {
                 if (n.D != 0)
                 {
-                    return InferExprType(n.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                    int refTargetT = InferExprType(n.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                    InferOperandDeclarations(n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                    return refTargetT;
                 }
                 if (IsDiscardExpression(n.B, in fctx, in ast, in names))
                 {
                     return InferExprType(n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                 }
                 int lhsT = InferExprType(n.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                InferOperandDeclarations(n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                 if ((TokKind)n.A == TokKind.PlusEq)
                 {
                     TypeInfo lti = types.Items[lhsT];
@@ -7429,6 +7714,7 @@ public static class FuncLowerer
                     if (callee.D == 1)
                     {
                         int payload = DeclBinder.ResolveTypeNode(ast.Extra[callee.C], fctx.TpNames.AsReadOnlySpan(), fctx.TpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false);
+                        InferArgumentDeclarations(callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                         return types.MakeOptionRef(payload);
                     }
                     AstNode slot = ast.Nodes[ast.Extra[callNode.B]];
@@ -7440,9 +7726,13 @@ public static class FuncLowerer
                 {
                     if (callee.B == bctx.IdSome && argCount == 1)
                     {
-                        int inner = callee.D == 1
-                            ? DeclBinder.ResolveTypeNode(ast.Extra[callee.C], fctx.TpNames.AsReadOnlySpan(), fctx.TpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false)
-                            : InferExprType(ast.Nodes[ast.Extra[callNode.B]].B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                        int inner;
+                        if (callee.D == 1)
+                        {
+                            InferOperandDeclarations(ast.Nodes[ast.Extra[callNode.B]].B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                            inner = DeclBinder.ResolveTypeNode(ast.Extra[callee.C], fctx.TpNames.AsReadOnlySpan(), fctx.TpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false);
+                        }
+                        else inner = InferExprType(ast.Nodes[ast.Extra[callNode.B]].B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                         return types.MakeSomeWrap(inner);
                     }
                     if (callee.B == bctx.IdOk)
@@ -7450,17 +7740,25 @@ public static class FuncLowerer
                         if (argCount == 0 && callee.D == 0) return types.MakeOkWrap(TypeIds.NoneUnit);
                         if (argCount == 1)
                         {
-                            int okInner = callee.D == 1
-                                ? DeclBinder.ResolveTypeNode(ast.Extra[callee.C], fctx.TpNames.AsReadOnlySpan(), fctx.TpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false)
-                                : InferExprType(ast.Nodes[ast.Extra[callNode.B]].B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                            int okInner;
+                            if (callee.D == 1)
+                            {
+                                InferOperandDeclarations(ast.Nodes[ast.Extra[callNode.B]].B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                                okInner = DeclBinder.ResolveTypeNode(ast.Extra[callee.C], fctx.TpNames.AsReadOnlySpan(), fctx.TpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false);
+                            }
+                            else okInner = InferExprType(ast.Nodes[ast.Extra[callNode.B]].B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                             return types.MakeOkWrap(okInner);
                         }
                     }
                     if (callee.B == bctx.IdErr && argCount == 1)
                     {
-                        int errInner = callee.D == 1
-                            ? DeclBinder.ResolveTypeNode(ast.Extra[callee.C], fctx.TpNames.AsReadOnlySpan(), fctx.TpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false)
-                            : InferExprType(ast.Nodes[ast.Extra[callNode.B]].B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                        int errInner;
+                        if (callee.D == 1)
+                        {
+                            InferOperandDeclarations(ast.Nodes[ast.Extra[callNode.B]].B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                            errInner = DeclBinder.ResolveTypeNode(ast.Extra[callee.C], fctx.TpNames.AsReadOnlySpan(), fctx.TpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false);
+                        }
+                        else errInner = InferExprType(ast.Nodes[ast.Extra[callNode.B]].B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                         return types.MakeErrWrap(errInner);
                     }
                     if (callee.B == bctx.IdMove && argCount == 1)
@@ -7470,10 +7768,12 @@ public static class FuncLowerer
                 }
                 if (stNameId == bctx.IdStringUtf8Extensions && callee.B == bctx.IdAsUtf8 && argCount == 1)
                 {
+                    InferArgumentDeclarations(callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                     return types.MakeSpan(TypeIds.U8, isReadOnly: true);
                 }
                 if ((stNameId == bctx.IdUtf8SpanExtensions || stNameId == bctx.IdStringUtf8Extensions) && callee.B == bctx.IdLines && argCount == 1)
                 {
+                    InferArgumentDeclarations(callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                     return TypeIds.Utf8Lines;
                 }
                 if (bctx.HasStdUnit && callee.B == bctx.IdTryParse && argCount == 2 &&
@@ -7527,10 +7827,15 @@ public static class FuncLowerer
             {
                 if (Bytes.Eq(mName, "AsRef"u8)) return types.MakeOptionRef(rti.A);
                 if (Bytes.Eq(mName, "AsMut"u8)) return types.MakeOptionMut(rti.A);
-                if (Bytes.Eq(mName, "Take"u8) || Bytes.Eq(mName, "Replace"u8)) return recvT;
+                if (Bytes.Eq(mName, "Take"u8) || Bytes.Eq(mName, "Replace"u8))
+                {
+                    InferArgumentDeclarations(callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                    return recvT;
+                }
                 if (Bytes.Eq(mName, "Unwrap"u8) || Bytes.Eq(mName, "UnwrapOr"u8) || Bytes.Eq(mName, "UnwrapMut"u8) ||
                     Bytes.Eq(mName, "Expect"u8) || Bytes.Eq(mName, "UnwrapOrDefault"u8))
                 {
+                    InferArgumentDeclarations(callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                     return rti.A;
                 }
                 if (Bytes.Eq(mName, "IsNone"u8))
@@ -7546,14 +7851,23 @@ public static class FuncLowerer
             if (rti.Kind == TypeKinds.OptionMut)
             {
                 if (Bytes.Eq(mName, "AsRef"u8)) return types.MakeOptionRef(rti.A);
-                if (Bytes.Eq(mName, "Take"u8) || Bytes.Eq(mName, "Replace"u8)) return types.MakeOption(rti.A);
-                if (Bytes.Eq(mName, "Set"u8)) return TypeIds.Void;
+                if (Bytes.Eq(mName, "Take"u8) || Bytes.Eq(mName, "Replace"u8))
+                {
+                    InferArgumentDeclarations(callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                    return types.MakeOption(rti.A);
+                }
+                if (Bytes.Eq(mName, "Set"u8))
+                {
+                    InferArgumentDeclarations(callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                    return TypeIds.Void;
+                }
             }
             if (rti.Kind == TypeKinds.Result)
             {
                 if (Bytes.Eq(mName, "Unwrap"u8) || Bytes.Eq(mName, "UnwrapOr"u8) ||
                     Bytes.Eq(mName, "Expect"u8) || Bytes.Eq(mName, "UnwrapOrDefault"u8))
                 {
+                    InferArgumentDeclarations(callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                     return rti.A;
                 }
                 if (Bytes.Eq(mName, "IsErr"u8))
@@ -7576,17 +7890,27 @@ public static class FuncLowerer
             if (rti.Kind == TypeKinds.Vec)
             {
                 if (Bytes.Eq(mName, "Pop"u8)) return types.MakeOption(rti.A);
-                if (Bytes.Eq(mName, "Slice"u8) || Bytes.Eq(mName, "AsSpan"u8)) return types.MakeSpan(rti.A, isReadOnly: false);
-                if (Bytes.Eq(mName, "ReadOnlySlice"u8) || Bytes.Eq(mName, "AsReadOnlySpan"u8)) return types.MakeSpan(rti.A, isReadOnly: true);
+                if (Bytes.Eq(mName, "Slice"u8) || Bytes.Eq(mName, "AsSpan"u8))
+                {
+                    InferArgumentDeclarations(callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                    return types.MakeSpan(rti.A, isReadOnly: false);
+                }
+                if (Bytes.Eq(mName, "ReadOnlySlice"u8) || Bytes.Eq(mName, "AsReadOnlySpan"u8))
+                {
+                    InferArgumentDeclarations(callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                    return types.MakeSpan(rti.A, isReadOnly: true);
+                }
                 if (Bytes.Eq(mName, "Push"u8) || Bytes.Eq(mName, "Add"u8) || Bytes.Eq(mName, "Clear"u8) ||
                     Bytes.Eq(mName, "Truncate"u8) || Bytes.Eq(mName, "Reserve"u8) || Bytes.Eq(mName, "Extend"u8) ||
                     Bytes.Eq(mName, "Resize"u8))
                 {
+                    InferArgumentDeclarations(callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                     return TypeIds.Void;
                 }
             }
             if ((rti.Kind == TypeKinds.Span || rti.Kind == TypeKinds.ReadOnlySpan) && Bytes.Eq(mName, "Slice"u8) && (argCount == 1 || argCount == 2))
             {
+                InferArgumentDeclarations(callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                 return recvT;
             }
             if (rti.Kind == TypeKinds.Class || rti.Kind == TypeKinds.Struct)
@@ -7633,7 +7957,35 @@ public static class FuncLowerer
         return -1;
     }
 
+    // At lowering time the receiver is typed again, so that the variables it
+    // declares are in scope in the index arguments, and one argument's are in
+    // scope in the next (C# scope, N110).
     private static bool TryResolveUserIndexer(
+        int ownerTypeId,
+        in AstNode idxNode,
+        ref FuncLowerCtx fctx,
+        in AstArena ast,
+        in TokenArena ta,
+        in Interner names,
+        ref BinderCtx bctx,
+        ref TypeTable types,
+        ref DiagnosticBag diags,
+        out int getterDeclId,
+        out int setterDeclId,
+        out int elemTypeId,
+        out bool isFromEndImplicit,
+        out bool isAmbiguous)
+    {
+        bool atRoot = fctx.InferDepth == 0;
+        fctx.InferDepth += 1;
+        if (atRoot) _ = InferExprType(idxNode.A, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+        bool found = TryResolveUserIndexerCore(ownerTypeId, in idxNode, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags,
+            out getterDeclId, out setterDeclId, out elemTypeId, out isFromEndImplicit, out isAmbiguous);
+        fctx.LeaveSpeculativeInfer();
+        return found;
+    }
+
+    private static bool TryResolveUserIndexerCore(
         int ownerTypeId,
         in AstNode idxNode,
         ref FuncLowerCtx fctx,
@@ -7702,6 +8054,7 @@ public static class FuncLowerer
         var actualArgTypes = new Vec<int>(callArgCount);
         if (fromEndSyntax)
         {
+            InferOperandDeclarations(idxNode.D, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
             actualArgModes.Push((int)PassMode.ByValue);
             actualArgTypes.Push(TypeIds.I32);
         }
@@ -8707,17 +9060,6 @@ public static class FuncLowerer
                             }
                         }
                     }
-                    else if (bId == BuiltinStaticIds.Array && Bytes.Eq(memText, "MaxLength"u8))
-                    {
-                        matchCount += 1;
-                        if (matchCount == 1)
-                        {
-                            resolvedKind = 3;
-                            resolvedBuiltinTypeId = TypeIds.I32;
-                            resolvedBuiltinBits = 2147483591L;
-                            resolvedBuiltinIsFloat = false;
-                        }
-                    }
                     else if (bTid == TypeIds.Str && Bytes.Eq(memText, "Empty"u8))
                     {
                         matchCount += 1;
@@ -8895,17 +9237,21 @@ public static class FuncLowerer
         int expr1,
         int t2,
         int expr2,
-        in FuncLowerCtx fctx,
+        ref FuncLowerCtx fctx,
         in AstArena ast,
         in TokenArena ta,
         in Interner names,
-        in BinderCtx bctx,
-        in TypeTable types)
+        ref BinderCtx bctx,
+        ref TypeTable types,
+        ref DiagnosticBag diags)
     {
         bool typed1 = t1 >= 0 && t1 != TypeIds.Error && t1 != TypeIds.Void;
         bool typed2 = t2 >= 0 && t2 != TypeIds.Error && t2 != TypeIds.Void;
-        if (!typed1) return typed2 ? t2 : TypeIds.Error;
-        if (!typed2) return t1;
+        if (!typed1 && !typed2) return TypeIds.Error;
+        if (!typed1)
+            return ClassifyImplicitExpressionConversion(expr1, t1, t2, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) >= 0 ? t2 : -1;
+        if (!typed2)
+            return ClassifyImplicitExpressionConversion(expr2, t2, t1, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) >= 0 ? t1 : -1;
         if (t1 == t2) return t1;
         bool candidate1 = ClassifyByValueConversionWithCtx(expr2, t2, t1, in fctx, in names, in bctx, in ast, in ta, in types) >= 0;
         bool candidate2 = ClassifyByValueConversionWithCtx(expr1, t1, t2, in fctx, in names, in bctx, in ast, in ta, in types) >= 0;
@@ -8922,8 +9268,151 @@ public static class FuncLowerer
         return -1;
     }
 
-    private static bool IsNumericConversionType(int typeId, in TypeTable types) =>
-        typeId == TypeIds.Char || types.IsInteger(typeId) || types.IsFloat(typeId);
+    private static void PushSpeculativeSwitchArmBindings(in AstNode arm, int swScrutT, ref FuncLowerCtx fctx,
+        in AstArena ast, in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
+    {
+        var armPats = new Vec<VarBinding>();
+        CollectSpeculativePatternBindings(arm.A, swScrutT, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref armPats);
+        for (int p = 0; p < armPats.Count; p++) fctx.Vars.Push(armPats[p]);
+        if (arm.C >= 0)
+        {
+            var wgT = new Vec<VarBinding>();
+            var wgF = new Vec<VarBinding>();
+            InferCondBranchSpeculative(arm.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref wgT, ref wgF);
+            for (int p = 0; p < wgT.Count; p++) fctx.Vars.Push(wgT[p]);
+            for (int p = 0; p < wgF.Count; p++) fctx.Vars.Push(wgF[p]);
+        }
+    }
+
+    // Best common type is one of the typed arm expressions, not an invented
+    // Option/Result lift or the enclosing assignment's target. Compare each
+    // viable candidate against the others by standard implicit conversion.
+    private static int InferSwitchNaturalType(int exprId, in AstNode n, ref FuncLowerCtx fctx, in AstArena ast,
+        in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
+    {
+        fctx.InferDepth += 1;
+        int scopeStart = fctx.Vars.Count;
+        int swScrutT = InferExprType(n.A, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+        int slot = fctx.BranchFactsFor(exprId, n.C);
+        var candidates = new Vec<int>();
+        for (int i = 0; i < n.C; i++)
+        {
+            AstNode arm = ast.Nodes[ast.Extra[n.B + i]];
+            int savedArmVars = fctx.Vars.Count;
+            PushSpeculativeSwitchArmBindings(in arm, swScrutT, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            int armScopeEnd = fctx.Vars.Count;
+            int at = InferExprType(arm.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            fctx.RecordBranchArm(slot + i, at, scopeStart, armScopeEnd);
+            fctx.Vars.Truncate(savedArmVars);
+            if (at < 0 || at == TypeIds.Error || at == TypeIds.Void) continue;
+            bool seen = false;
+            for (int j = 0; j < candidates.Count; j++) if (candidates[j] == at) seen = true;
+            if (!seen) candidates.Push(at);
+        }
+        int best = -1;
+        bool ambiguous = false;
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            int candidate = candidates[i];
+            if (ClassifyBranchArmConversions(exprId, in n, candidate, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) < 0) continue;
+            if (best < 0 || ClassifyByValueConversion(-1, best, candidate, in ast, in ta, in types) >= 0)
+            {
+                best = candidate;
+                ambiguous = false;
+            }
+            else if (ClassifyByValueConversion(-1, candidate, best, in ast, in ta, in types) < 0) ambiguous = true;
+        }
+        fctx.LeaveSpeculativeInfer();
+        return ambiguous ? -1 : best;
+    }
+
+    // Types an operand whose type the caller does not need, so that the
+    // variables it declares are on the binding stack for the rest of the
+    // expression (C# scope, N111).
+    private static void InferOperandDeclarations(int exprId, ref FuncLowerCtx fctx, in AstArena ast,
+        in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
+    {
+        if (exprId < 0 || fctx.ElementRetypeDepth > 0) return;
+        AstNode n = ast.Nodes[exprId];
+        if (n.Kind == AstKind.ExprRange)
+        {
+            InferOperandDeclarations(n.A, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            InferOperandDeclarations(n.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+        }
+        else if (n.Kind == AstKind.ExprFromEnd) InferOperandDeclarations(n.A, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+        else _ = InferExprType(exprId, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+    }
+
+    // The same for an argument list that no overload resolution types. An out
+    // argument declares its variable with the type it names.
+    private static void InferArgumentDeclarations(int argStart, int argCount, ref FuncLowerCtx fctx, in AstArena ast,
+        in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
+    {
+        if (fctx.ElementRetypeDepth > 0) return;
+        for (int a = 0; a < argCount; a++)
+        {
+            AstNode arg = ast.Nodes[ast.Extra[argStart + a]];
+            if (CallArgBits.Mode(in arg) != PassMode.Out) InferOperandDeclarations(arg.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            else if (arg.C >= 0)
+            {
+                int declared = DeclBinder.ResolveTypeNode(arg.C, fctx.TpNames.AsReadOnlySpan(), fctx.TpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false);
+                PushSpeculativeOutArg(in arg, declared, ref fctx);
+            }
+        }
+    }
+
+    // Types a receiver at lowering time. `declares` says that it declares out or
+    // pattern variables: C# keeps them in scope in the member's argument list,
+    // so the caller resolves the member inside EnterReceiverScope (N110).
+    private static int InferReceiverType(int recvExprId, out bool declares, ref FuncLowerCtx fctx, in AstArena ast,
+        in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
+    {
+        fctx.InferDepth += 1;
+        int mark = fctx.Vars.Count;
+        int type = InferExprType(recvExprId, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+        declares = fctx.Vars.Count > mark;
+        fctx.LeaveSpeculativeInfer();
+        return type;
+    }
+
+    // Types the receiver again when it declares variables, which leaves them on
+    // the binding stack; the caller ends the scope with LeaveSpeculativeInfer.
+    private static void EnterReceiverScope(int recvExprId, bool declares, ref FuncLowerCtx fctx, in AstArena ast,
+        in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
+    {
+        fctx.InferDepth += 1;
+        if (declares) _ = InferExprType(recvExprId, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+    }
+
+    // Whether every arm of a conditional or switch expression converts
+    // implicitly to targetType, from the arm types and scopes that the last
+    // natural-type inference of the expression recorded. It infers nothing.
+    private static int ClassifyBranchArmConversions(int exprId, in AstNode n, int targetType, ref FuncLowerCtx fctx,
+        in AstArena ast, in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
+    {
+        bool isCond = n.Kind == AstKind.ExprCond;
+        int armCount = isCond ? 2 : n.C;
+        int entry = fctx.BranchFactSlots.Find(exprId);
+        if (entry < 0)
+        {
+            // Every caller infers the natural type first; this keeps the answer right if one does not.
+            _ = InferExprType(exprId, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            entry = fctx.BranchFactSlots.Find(exprId);
+        }
+        int slot = fctx.BranchFactSlots.ValueAt(entry);
+        for (int i = 0; i < armCount; i++)
+        {
+            int armExpr = isCond ? (i == 0 ? n.B : n.C) : ast.Nodes[ast.Extra[n.B + i]].B;
+            BranchArmFact arm = fctx.BranchArmFacts[slot + i];
+            int mark = fctx.Vars.Count;
+            for (int p = 0; p < arm.ScopeCount; p++) fctx.Vars.Push(fctx.BranchArmScopes[arm.ScopeStart + p]);
+            int conversion = ClassifyImplicitExpressionConversionCore(armExpr, arm.TypeId, targetType,
+                ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            fctx.Vars.Truncate(mark);
+            if (conversion < 0) return -1;
+        }
+        return armCount > 0 ? 1 : -1;
+    }
 
     private static int MergeCommonBranchType(
         int t1,
@@ -10032,13 +10521,15 @@ public static class FuncLowerer
                 return -1;
             }
 
-            int instRecvT = InferExprType(callee.A, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            int instRecvT = InferReceiverType(callee.A, out bool instRecvDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
             TypeInfo irti = types.Items[instRecvT];
             if (irti.Kind == TypeKinds.Class || irti.Kind == TypeKinds.Struct)
             {
                 var imCands = new Vec<int>();
                 CollectTypeMethodCandidates(irti.A, callee.B, allowInstance: true, allowStatic: false, isCtor: false, ref fctx, in ast, in bctx, ref imCands);
+                EnterReceiverScope(callee.A, instRecvDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                 int imId = ResolveBestOverload(imCands.AsReadOnlySpan(), instRecvT, -1, callee.C, callee.D, callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out bool imAmb, out _);
+                fctx.LeaveSpeculativeInfer();
                 if (imId >= 0 && (ast.Funcs[imId].Flags & DeclFlags.ReturnsByRef) != 0)
                 {
                     PassMode recvMode = DeclBinder.GetReceiverPassMode(ast.Funcs[imId], instRecvT, in ast, in types, bctx.IdDispose);
@@ -10055,7 +10546,9 @@ public static class FuncLowerer
 
             var extCands = new Vec<int>();
             CollectExtensionCandidates(callee.B, ref fctx, in ast, in bctx, ref extCands);
+            EnterReceiverScope(callee.A, instRecvDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
             int extId = ResolveBestOverload(extCands.AsReadOnlySpan(), -1, instRecvT, callee.C, callee.D, callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out _, out _);
+            fctx.LeaveSpeculativeInfer();
             if (extId >= 0 && (ast.Funcs[extId].Flags & DeclFlags.ReturnsByRef) != 0)
             {
                 return EmitResolvedRefExtensionCall(extId, callee.A, instRecvT, callee.C, callee.D, callNode.B, argCount, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, isTwoPhase, out targetTypeId);
@@ -10410,14 +10903,7 @@ public static class FuncLowerer
                     int slOp = LowerRangeSliceAsOperand(in n, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
                     return ConvertOperandIfNeeded(slOp, expectedTypeId, tokIdx, ref fctx, in ast, in ta, in names, in bctx, in types, ref mir, ref diags, exprId, diags.Items.Count > diagCountBefore);
                 }
-                int pl = LowerPlace(exprId, isMut: false, isTwoPhase: false, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
-                int elemT = mir.Places[pl].TypeId;
-                int derefOp = mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, pl, 0, elemT, tokIdx,
-                    SourceExpressionStartToken(exprId, in ast)));
-                int valTmp = fctx.NewTemp(elemT, tokIdx, ref mir);
-                int valPl = mir.AddPlaceLocal(valTmp, elemT);
-                fctx.Emit(new MirInst(MirOp.AssignUse, valPl, -1, 0, elemT, derefOp, 0, 0, 0, tokIdx));
-                int op = mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, valPl, 0, elemT, tokIdx));
+                int op = LowerIndexValue(exprId, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out _);
                 return ConvertOperandIfNeeded(op, expectedTypeId, tokIdx, ref fctx, in ast, in ta, in names, in bctx, in types, ref mir, ref diags, exprId, diags.Items.Count > diagCountBefore);
             }
 
@@ -10514,6 +11000,20 @@ public static class FuncLowerer
                     }
                     int nullOp = LowerExprAsOperand(n.B, dstType, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
                     return ConvertOperandIfNeeded(nullOp, expectedTypeId, tokIdx, ref fctx, in ast, in ta, in names, in bctx, in types, ref mir, ref diags, exprId, true);
+                }
+
+                // An untyped conditional or switch can use the cast target,
+                // but only when every arm implicitly converts to it. A typed
+                // operand still uses the existing explicit conversion of the result.
+                if (subNode.Kind == AstKind.ExprCond || subNode.Kind == AstKind.ExprSwitch)
+                {
+                    int naturalType = InferExprType(n.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                    if (naturalType == TypeIds.Error &&
+                        ClassifyImplicitExpressionConversion(n.B, naturalType, dstType, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) >= 0)
+                    {
+                        int targetOp = LowerExprAsOperand(n.B, dstType, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+                        return ConvertOperandIfNeeded(targetOp, expectedTypeId, tokIdx, ref fctx, in ast, in ta, in names, in bctx, in types, ref mir, ref diags, exprId, diags.Items.Count > diagCountBefore);
+                    }
                 }
 
                 int srcOp = LowerExprAsOperand(n.B, -1, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
@@ -10628,7 +11128,7 @@ public static class FuncLowerer
             }
 
             case AstKind.ExprCond:
-                return LowerConditionalExpr(in n, expectedTypeId, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+                return LowerConditionalExpr(exprId, in n, expectedTypeId, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
 
             case AstKind.ExprIsPattern:
             {
@@ -10657,6 +11157,19 @@ public static class FuncLowerer
 
         diags.ReportTok(VibCodes.Unsupported, tok, "Unsupported expression in Vibranium."u8);
         return mir.AddOperand(new MirOperand(MirOpKinds.IntConst, -1, 0, TypeIds.I32, tokIdx));
+    }
+
+    private static int LowerIndexValue(int exprId, int tokIdx, ref FuncLowerCtx fctx, in AstArena ast, in TokenArena ta,
+        ref Interner names, ref BinderCtx bctx, ref TypeTable types, ref MirModuleArena mir, ref DiagnosticBag diags, out int pl)
+    {
+        pl = LowerPlace(exprId, isMut: false, isTwoPhase: false, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+        int elemT = mir.Places[pl].TypeId;
+        int derefOp = mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, pl, 0, elemT, tokIdx,
+            SourceExpressionStartToken(exprId, in ast)));
+        int valTmp = fctx.NewTemp(elemT, tokIdx, ref mir);
+        int valPl = mir.AddPlaceLocal(valTmp, elemT);
+        fctx.Emit(new MirInst(MirOp.AssignUse, valPl, -1, 0, elemT, derefOp, 0, 0, 0, tokIdx));
+        return mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, valPl, 0, elemT, tokIdx));
     }
 
     private static int LowerRangeSliceAsOperand(
@@ -11271,10 +11784,6 @@ public static class FuncLowerer
                 {
                     return mir.AddOperand(new MirOperand(MirOpKinds.StrConst, -1, 0, TypeIds.Str, tokIdx));
                 }
-                if (Bytes.Eq(lhsName, "Array"u8) && Bytes.Eq(memName, "MaxLength"u8))
-                {
-                    return mir.AddOperand(new MirOperand(MirOpKinds.IntConst, -1, 2147483591L, TypeIds.I32, tokIdx));
-                }
             }
 
             diags.ReportTok(VibCodes.Unsupported, tok, "Unsupported, unresolved, or inaccessible static member access in Vibranium."u8);
@@ -11664,7 +12173,7 @@ public static class FuncLowerer
                         {
                             bytesOp = EmitStringAsUtf8Intrinsic(a0.B, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
                         }
-                        else if (ClassifyByValueConversion(a0.B, a0Type, roSpanU8, in ast, in ta, in types) >= 0 && CheckSingleNamedArg(in a0, "bytes"u8, in names))
+                        else if (ClassifyImplicitExpressionConversion(a0.B, a0Type, roSpanU8, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) >= 0 && CheckSingleNamedArg(in a0, "bytes"u8, in names))
                         {
                             bytesOp = LowerExprAsOperand(a0.B, roSpanU8, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
                         }
@@ -11732,7 +12241,7 @@ public static class FuncLowerer
                     int roSpanU8 = types.MakeSpan(TypeIds.U8, isReadOnly: true);
                     int a0T = InferExprType(a0.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                     if (CallArgBits.Mode(in a0) == PassMode.ByValue && CheckSingleNamedArg(in a0, "text"u8, in names) &&
-                        ClassifyByValueConversion(a0.B, a0T, roSpanU8, in ast, in ta, in types) >= 0)
+                        ClassifyImplicitExpressionConversion(a0.B, a0T, roSpanU8, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) >= 0)
                     {
                         if (expectedTypeId != TypeIds.Utf8Lines)
                         {
@@ -11780,7 +12289,7 @@ public static class FuncLowerer
             }
 
             // Instance intrinsic / user instance / extension method calls
-            int recvType = InferExprType(callee.A, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            int recvType = InferReceiverType(callee.A, out bool recvDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
             TypeInfo rti = types.Items[recvType];
 
             if (rti.Kind == TypeKinds.Utf8Lines || rti.Kind == TypeKinds.Utf8ArgEnum)
@@ -11814,7 +12323,7 @@ public static class FuncLowerer
             }
 
             if (rti.Kind == TypeKinds.Option &&
-                TryLowerOptionIntrinsicCall(callee.A, recvType, rti.A, callee.B, callNode.B, argCount, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out int optIntrOp))
+                TryLowerOptionIntrinsicCall(callee.A, recvDeclares, recvType, rti.A, callee.B, callNode.B, argCount, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out int optIntrOp))
             {
                 return optIntrOp;
             }
@@ -11824,7 +12333,7 @@ public static class FuncLowerer
                 return optMutIntrOp;
             }
             if (rti.Kind == TypeKinds.Result &&
-                TryLowerResultIntrinsicCall(callee.A, recvType, rti.A, rti.B, callee.B, callNode.B, argCount, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out int resIntrOp))
+                TryLowerResultIntrinsicCall(callee.A, recvDeclares, recvType, rti.A, rti.B, callee.B, callNode.B, argCount, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out int resIntrOp))
             {
                 return resIntrOp;
             }
@@ -11834,7 +12343,7 @@ public static class FuncLowerer
                 return vecIntrOp;
             }
             if ((rti.Kind == TypeKinds.Span || rti.Kind == TypeKinds.ReadOnlySpan) &&
-                TryLowerSpanIntrinsicCall(callee.A, recvType, callee.B, callNode.B, argCount, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out int spanIntrOp))
+                TryLowerSpanIntrinsicCall(callee.A, recvDeclares, recvType, callee.B, callNode.B, argCount, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out int spanIntrOp))
             {
                 return spanIntrOp;
             }
@@ -11844,7 +12353,9 @@ public static class FuncLowerer
             {
                 var imCands = new Vec<int>();
                 CollectTypeMethodCandidates(rti.A, callee.B, allowInstance: true, allowStatic: false, isCtor: false, ref fctx, in ast, in bctx, ref imCands);
+                EnterReceiverScope(callee.A, recvDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                 int imId = ResolveBestOverload(imCands.AsReadOnlySpan(), recvType, -1, callee.C, callee.D, callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out bool imAmb, out _);
+                fctx.LeaveSpeculativeInfer();
                 if (imAmb)
                 {
                     diags.ReportTok(VibCodes.Unsupported, tok, "Ambiguous instance method invocation in Vibranium."u8);
@@ -11870,7 +12381,9 @@ public static class FuncLowerer
             CollectExtensionCandidates(callee.B, ref fctx, in ast, in bctx, ref extCands);
             if (extCands.Count > 0)
             {
+                EnterReceiverScope(callee.A, recvDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                 int extId = ResolveBestOverload(extCands.AsReadOnlySpan(), -1, recvType, callee.C, callee.D, callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out bool extAmb, out _);
+                fctx.LeaveSpeculativeInfer();
                 if (extAmb)
                 {
                     diags.ReportTok(VibCodes.Unsupported, tok, "Ambiguous extension method invocation in Vibranium."u8);
@@ -12056,7 +12569,7 @@ public static class FuncLowerer
 
         int roSpanU8 = types.MakeSpan(TypeIds.U8, isReadOnly: true);
         int sArgT = InferExprType(sArg.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-        if (sArgT != TypeIds.Str && ClassifyByValueConversion(sArg.B, sArgT, roSpanU8, in ast, in ta, in types) < 0)
+        if (sArgT != TypeIds.Str && ClassifyImplicitExpressionConversion(sArg.B, sArgT, roSpanU8, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) < 0)
         {
             return false;
         }
@@ -12250,6 +12763,9 @@ public static class FuncLowerer
             bool nl = fnNameId == bctx.IdWriteLine;
             int roSpanU8 = types.MakeSpan(TypeIds.U8, isReadOnly: true);
             int inferredT = InferExprType(a0.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            int contextualT = inferredT == TypeIds.Error
+                ? ChooseTargetTypedWriteParameter(in a0, allowReadOnlySpanBytes, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) : -1;
+            if (contextualT >= 0) inferredT = contextualT;
             TypeInfo iti = types.Items[inferredT];
 
             if ((iti.Kind == TypeKinds.Span || iti.Kind == TypeKinds.ReadOnlySpan) && iti.A == TypeIds.U8)
@@ -12278,7 +12794,7 @@ public static class FuncLowerer
                 return false;
             }
 
-            int vOp = LowerExprAsOperand(a0.B, -1, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+            int vOp = LowerExprAsOperand(a0.B, contextualT, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
             int vType = mir.Operands[vOp].TypeId;
             MirIntrinsic intr;
             if (vType == TypeIds.Bool)
@@ -12386,6 +12902,7 @@ public static class FuncLowerer
                 AstNode argNode = ast.Nodes[ast.Extra[callArgExtraStart + a]];
                 if (CallArgBits.Mode(in argNode) == PassMode.Out && argNode.C < -1 && argNode.C != -2) continue;
                 int actualT = InferCallArgActualType(in argNode, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                if (fctx.ElementRetypeDepth == 0 && argNode.C >= 0 && CallArgBits.Mode(in argNode) == PassMode.Out) PushSpeculativeOutArg(in argNode, actualT, ref fctx);
                 inferred = TryInferTypeParamFromNode(ast.Params[fd.ParamStart + extOffset + mappedP].TypeNode, actualT, tpName, in ast, in bctx, in types);
             }
             fctx.LeaveSpeculativeInfer();
@@ -12986,7 +13503,12 @@ public static class FuncLowerer
         FuncDecl fd = ast.Funcs[funcDeclId];
         Token tok = ta.Tokens[tokIdx];
         var methodTypeArgs = new Vec<int>(fd.TypeParamCount);
+        // Type arguments are inferred from the arguments before the receiver is
+        // lowered, so the receiver's declarations are put in scope for them.
+        bool infersTypeArgs = fd.TypeParamCount > 0 && explicitMethodTaCount != fd.TypeParamCount;
+        EnterReceiverScope(recvExprId, infersTypeArgs, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
         ResolveMethodTypeArgumentsForCall(in fd, -1, recvTypeId, explicitMethodTaStart, explicitMethodTaCount, callArgExtraStart, callArgCount, tok, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref methodTypeArgs);
+        fctx.LeaveSpeculativeInfer();
 
         int instId = DeclBinder.EnsureFuncInstance(funcDeclId, -1, methodTypeArgs.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref mir, ref diags);
         if (instId < 0)
@@ -13050,7 +13572,12 @@ public static class FuncLowerer
         FuncDecl fd = ast.Funcs[funcDeclId];
         Token tok = ta.Tokens[tokIdx];
         var methodTypeArgs = new Vec<int>(fd.TypeParamCount);
+        // Type arguments are inferred from the arguments before the receiver is
+        // lowered, so the receiver's declarations are put in scope for them.
+        bool infersTypeArgs = fd.TypeParamCount > 0 && explicitMethodTaCount != fd.TypeParamCount;
+        EnterReceiverScope(recvExprId, infersTypeArgs, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
         ResolveMethodTypeArgumentsForCall(in fd, -1, recvTypeId, explicitMethodTaStart, explicitMethodTaCount, callArgExtraStart, callArgCount, tok, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref methodTypeArgs);
+        fctx.LeaveSpeculativeInfer();
 
         int instId = DeclBinder.EnsureFuncInstance(funcDeclId, -1, methodTypeArgs.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref mir, ref diags);
         if (instId < 0)
@@ -13239,6 +13766,8 @@ public static class FuncLowerer
                     bestPrelParamT = argT;
                 }
             }
+            if (bestPrelParamT < 0 && argT == TypeIds.Error)
+                bestPrelParamT = ChooseTargetTypedWriteParameter(in a0, true, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
             if (bestPrelParamT >= 0)
             {
                 appFuncIds.Push(-10);
@@ -13274,7 +13803,7 @@ public static class FuncLowerer
             if (explicitMethodTaCount == 1)
             {
                 tArg = DeclBinder.ResolveTypeNode(ast.Extra[explicitMethodTaStart], fctx.TpNames.AsReadOnlySpan(), fctx.TpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false);
-                if (tArg <= 0 || tArg == TypeIds.Error || ClassifyByValueConversionWithCtx(a0.B, argT, tArg, in fctx, in names, in bctx, in ast, in ta, in types) < 0)
+                if (tArg <= 0 || tArg == TypeIds.Error || ClassifyImplicitExpressionConversion(a0.B, argT, tArg, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) < 0)
                 {
                     return;
                 }
@@ -13432,7 +13961,10 @@ public static class FuncLowerer
             AstNode cArg = ast.Nodes[ast.Extra[callArgExtraStart + a]];
             actualArgModes.Push((int)CallArgBits.Mode(in cArg));
             actualArgExprs.Push(cArg.B);
-            actualArgTypes.Push(InferCallArgActualType(in cArg, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags));
+            int actualT = InferCallArgActualType(in cArg, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            actualArgTypes.Push(actualT);
+            // `out T name` declares its variable for the arguments after it.
+            if (fctx.ElementRetypeDepth == 0 && cArg.C >= 0 && CallArgBits.Mode(in cArg) == PassMode.Out) PushSpeculativeOutArg(in cArg, actualT, ref fctx);
         }
 
         int stride = callArgCount + 1;
@@ -13558,7 +14090,8 @@ public static class FuncLowerer
             for (int a = 0; a < callArgCount; a++)
             {
                 AstNode cArg = ast.Nodes[ast.Extra[callArgExtraStart + a]];
-                if (CallArgBits.Mode(in cArg) == PassMode.Out)
+                // An `out var` gets the winner's parameter type; `out T name` is on the stack already.
+                if (CallArgBits.Mode(in cArg) == PassMode.Out && (cArg.C == -1 || fctx.ElementRetypeDepth > 0))
                 {
                     PushSpeculativeOutArg(in cArg, winPTypes[a + 1], ref fctx);
                 }
@@ -13720,7 +14253,7 @@ public static class FuncLowerer
             if (pd.Mode == PassMode.ByValue)
             {
                 if (argMode != PassMode.ByValue) return false;
-                if (ClassifyCandidateCollectionConversion(cArg.B, actualArgTypes[a], pType, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) < 0) return false;
+                if (ClassifyImplicitExpressionConversion(cArg.B, actualArgTypes[a], pType, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) < 0) return false;
             }
             else if (pd.Mode == PassMode.In)
             {
@@ -13731,7 +14264,7 @@ public static class FuncLowerer
                     // conversion to an `in` parameter; the converted value is
                     // passed through a temporary. `in`/`ref` arguments need identity.
                     if (argMode != PassMode.ByValue) return false;
-                    if (ClassifyCandidateCollectionConversion(cArg.B, actualArgTypes[a], pType, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) < 0) return false;
+                    if (ClassifyImplicitExpressionConversion(cArg.B, actualArgTypes[a], pType, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) < 0) return false;
                 }
             }
             else if (pd.Mode == PassMode.Ref)
@@ -13871,20 +14404,57 @@ public static class FuncLowerer
         return false;
     }
 
-    private static int ClassifyCandidateCollectionConversion(int expressionId, int actualType, int targetType,
+    // Prelude.Write/WriteLine are synthetic candidates. Give an expression
+    // without a natural type the same applicability and better-target rules
+    // as declared methods rather than guessing an arm's type.
+    private static int ChooseTargetTypedWriteParameter(in AstNode arg, bool allowBytes, ref FuncLowerCtx fctx,
+        in AstArena ast, in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
+    {
+        AstKind kind = ast.Nodes[arg.B].Kind;
+        if (kind != AstKind.ExprCond && kind != AstKind.ExprSwitch) return -1;
+        var candidates = new Vec<int>();
+        if (CheckSingleNamedArg(in arg, "value"u8, in names))
+        {
+            for (int t = TypeIds.Bool; t <= TypeIds.U64; t++) if (t != TypeIds.Char) candidates.Push(t);
+            candidates.Push(TypeIds.Str);
+        }
+        if (allowBytes && CheckSingleNamedArg(in arg, "utf8"u8, in names)) candidates.Push(types.MakeSpan(TypeIds.U8, isReadOnly: true));
+        var applicable = new Vec<int>();
+        for (int i = 0; i < candidates.Count; i++)
+        {
+            int t = candidates[i];
+            if (ClassifyImplicitExpressionConversion(arg.B, TypeIds.Error, t, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) >= 0)
+                applicable.Push(t);
+        }
+        if (applicable.Count == 1) return applicable[0];
+        for (int i = 0; i < applicable.Count; i++)
+        {
+            bool best = true;
+            for (int j = 0; j < applicable.Count; j++)
+            {
+                if (j == i) continue;
+                if (CompareSingleConversion(TypeIds.Error, PassMode.ByValue, applicable[i], PassMode.ByValue,
+                    applicable[j], PassMode.ByValue, in types) <= 0) { best = false; break; }
+            }
+            if (best) return applicable[i];
+        }
+        return -1;
+    }
+
+    private static int ClassifyImplicitExpressionConversion(int expressionId, int actualType, int targetType,
         ref FuncLowerCtx fctx, in AstArena ast, in TokenArena ta, in Interner names,
         ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
     {
         int mark = fctx.Vars.Count;
         fctx.InferDepth += 1;
-        int result = ClassifyCandidateCollectionConversionCore(expressionId, actualType, targetType, false,
+        int result = ClassifyImplicitExpressionConversionCore(expressionId, actualType, targetType,
             ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
         fctx.Vars.Truncate(mark);
         fctx.LeaveSpeculativeInfer();
         return result;
     }
 
-    private static int ClassifyCandidateCollectionConversionCore(int expressionId, int actualType, int targetType, bool elementContext,
+    private static int ClassifyImplicitExpressionConversionCore(int expressionId, int actualType, int targetType,
         ref FuncLowerCtx fctx, in AstArena ast, in TokenArena ta, in Interner names,
         ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
     {
@@ -13898,22 +14468,26 @@ public static class FuncLowerer
             for (int i = 0; i < expression.B; i++)
             {
                 int element = ast.Extra[expression.A + i];
+                fctx.ElementRetypeDepth += 1;
                 int elementType = InferExprType(element, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-                if (ClassifyCandidateCollectionConversionCore(element, elementType, target.A, true,
+                fctx.ElementRetypeDepth -= 1;
+                if (ClassifyImplicitExpressionConversionCore(element, elementType, target.A,
                     ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) < 0) return -1;
             }
             return 1;
         }
-        if (expression.Kind == AstKind.ExprCond && (collectionTarget || elementContext))
+        if (expression.Kind == AstKind.ExprCond || expression.Kind == AstKind.ExprSwitch)
         {
-            int trueType = InferExprType(expression.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-            int falseType = InferExprType(expression.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-            if (ClassifyCandidateCollectionConversionCore(expression.B, trueType, targetType, elementContext,
-                ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) < 0) return -1;
-            if (ClassifyCandidateCollectionConversionCore(expression.C, falseType, targetType, elementContext,
-                ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) < 0) return -1;
-            return 1;
+            // A naturally typed conditional needs a conversion from that
+            // type. An untyped conditional or a switch can instead convert
+            // each arm independently to the target.
+            if (CanUseNaturalBranchType(actualType, targetType, in ast, in ta, in types))
+                return actualType == targetType ? 0 : 1;
+            if (expression.Kind == AstKind.ExprCond && actualType >= 0 && actualType != TypeIds.Error && actualType != TypeIds.Void)
+                return -1;
         }
+        if (expression.Kind == AstKind.ExprCond || expression.Kind == AstKind.ExprSwitch)
+            return ClassifyBranchArmConversions(expressionId, in expression, targetType, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
         // Scalar call arguments retain their existing natural-type/ranking rules.
         return ClassifyByValueConversionWithCtx(expressionId, actualType, targetType, in fctx, in names, in bctx, in ast, in ta, in types);
     }
@@ -14285,6 +14859,27 @@ public static class FuncLowerer
         return -1;
     }
 
+    // A built-in readonly struct member with value-based LLVM lowering still
+    // borrows its source receiver while its arguments are being evaluated.
+    // Capture once, retaining the original place only for ownership checking.
+    private static int LowerBorrowedIntrinsicReceiver(int receiver, int receiverType, ref FuncLowerCtx fctx,
+        in AstArena ast, in TokenArena ta, ref Interner names, ref BinderCtx bctx, ref TypeTable types,
+        ref MirModuleArena mir, ref DiagnosticBag diags, out int receiverLoan)
+    {
+        int tokIdx = ast.Nodes[receiver].TokIdx;
+        int input = LowerBorrowWindowInput(receiver, receiverType, snapshotIndex: true, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out int place);
+        int snapshot = MaterializeByValueCallArgIfNeeded(input, true, tokIdx, ref fctx, in types, ref mir);
+        int windowFlag = 0;
+        if (!types.IsCopy(receiverType, in ast) && place >= 0 && mir.Places[place].ProjCount == 0)
+        {
+            MirLocal loc = fctx.Locals[mir.Places[place].LocalId];
+            if ((loc.Flags & MirLocalFlags.IsRefLocal) == 0 && loc.Mode == PassMode.ByValue)
+                windowFlag = MirLocalFlags.IsMovedReceiverWindow;
+        }
+        receiverLoan = BeginBorrowWindow(place, tokIdx, windowFlag, ref fctx, in mir);
+        return snapshot;
+    }
+
     private static int LowerOptionAsRef(int recvExprId, int optTypeId, int innerTypeId, int tokIdx,
         ref FuncLowerCtx fctx, in AstArena ast, in TokenArena ta, ref Interner names, ref BinderCtx bctx,
         ref TypeTable types, ref MirModuleArena mir, ref DiagnosticBag diags)
@@ -14302,6 +14897,7 @@ public static class FuncLowerer
 
     private static bool TryLowerOptionIntrinsicCall(
         int recvExprId,
+        bool recvDeclares,
         int optTypeId,
         int innerTypeId,
         int mNameId,
@@ -14336,19 +14932,23 @@ public static class FuncLowerer
         {
             AstNode cArg0 = ast.Nodes[ast.Extra[argStart]];
             if (CallArgBits.Mode(in cArg0) != PassMode.ByValue ||
-                !CheckSingleNamedArg(in cArg0, "message"u8, in names) ||
-                InferExprType(cArg0.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) != TypeIds.Str)
+                !CheckSingleNamedArg(in cArg0, "message"u8, in names))
             {
                 return false;
             }
-            int oOp = LowerExprAsOperand(recvExprId, optTypeId, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
-            oOp = MaterializeByValueCallArgIfNeeded(oOp, true, ast.Nodes[recvExprId].TokIdx, ref fctx, in types, ref mir);
+            // The receiver's out and pattern variables stay in scope in the message (N110).
+            EnterReceiverScope(recvExprId, recvDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            int messageType = InferExprType(cArg0.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            fctx.LeaveSpeculativeInfer();
+            if (messageType != TypeIds.Str) return false;
+            int oOp = LowerBorrowedIntrinsicReceiver(recvExprId, optTypeId, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out int receiverLoan);
             int msgOp = LowerExprAsOperand(cArg0.B, TypeIds.Str, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
             var ops = new Vec<int>(2);
             ops.Push(oOp);
             ops.Push(msgOp);
             int dstTmp = fctx.NewTemp(innerTypeId, tokIdx, ref mir);
             int dstPl = mir.AddPlaceLocal(dstTmp, innerTypeId);
+            EndBorrowWindow(receiverLoan, tokIdx, ref fctx);
             fctx.Emit(new MirInst(MirOp.Intrinsic, dstPl, -1, 0, innerTypeId, (int)MirIntrinsic.OptionExpect, mir.PushIdList(ops.AsReadOnlySpan()), 2, 0, tokIdx));
             resultOp = mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, dstPl, 0, innerTypeId, tokIdx));
             return true;
@@ -14379,14 +14979,14 @@ public static class FuncLowerer
             AstNode cArg0 = ast.Nodes[ast.Extra[argStart]];
             if (CallArgBits.Mode(in cArg0) != PassMode.ByValue || !CheckSingleNamedArg(in cArg0, "fallback"u8, in names)) return false;
             if (isLin) diags.ReportTok(VibCodes.LinearViolation, tok, "Option.UnwrapOr is banned on linear resources."u8);
-            int oOp = LowerExprAsOperand(recvExprId, optTypeId, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
-            oOp = MaterializeByValueCallArgIfNeeded(oOp, true, ast.Nodes[recvExprId].TokIdx, ref fctx, in types, ref mir);
+            int oOp = LowerBorrowedIntrinsicReceiver(recvExprId, optTypeId, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out int receiverLoan);
             int fbOp = LowerExprAsOperand(cArg0.B, innerTypeId, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
             var ops = new Vec<int>(2);
             ops.Push(oOp);
             ops.Push(fbOp);
             int dstTmp = fctx.NewTemp(innerTypeId, tokIdx, ref mir);
             int dstPl = mir.AddPlaceLocal(dstTmp, innerTypeId);
+            EndBorrowWindow(receiverLoan, tokIdx, ref fctx);
             fctx.Emit(new MirInst(MirOp.Intrinsic, dstPl, -1, 0, innerTypeId, (int)MirIntrinsic.OptionUnwrapOr, mir.PushIdList(ops.AsReadOnlySpan()), 2, 0, tokIdx));
             resultOp = mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, dstPl, 0, innerTypeId, tokIdx));
             return true;
@@ -14544,6 +15144,7 @@ public static class FuncLowerer
 
     private static bool TryLowerResultIntrinsicCall(
         int recvExprId,
+        bool recvDeclares,
         int resTypeId,
         int okTypeId,
         int errTypeId,
@@ -14578,19 +15179,23 @@ public static class FuncLowerer
         {
             AstNode cArg0 = ast.Nodes[ast.Extra[argStart]];
             if (CallArgBits.Mode(in cArg0) != PassMode.ByValue ||
-                !CheckSingleNamedArg(in cArg0, "message"u8, in names) ||
-                InferExprType(cArg0.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) != TypeIds.Str)
+                !CheckSingleNamedArg(in cArg0, "message"u8, in names))
             {
                 return false;
             }
-            int rOp = LowerExprAsOperand(recvExprId, resTypeId, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
-            rOp = MaterializeByValueCallArgIfNeeded(rOp, true, ast.Nodes[recvExprId].TokIdx, ref fctx, in types, ref mir);
+            // The receiver's out and pattern variables stay in scope in the message (N110).
+            EnterReceiverScope(recvExprId, recvDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            int messageType = InferExprType(cArg0.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            fctx.LeaveSpeculativeInfer();
+            if (messageType != TypeIds.Str) return false;
+            int rOp = LowerBorrowedIntrinsicReceiver(recvExprId, resTypeId, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out int receiverLoan);
             int msgOp = LowerExprAsOperand(cArg0.B, TypeIds.Str, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
             var ops = new Vec<int>(2);
             ops.Push(rOp);
             ops.Push(msgOp);
             int dstTmp = fctx.NewTemp(okTypeId, tokIdx, ref mir);
             int dstPl = mir.AddPlaceLocal(dstTmp, okTypeId);
+            EndBorrowWindow(receiverLoan, tokIdx, ref fctx);
             fctx.Emit(new MirInst(MirOp.Intrinsic, dstPl, -1, 0, okTypeId, (int)MirIntrinsic.ResultExpect, mir.PushIdList(ops.AsReadOnlySpan()), 2, 0, tokIdx));
             resultOp = mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, dstPl, 0, okTypeId, tokIdx));
             return true;
@@ -14624,14 +15229,14 @@ public static class FuncLowerer
             {
                 diags.ReportTok(VibCodes.LinearViolation, tok, "Result.UnwrapOr is banned on linear resources."u8);
             }
-            int rOp = LowerExprAsOperand(recvExprId, resTypeId, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
-            rOp = MaterializeByValueCallArgIfNeeded(rOp, true, ast.Nodes[recvExprId].TokIdx, ref fctx, in types, ref mir);
+            int rOp = LowerBorrowedIntrinsicReceiver(recvExprId, resTypeId, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out int receiverLoan);
             int fbOp = LowerExprAsOperand(cArg0.B, okTypeId, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
             var ops = new Vec<int>(2);
             ops.Push(rOp);
             ops.Push(fbOp);
             int dstTmp = fctx.NewTemp(okTypeId, tokIdx, ref mir);
             int dstPl = mir.AddPlaceLocal(dstTmp, okTypeId);
+            EndBorrowWindow(receiverLoan, tokIdx, ref fctx);
             fctx.Emit(new MirInst(MirOp.Intrinsic, dstPl, -1, 0, okTypeId, (int)MirIntrinsic.ResultUnwrapOr, mir.PushIdList(ops.AsReadOnlySpan()), 2, 0, tokIdx));
             resultOp = mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, dstPl, 0, okTypeId, tokIdx));
             return true;
@@ -14823,6 +15428,7 @@ public static class FuncLowerer
 
     private static bool TryLowerSpanIntrinsicCall(
         int recvExprId,
+        bool recvDeclares,
         int spanTypeId,
         int mNameId,
         int argStart,
@@ -14854,13 +15460,19 @@ public static class FuncLowerer
                 if (!TryMapTwoNamedArgs(in raw0, in raw1, "start"u8, "length"u8, in names, out stIdx, out _)) return false;
             }
 
-            for (int a = 0; a < argCount; a++)
+            // One scope for the receiver and both arguments: a variable that an
+            // earlier one declares stays in scope in a later one (N110).
+            bool argsConvert = true;
+            EnterReceiverScope(recvExprId, recvDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            for (int a = 0; a < argCount && argsConvert; a++)
             {
                 AstNode ca = ast.Nodes[ast.Extra[argStart + a]];
-                if (CallArgBits.Mode(in ca) != PassMode.ByValue) return false;
+                if (CallArgBits.Mode(in ca) != PassMode.ByValue) { argsConvert = false; break; }
                 int aT = InferExprType(ca.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-                if (ClassifyByValueConversion(ca.B, aT, TypeIds.I32, in ast, in ta, in types) < 0) return false;
+                if (ClassifyImplicitExpressionConversion(ca.B, aT, TypeIds.I32, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) < 0) argsConvert = false;
             }
+            fctx.LeaveSpeculativeInfer();
+            if (!argsConvert) return false;
 
             bool isExcl = types.Items[spanTypeId].Kind == TypeKinds.Span;
             int spPl = LowerPlaceOrTemp(recvExprId, spanTypeId, isMut: isExcl, isTwoPhase: isExcl, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
@@ -14982,7 +15594,7 @@ public static class FuncLowerer
                 int a0T = InferExprType(a0.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                 if (CallArgBits.Mode(in a0) == PassMode.ByValue &&
                     CheckSingleNamedArg(in a0, "nulTerminatedItems"u8, in names) &&
-                    ClassifyByValueConversion(a0.B, a0T, roSpanU8, in ast, in ta, in types) >= 0)
+                    ClassifyImplicitExpressionConversion(a0.B, a0T, roSpanU8, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) >= 0)
                 {
                     int spPl = LowerPlaceOrTemp(a0.B, roSpanU8, isMut: false, isTwoPhase: false, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
                     var pls = new Vec<int>(1);
@@ -15010,7 +15622,7 @@ public static class FuncLowerer
                 int a0T = InferExprType(a0.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                 if (CallArgBits.Mode(in a0) == PassMode.ByValue &&
                     CheckSingleNamedArg(in a0, "capacity"u8, in names) &&
-                    ClassifyByValueConversion(a0.B, a0T, TypeIds.I32, in ast, in ta, in types) >= 0)
+                    ClassifyImplicitExpressionConversion(a0.B, a0T, TypeIds.I32, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) >= 0)
                 {
                     int capOp = LowerExprAsOperand(a0.B, TypeIds.I32, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
                     var ops = new Vec<int>(1);
@@ -16109,8 +16721,13 @@ public static class FuncLowerer
             int tBlk = fctx.NewBlock();
             int fBlk = fctx.NewBlock();
             int mBlk = fctx.NewBlock();
+            // The operands' out and pattern variables stay in scope after the
+            // expression, like those of a conditional's condition (C# scope).
+            int prevShortCircuitOverride = fctx.OutVarScopeOverride;
+            if (fctx.OutVarScopeOverride <= 0) fctx.OutVarScopeOverride = fctx.ScopeDepth;
             PushScope(ref fctx);
             LowerCondBranch(exprId, tBlk, fBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, hoistOutVarsToParentScope: false);
+            fctx.OutVarScopeOverride = prevShortCircuitOverride;
             fctx.CurBlock = tBlk;
             EmitScopeExitsDownTo(fctx.ScopeDepth, tokIdx, ref fctx, ref mir);
             fctx.Emit(new MirInst(MirOp.AssignUse, resPl, -1, 0, TypeIds.Bool, mir.AddOperand(new MirOperand(MirOpKinds.BoolConst, -1, 1, TypeIds.Bool, tokIdx)), 0, 0, 0, tokIdx));
@@ -16142,6 +16759,8 @@ public static class FuncLowerer
         bool isEqOrRel = op == TokKind.EqEq || op == TokKind.BangEq || op == TokKind.LAngle || op == TokKind.LtEq || op == TokKind.RAngle || op == TokKind.GtEq;
         int commonType;
         int enumArithmeticOutType = -1;
+        bool leftConvertedToEnumZero = false;
+        bool rightConvertedToEnumZero = false;
 
         if (isShift)
         {
@@ -16194,9 +16813,27 @@ public static class FuncLowerer
                 rOp = ConvertOperandIfNeeded(rOp, TypeIds.I32, tokIdx, ref fctx, in ast, in ta, in names, in bctx, in types, ref mir, ref diags, n.C);
                 rOp = EmitCastToTemp(rOp, eType, tokIdx, ref fctx, ref mir);
             }
-            else if (!lEnum && rEnum && op == TokKind.Plus &&
+            else if (op == TokKind.Minus &&
+                     ((lEnum && !rEnum && ClassifyByValueConversionWithCtx(n.C, rType, eType, in fctx, in names, in bctx, in ast, in ta, in types) >= 0) ||
+                      (!lEnum && rEnum && ClassifyByValueConversionWithCtx(n.B, lType, eType, in fctx, in names, in bctx, in ast, in ta, in types) >= 0)))
+            {
+                // Numeric constant zero converts to E; this is E - E -> int even
+                // for float/double zero. Feed the converted values to the overflow gate.
+                commonType = TypeIds.I32;
+                enumArithmeticOutType = TypeIds.I32;
+                leftConvertedToEnumZero = !lEnum;
+                rightConvertedToEnumZero = !rEnum;
+                lOp = leftConvertedToEnumZero
+                    ? mir.AddOperand(new MirOperand(MirOpKinds.IntConst, -1, 0, TypeIds.I32, tokIdx))
+                    : EmitCastToTemp(lOp, TypeIds.I32, tokIdx, ref fctx, ref mir);
+                rOp = rightConvertedToEnumZero
+                    ? mir.AddOperand(new MirOperand(MirOpKinds.IntConst, -1, 0, TypeIds.I32, tokIdx))
+                    : EmitCastToTemp(rOp, TypeIds.I32, tokIdx, ref fctx, ref mir);
+            }
+            else if (!lEnum && rEnum && (op == TokKind.Plus || op == TokKind.Minus) &&
                      ClassifyByValueConversionWithCtx(n.B, lType, TypeIds.I32, in fctx, in names, in bctx, in ast, in ta, in types) >= 0)
             {
+                // U + E and U - E -> E.
                 commonType = eType;
                 lOp = ConvertOperandIfNeeded(lOp, TypeIds.I32, tokIdx, ref fctx, in ast, in ta, in names, in bctx, in types, ref mir, ref diags, n.B);
                 lOp = EmitCastToTemp(lOp, eType, tokIdx, ref fctx, ref mir);
@@ -16234,9 +16871,11 @@ public static class FuncLowerer
 
         // Compile-time division by constant 0 (CS0020) and constant integer overflow (CS0220)
         int bCurOwner = fctx.EnclosingOwnerDeclId;
-        if (types.IsInteger(commonType) && types.Items[commonType].Kind != TypeKinds.Enum &&
-            TryEvalTypedIntConstExpr(n.B, bCurOwner, in fctx, in ast, in ta, in names, in bctx, in types, out _, out long lConstV) &&
-            TryEvalTypedIntConstExpr(n.C, bCurOwner, in fctx, in ast, in ta, in names, in bctx, in types, out _, out long rConstV))
+        long lConstV = 0L;
+        long rConstV = 0L;
+        if (types.IsInteger(commonType) &&
+            (leftConvertedToEnumZero || TryEvalTypedIntConstExpr(n.B, bCurOwner, in fctx, in ast, in ta, in names, in bctx, in types, out _, out lConstV)) &&
+            (rightConvertedToEnumZero || TryEvalTypedIntConstExpr(n.C, bCurOwner, in fctx, in ast, in ta, in names, in bctx, in types, out _, out rConstV)))
         {
             if ((op == TokKind.Slash || op == TokKind.Percent) && TruncateConstToType(rConstV, UnderlyingIntOrSelf(commonType, in types)) == 0)
             {
@@ -16474,7 +17113,7 @@ public static class FuncLowerer
         // `vec += item` -> `vec.Push(item)`, or user `void operator +=` with C# type-directed overload resolution
         if (op == TokKind.PlusEq)
         {
-            int lhsT = InferExprType(n.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            int lhsT = InferReceiverType(n.B, out bool lhsDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
             TypeInfo lti = types.Items[lhsT];
             if (lti.Kind == TypeKinds.Vec)
             {
@@ -16518,17 +17157,20 @@ public static class FuncLowerer
                         return mir.AddOperand(new MirOperand(MirOpKinds.IntConst, -1, 0, TypeIds.Void, tokIdx));
                     }
 
+                    // The left operand's out and pattern variables stay in scope in the right operand (N110).
+                    EnterReceiverScope(n.B, lhsDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                     int rhsT = InferExprType(n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                     var appCands = new Vec<int>();
                     var appParamTypes = new Vec<int>();
                     for (int c = 0; c < opCands.Count; c++)
                     {
-                        if (ClassifyByValueConversionWithCtx(n.C, rhsT, opParamTypes[c], in fctx, in names, in bctx, in ast, in ta, in types) >= 0)
+                        if (ClassifyImplicitExpressionConversion(n.C, rhsT, opParamTypes[c], ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) >= 0)
                         {
                             appCands.Push(opCands[c]);
                             appParamTypes.Push(opParamTypes[c]);
                         }
                     }
+                    fctx.LeaveSpeculativeInfer();
 
                     if (appCands.Count == 0)
                     {
@@ -16888,7 +17530,15 @@ public static class FuncLowerer
         return mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, destPl, 0, destType, tokIdx));
     }
 
+    private static bool CanUseNaturalBranchType(int naturalType, int targetType,
+        in AstArena ast, in TokenArena ta, in TypeTable types)
+    {
+        if (naturalType < 0 || naturalType == TypeIds.Error || naturalType == TypeIds.Void) return false;
+        return ClassifyByValueConversion(-1, naturalType, targetType, in ast, in ta, in types) >= 0;
+    }
+
     private static int LowerConditionalExpr(
+        int exprId,
         in AstNode n,
         int expectedTypeId,
         ref FuncLowerCtx fctx,
@@ -16911,46 +17561,32 @@ public static class FuncLowerer
         PushScope(ref fctx);
         LowerCondBranch(n.A, tBlk, fBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, hoistOutVarsToParentScope: false);
 
-        // The conditional has its natural type wherever one exists and is only
-        // target-typed without one. It is never a constant expression here: a
-        // constant condition is a parse-time cut, so converting the natural type
-        // to the target uses no constant-expression conversion (CS0266, CS0173).
-        int t1 = InferExprType(n.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-        int t2 = InferExprType(n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-        int naturalType = NaturalConditionalType(t1, n.B, t2, n.C, in fctx, in ast, in ta, in names, in bctx, in types);
-        bool hasTarget = expectedTypeId >= 0 && expectedTypeId != TypeIds.Void;
+        // One inference of the whole conditional, so that the false arm is
+        // typed in the scope of what the true arm declares (N110); its record
+        // holds both arm types.
+        fctx.InferDepth += 1;
+        _ = InferExprType(exprId, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+        int armSlot = fctx.BranchFactsFor(exprId, 2);
+        int t1 = fctx.BranchArmFacts[armSlot].TypeId;
+        int t2 = fctx.BranchArmFacts[armSlot + 1].TypeId;
+        int naturalType = NaturalConditionalType(t1, n.B, t2, n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+        fctx.LeaveSpeculativeInfer();
+        bool hasTarget = expectedTypeId >= 0 && expectedTypeId != TypeIds.Void && expectedTypeId != TypeIds.Error;
         int resType;
-        int convertTo = -1;
-        if (naturalType == TypeIds.Error)
+        if (hasTarget)
         {
-            resType = hasTarget ? expectedTypeId : MergeCommonBranchType(t1, n.B, t2, n.C, in fctx, in ast, in ta, in names, in bctx, ref types);
+            // Unlike switch expressions, only conditionals without a natural
+            // type may use a conversion of the individual branches. In
+            // particular, a default next to Some<T> initializes Some<T>.
+            resType = naturalType >= 0 && naturalType != TypeIds.Error ? naturalType : expectedTypeId;
         }
-        else if (naturalType < 0)
+        else if (naturalType < 0 || naturalType == TypeIds.Error)
         {
-            if (!hasTarget)
+            if (naturalType < 0)
                 diags.ReportTok(VibCodes.Unsupported, ta.Tokens[tokIdx], "The conditional expression has no natural type: neither branch type converts implicitly to the other, and there is no target type (CS0173)."u8);
-            resType = hasTarget ? expectedTypeId : MergeCommonBranchType(t1, n.B, t2, n.C, in fctx, in ast, in ta, in names, in bctx, ref types);
+            resType = MergeCommonBranchType(t1, n.B, t2, n.C, in fctx, in ast, in ta, in names, in bctx, ref types);
         }
-        else if (!hasTarget || naturalType == expectedTypeId)
-        {
-            resType = hasTarget ? expectedTypeId : naturalType;
-        }
-        else if (ClassifyByValueConversion(-1, naturalType, expectedTypeId, in ast, in ta, in types) < 0)
-        {
-            diags.ReportTok(VibCodes.Unsupported, ta.Tokens[tokIdx], "The conditional expression's natural type does not convert implicitly to the target type; cast a branch or the whole conditional (CS0266)."u8);
-            resType = expectedTypeId;
-        }
-        else if (IsNumericConversionType(naturalType, in types) && IsNumericConversionType(expectedTypeId, in types))
-        {
-            // Each branch converts to the natural type first: int or long
-            // branches of a float conditional round before widening further.
-            resType = naturalType;
-            convertTo = expectedTypeId;
-        }
-        else
-        {
-            resType = expectedTypeId;
-        }
+        else resType = naturalType;
 
         int resTmp = fctx.AddLocal(-1, resType, PassMode.ByValue, MirLocalFlags.IsTemp, tokIdx);
         InsertScopeEntryAtDepth(ref fctx, outerScope, resTmp, tokIdx);
@@ -16978,9 +17614,70 @@ public static class FuncLowerer
 
         fctx.CurBlock = mBlk;
         int result = mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, resPl, 0, resType, tokIdx));
-        if (convertTo >= 0)
-            result = ConvertOperandIfNeeded(result, convertTo, tokIdx, ref fctx, in ast, in ta, in names, in bctx, in types, ref mir, ref diags, -1, false);
+        if (hasTarget && resType != expectedTypeId)
+            result = ConvertOperandIfNeeded(result, expectedTypeId, tokIdx, ref fctx, in ast, in ta, in names, in bctx, in types, ref mir, ref diags, -1, false);
         return result;
+    }
+
+    // F17(C) is deliberately a source occurrence test, not MIR last-use
+    // analysis. Visit all arms and operands, including ones that won't run.
+    // Member names and named-argument labels are not local variable uses.
+    private static bool RefRepointTargetNamesLocal(int nodeId, int nameId, bool rebindOnly, in AstArena ast)
+    {
+        if (nodeId < 0) return false;
+        AstNode node = ast.Nodes[nodeId];
+        if (rebindOnly && node.Kind == AstKind.ExprAssign && node.D != 0)
+        {
+            AstNode lhs = ast.Nodes[node.B];
+            if (lhs.Kind == AstKind.ExprIdent && lhs.A == nameId && lhs.C == 0 && lhs.D == 0) return true;
+        }
+        switch (node.Kind)
+        {
+            case AstKind.ExprIdent:
+                return !rebindOnly && node.A == nameId && node.C == 0 && node.D == 0;
+            case AstKind.ExprMember:
+            case AstKind.ExprFromEnd:
+            case AstKind.PatNot:
+            case AstKind.PatConst:
+                return RefRepointTargetNamesLocal(node.A, nameId, rebindOnly, in ast);
+            case AstKind.ExprCast:
+            case AstKind.ExprUnary:
+            case AstKind.PatRel:
+                return RefRepointTargetNamesLocal(node.B, nameId, rebindOnly, in ast);
+            case AstKind.CallArg:
+                return node.C == -2 && RefRepointTargetNamesLocal(node.B, nameId, rebindOnly, in ast);
+            case AstKind.PatUnion:
+                return RefRepointTargetNamesLocal(node.D, nameId, rebindOnly, in ast);
+            case AstKind.ExprRange:
+            case AstKind.ExprIsPattern:
+                return RefRepointTargetNamesLocal(node.A, nameId, rebindOnly, in ast) || RefRepointTargetNamesLocal(node.B, nameId, rebindOnly, in ast);
+            case AstKind.ExprCond:
+            case AstKind.SwitchArm:
+                return RefRepointTargetNamesLocal(node.A, nameId, rebindOnly, in ast) ||
+                    RefRepointTargetNamesLocal(node.B, nameId, rebindOnly, in ast) || RefRepointTargetNamesLocal(node.C, nameId, rebindOnly, in ast);
+            case AstKind.ExprBinary:
+            case AstKind.ExprAssign:
+            case AstKind.PatLogic:
+                return RefRepointTargetNamesLocal(node.B, nameId, rebindOnly, in ast) || RefRepointTargetNamesLocal(node.C, nameId, rebindOnly, in ast);
+            case AstKind.ExprCall:
+            case AstKind.ExprIndex:
+            case AstKind.ExprSwitch:
+                if (RefRepointTargetNamesLocal(node.A, nameId, rebindOnly, in ast)) return true;
+                return RefRepointTargetsNameLocal(node.B, node.C, nameId, rebindOnly, in ast);
+            case AstKind.ExprNew:
+                return RefRepointTargetsNameLocal(node.B, node.C, nameId, rebindOnly, in ast);
+            case AstKind.ExprCollLit:
+                return RefRepointTargetsNameLocal(node.A, node.B, nameId, rebindOnly, in ast);
+            default:
+                return false;
+        }
+    }
+
+    private static bool RefRepointTargetsNameLocal(int start, int count, int nameId, bool rebindOnly, in AstArena ast)
+    {
+        for (int i = 0; i < count; i++)
+            if (RefRepointTargetNamesLocal(ast.Extra[start + i], nameId, rebindOnly, in ast)) return true;
+        return false;
     }
 
     private static int LowerRefAssignPlace(
@@ -17043,6 +17740,20 @@ public static class FuncLowerer
             CheckNotDirectCapturedPrimaryParamWrite(refInner, "Cannot take mutable reference to a captured primary-constructor parameter."u8, in fctx, in ast, in ta, in types, ref diags);
         }
 
+        // Usually keeping the carrier live through the RHS suffices. A
+        // nested assignment to the same carrier kills that liveness and
+        // changes its loans; preserve the original loan set independently.
+        int oldLoanCarrier = -1;
+        if (RefRepointTargetNamesLocal(n.C, lhs.A, rebindOnly: false, in ast))
+        {
+            oldLoanCarrier = lhsLid;
+            if (RefRepointTargetNamesLocal(n.C, lhs.A, rebindOnly: true, in ast))
+            {
+                int flags = MirLocalFlags.IsTemp | MirLocalFlags.IsRefLocal | MirLocalFlags.IsAnalysisBorrow | MirLocalFlags.IsRepointLoanSnapshot;
+                oldLoanCarrier = fctx.AddLocal(-1, lhsElemType, PassMode.ByValue, flags, tokIdx);
+                fctx.Emit(new MirInst(MirOp.SnapshotRefLoan, -1, oldLoanCarrier, 0, lhsElemType, oldLoanCarrier, lhsLid, 0, 0, tokIdx));
+            }
+        }
         int diagBeforeRhs = diags.Items.Count;
         int targetPl = LowerPlace(n.C, lhsIsMut, isTwoPhase: false, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
         MirPlace rhsPlace = mir.Places[targetPl];
@@ -17069,6 +17780,8 @@ public static class FuncLowerer
             diags.ReportTok(VibCodes.Unsupported, tok, "Ref assignment requires exact pointee type match."u8);
         }
 
+        // Keep the old loan across every path evaluating the new target.
+        EndBorrowWindow(oldLoanCarrier, tokIdx, ref fctx);
         fctx.Emit(new MirInst(MirOp.BindRef, -1, lhsLid, lhsIsMut ? 1 : 0, lhsElemType, lhsLid, targetPl, 0, 0, tokIdx));
 
         if ((lhsLoc.Flags & MirLocalFlags.IsRefLocal) != 0)
@@ -18182,9 +18895,13 @@ public static class FuncLowerer
             return mir.AddOperand(new MirOperand(MirOpKinds.IntConst, -1, 0, TypeIds.I32, tokIdx));
         }
 
-        int resType = expectedTypeId >= 0 && expectedTypeId != TypeIds.Void
-            ? expectedTypeId
-            : InferExprType(exprId, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+        int naturalType = InferSwitchNaturalType(exprId, in n, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+        bool hasTarget = expectedTypeId >= 0 && expectedTypeId != TypeIds.Void && expectedTypeId != TypeIds.Error;
+        int resType = hasTarget ? expectedTypeId : TypeIds.I32;
+        if (naturalType >= 0 && (!hasTarget || CanUseNaturalBranchType(naturalType, expectedTypeId, in ast, in ta, in types)))
+            resType = naturalType;
+        if (naturalType < 0 && !hasTarget)
+            diags.ReportTok(VibCodes.Unsupported, ta.Tokens[tokIdx], "A switch expression without a best common arm type requires a target type."u8);
 
         int resTmp = fctx.NewTemp(resType, tokIdx, ref mir);
         int resPl = mir.AddPlaceLocal(resTmp, resType);
@@ -18197,7 +18914,6 @@ public static class FuncLowerer
         }
         TypeInfo sti = types.Items[scrutType];
         CheckSourceScalarPatternCoverage(in n, scrutType, true, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-        CheckLinearUnionSwitchArms(in n, true, scrutType, sti, in fctx, in ast, in ta, in bctx, in types, ref diags);
         for (int i = 0; i < armCount; i++)
             CheckUnionTypePatterns(ast.Nodes[ast.Extra[n.B + i]].A, scrutType, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
 
@@ -18216,7 +18932,10 @@ public static class FuncLowerer
         if ((sti.Kind == TypeKinds.Option || sti.Kind == TypeKinds.OptionRef || sti.Kind == TypeKinds.OptionMut || sti.Kind == TypeKinds.Result) &&
             anyUnionArm)
         {
-            bool isPlace = IsPlaceExpression(n.A, in ast, in fctx, in types);
+            int scrutId = LowerUnionSwitchInput(in n, true, scrutType, sti.Kind, ref fctx, in ast, in ta,
+                ref names, ref bctx, ref types, ref mir, ref diags, out int termFlags);
+            bool isPlace = (termFlags & 1) != 0;
+            CheckLinearUnionSwitchArms(in n, true, scrutType, sti, isPlace, in ast, in ta, in bctx, in types, ref diags);
             bool isBorrowed = isPlace || sti.Kind == TypeKinds.OptionRef || sti.Kind == TypeKinds.OptionMut;
             bool isShared = (isPlace && sti.Kind != TypeKinds.OptionMut) || sti.Kind == TypeKinds.OptionRef;
             bool isLinUnion = types.IsLinear(scrutType, in ast);
@@ -18229,6 +18948,7 @@ public static class FuncLowerer
             {
                 AstNode arm = ast.Nodes[ast.Extra[n.B + i]];
                 AstNode pat = ast.Nodes[arm.A];
+                if (isPlace) CheckGuardedCursorPayloadBinding(arm.A, arm.C, sti, in ast, in ta, ref diags);
                 if (pat.Kind == AstKind.PatUnion && isLinUnion)
                 {
                     int head = ast.Nodes[pat.A].A;
@@ -18269,33 +18989,13 @@ public static class FuncLowerer
                 }
             }
 
-            int scrutId;
-            int termFlags = 0;
-            if (isPlace)
-            {
-                scrutId = LowerPlace(n.A, isMut: sti.Kind == TypeKinds.OptionMut, isTwoPhase: false, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
-                termFlags |= 1;
-                if (sti.Kind == TypeKinds.OptionRef || sti.Kind == TypeKinds.OptionMut)
-                {
-                    termFlags |= 4 | (sti.Kind == TypeKinds.OptionMut ? 2 : 0);
-                }
-            }
-            else
-            {
-                scrutId = LowerExprAsOperand(n.A, scrutType, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
-                if (sti.Kind == TypeKinds.OptionRef || sti.Kind == TypeKinds.OptionMut)
-                {
-                    termFlags |= 4 | (sti.Kind == TypeKinds.OptionMut ? 2 : 0);
-                }
-            }
-
             int savedUnionOutScope = fctx.OutVarScopeOverride;
             fctx.OutVarScopeOverride = -1;
             if (!canUseTwoArmFastPath)
             {
                 int complexUnionRes = LowerComplexUnionSwitchExpr(in n, scrutType, sti, scrutId, termFlags, isBorrowed, isShared, resType, resPl, mergeBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
                 fctx.OutVarScopeOverride = savedUnionOutScope;
-                return complexUnionRes;
+                return ConvertOperandIfNeeded(complexUnionRes, expectedTypeId, tokIdx, ref fctx, in ast, in ta, in names, in bctx, in types, ref mir, ref diags, -1, false);
             }
 
             if (sti.Kind == TypeKinds.Result)
@@ -18331,7 +19031,7 @@ public static class FuncLowerer
 
                 fctx.OutVarScopeOverride = savedUnionOutScope;
                 fctx.CurBlock = mergeBlk;
-                return mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, resPl, 0, resType, tokIdx));
+                return FinishSwitchResult(resPl, resType, expectedTypeId, tokIdx, ref fctx, in ast, in ta, in names, in bctx, in types, ref mir, ref diags);
             }
             else
             {
@@ -18362,17 +19062,14 @@ public static class FuncLowerer
 
                 fctx.OutVarScopeOverride = savedUnionOutScope;
                 fctx.CurBlock = mergeBlk;
-                return mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, resPl, 0, resType, tokIdx));
+                return FinishSwitchResult(resPl, resType, expectedTypeId, tokIdx, ref fctx, in ast, in ta, in names, in bctx, in types, ref mir, ref diags);
             }
         }
 
         // General pattern switch expression (constants, relational `> 0`, logical `and`/`or`/`not`, declaration `var x`, `when` guards, `_`)
         bool hasSourceConstant = TryGetSourceSwitchConstant(n.A, scrutType, fctx.EnclosingOwnerDeclId, in fctx, in ast, in ta, in names, in bctx, in types, out ulong sourceValue, out bool sourceNaN);
-        int sOp = LowerExprAsOperand(n.A, -1, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
-        int sType = mir.Operands[sOp].TypeId;
-        int sTmp = fctx.NewTemp(sType, tokIdx, ref mir);
-        int sPl = mir.AddPlaceLocal(sTmp, sType);
-        fctx.Emit(new MirInst(MirOp.AssignUse, sPl, -1, 0, sType, sOp, 0, 0, 0, tokIdx));
+        CheckLinearUnionSwitchArms(in n, true, scrutType, sti, IsPlaceExpression(n.A, in ast, in fctx, in types), in ast, in ta, in bctx, in types, ref diags);
+        int sPl = LowerGenericSwitchInput(in n, true, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, out int sType, out int sourcePlace);
 
         int sourceEntry = fctx.CurBlock;
         int sourceAfterInst = fctx.BlockTail[sourceEntry];
@@ -18474,7 +19171,7 @@ public static class FuncLowerer
             if (arm.C >= 0)
             {
                 fctx.CurBlock = patTrueBlk;
-                LowerCondBranch(arm.C, armBlk, nextBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, hoistOutVarsToParentScope: false);
+                LowerSwitchGuard(arm.C, sourcePlace, armBlk, nextBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, HasLaterScrutineeArm(in n, i, in ast), -1);
             }
 
             fctx.CurBlock = armBlk;
@@ -18502,7 +19199,15 @@ public static class FuncLowerer
         RecordSourceSwitchFlow(sourceEntry, sourceAfterInst, in sourceTargets, in sourceBodies, ref fctx);
         fctx.OutVarScopeOverride = savedGenOutScope;
         fctx.CurBlock = mergeBlk;
-        return mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, resPl, 0, resType, tokIdx));
+        return FinishSwitchResult(resPl, resType, expectedTypeId, tokIdx, ref fctx, in ast, in ta, in names, in bctx, in types, ref mir, ref diags);
+    }
+
+    private static int FinishSwitchResult(int resPlace, int resType, int expectedTypeId, int tokIdx,
+        ref FuncLowerCtx fctx, in AstArena ast, in TokenArena ta, in Interner names, in BinderCtx bctx,
+        in TypeTable types, ref MirModuleArena mir, ref DiagnosticBag diags)
+    {
+        int result = mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, resPlace, 0, resType, tokIdx));
+        return ConvertOperandIfNeeded(result, expectedTypeId, tokIdx, ref fctx, in ast, in ta, in names, in bctx, in types, ref mir, ref diags, -1, false);
     }
 
     private static bool PatternHasDeclBind(int patNodeId, in AstArena ast)
@@ -18548,12 +19253,20 @@ public static class FuncLowerer
 
         int v1Entry = fctx.NewBlock();
         int v2Entry = fctx.NewBlock();
-        int v1Lid = fctx.AddLocal(-1, sti.A, PassMode.ByValue, MakePatternBindFlags(sti.A, -1, isBorrowed, isShared, in ast, in types), tokIdx);
+        bool hasGuard = HasSwitchGuard(in n, true, in ast);
+        bool deferCursorPayload = sti.Kind == TypeKinds.OptionMut && (termFlags & 1) != 0 && hasGuard;
+        int v1Lid = deferCursorPayload ? -1 : fctx.AddLocal(-1, sti.A, PassMode.ByValue, MakePatternBindFlags(sti.A, -1, isBorrowed, isShared, in ast, in types), tokIdx);
+        int rvalueViewLoan = (termFlags & 1) == 0 && hasGuard ? BeginRvalueViewBorrowWindow(scrutId, sti.Kind, sti.Kind == TypeKinds.OptionMut ? v1Lid : -1, tokIdx, ref fctx, in mir) : -1;
         int v2Lid = -1;
         if (sti.Kind == TypeKinds.Result)
         {
             v2Lid = fctx.AddLocal(-1, sti.B, PassMode.ByValue, MakePatternBindFlags(sti.B, -1, isBorrowed, isShared, in ast, in types), tokIdx);
             fctx.Terminate(new MirTerm(MirTermKind.MatchResult, scrutId, v1Lid, v1Entry, v2Lid, v2Entry, termFlags, tokIdx));
+        }
+        else if (deferCursorPayload)
+        {
+            int tag = EmitUnionTagRead(scrutId, sti, tokIdx, ref fctx, ref mir);
+            fctx.Terminate(new MirTerm(MirTermKind.Branch, tag, v1Entry, v2Entry, 0, 0, 0, tokIdx));
         }
         else
         {
@@ -18563,8 +19276,9 @@ public static class FuncLowerer
         // A shared, in-place match of an owned union keeps its scrutinee place
         // intact, so whole-union arms can test that place directly.
         int scrutPlace = (termFlags & 1) != 0 && isShared && (sti.Kind == TypeKinds.Option || sti.Kind == TypeKinds.Result) ? scrutId : -1;
-        EmitUnionVariantExprChain(in n, sti, isFirstVariant: true, v1Lid, sti.A, isBorrowed, isShared, scrutPlace, v1Entry, resType, resPl, mergeBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
-        EmitUnionVariantExprChain(in n, sti, isFirstVariant: false, v2Lid, sti.Kind == TypeKinds.Result ? sti.B : TypeIds.NoneUnit, isBorrowed, isShared, scrutPlace, v2Entry, resType, resPl, mergeBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+        int guardPlace = (termFlags & 1) != 0 ? scrutId : -1;
+        EmitUnionVariantExprChain(in n, sti, isFirstVariant: true, v1Lid, sti.A, isBorrowed, isShared, scrutPlace, guardPlace, rvalueViewLoan, v1Entry, resType, resPl, mergeBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+        EmitUnionVariantExprChain(in n, sti, isFirstVariant: false, v2Lid, sti.Kind == TypeKinds.Result ? sti.B : TypeIds.NoneUnit, isBorrowed, isShared, scrutPlace, guardPlace, rvalueViewLoan, v2Entry, resType, resPl, mergeBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
 
         if (!isSwitchExhaustive)
         {
@@ -18575,9 +19289,149 @@ public static class FuncLowerer
         return mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, resPl, 0, resType, tokIdx));
     }
 
+    private static bool IsWholeUnionValueBinding(in AstNode pat) =>
+        pat.Kind == AstKind.PatDecl && pat.A < 0 && pat.B >= 0 && pat.C == 0;
+
+    // If a preceding guard bound the whole union by value, this test still reads
+    // the scrutinee. Starting the chain with a tag dispatch cannot erase a
+    // later read of that place on the guard-failure edge.
+    private static int EmitUnionTagRead(int scrutPlace, TypeInfo sti, int tokIdx, ref FuncLowerCtx fctx, ref MirModuleArena mir)
+    {
+        int testLid = fctx.NewTemp(TypeIds.Bool, tokIdx, ref mir);
+        int testPlace = mir.AddPlaceLocal(testLid, TypeIds.Bool);
+        var places = new Vec<int>(1);
+        places.Push(scrutPlace);
+        MirIntrinsic intrinsic = sti.Kind == TypeKinds.Result ? MirIntrinsic.ResultIsOk : MirIntrinsic.OptionIsSome;
+        fctx.Emit(new MirInst(MirOp.Intrinsic, testPlace, -1, 0, TypeIds.Bool, (int)intrinsic, 0, 0,
+            mir.PushIdList(places.AsReadOnlySpan()) | (1 << 20), tokIdx));
+        return mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, testPlace, 0, TypeIds.Bool, tokIdx));
+    }
+
+    // Reborrow the payload after a whole-union move. Otherwise the old dispatch
+    // borrow would be kept live by the new arm, spuriously conflicting with the
+    // preceding move instead of diagnosing the retest's use of the moved place.
+    // For a cursor place, start the payload borrow only in the arm that needs
+    // it, not across earlier guards that only test tags.
+    private static int EmitUnionVariantRetest(int scrutPlace, TypeInfo sti, bool isFirst, int payloadType, int tokIdx,
+        ref FuncLowerCtx fctx, in AstArena ast, in TypeTable types)
+    {
+        int passBlk = fctx.NewBlock();
+        int failBlk = fctx.NewBlock();
+        bool isCursor = sti.Kind == TypeKinds.OptionMut;
+        int payloadLid = sti.Kind == TypeKinds.Result || isFirst
+            ? fctx.AddLocal(-1, payloadType, PassMode.ByValue, MakePatternBindFlags(payloadType, -1, true, !isCursor, in ast, in types), tokIdx) : -1;
+        if (sti.Kind == TypeKinds.Result)
+        {
+            int otherType = isFirst ? sti.B : sti.A;
+            int otherLid = fctx.AddLocal(-1, otherType, PassMode.ByValue, MakePatternBindFlags(otherType, -1, true, true, in ast, in types), tokIdx);
+            fctx.Terminate(new MirTerm(MirTermKind.MatchResult, scrutPlace, isFirst ? payloadLid : otherLid, isFirst ? passBlk : failBlk,
+                isFirst ? otherLid : payloadLid, isFirst ? failBlk : passBlk, 1, tokIdx));
+        }
+        else
+        {
+            int someLid = isFirst ? payloadLid : fctx.AddLocal(-1, sti.A, PassMode.ByValue, MakePatternBindFlags(sti.A, -1, true, true, in ast, in types), tokIdx);
+            fctx.Terminate(new MirTerm(MirTermKind.MatchOption, scrutPlace, someLid, isFirst ? passBlk : failBlk,
+                isFirst ? failBlk : passBlk, 0, isCursor ? 7 : 1, tokIdx));
+        }
+        fctx.CurBlock = failBlk;
+        fctx.Terminate(new MirTerm(MirTermKind.Unreachable, 0, 0, 0, 0, 0, 0, tokIdx));
+        fctx.CurBlock = passBlk;
+        return payloadLid;
+    }
+
+    // A guarded variant can fail *after* binding its payload. On an owned
+    // rvalue the retry borrows from the hidden payload storage for just this
+    // arm; later unguarded bindings can still consume the owned payload.
+    private static void BindSwitchPayload(int bindNameId, int payloadLid, int payloadType, int tokIdx, bool sharedRetry,
+        ref FuncLowerCtx fctx, in AstArena ast, in TokenArena ta, in Interner names, in TypeTable types,
+        ref MirModuleArena mir, ref DiagnosticBag diags)
+    {
+        if (bindNameId < 0 || payloadLid < 0) return;
+        if (types.IsCopy(payloadType, in ast))
+        {
+            // The dispatch payload is just a snapshot for testing arms. Each
+            // source binding is a variable with its own copy: changing it in
+            // a failed guard must not change what later patterns observe.
+            int binding = BindExpressionLocal(bindNameId, payloadType, MirLocalFlags.IsPatternBind, fctx.ScopeDepth, tokIdx,
+                ref fctx, in ast, in ta, in names, ref diags);
+            int source = mir.AddPlaceLocal(payloadLid, payloadType);
+            int destination = mir.AddPlaceLocal(binding, payloadType);
+            int copy = mir.AddOperand(new MirOperand(MirOpKinds.CopyOrMove, source, 0, payloadType, tokIdx));
+            fctx.LocalInitializerInsts[binding] = fctx.StagedInsts.Count;
+            fctx.Emit(new MirInst(MirOp.AssignUse, destination, -1, 0, payloadType, copy, 0, 0, 0, tokIdx));
+            return;
+        }
+        if (sharedRetry && !types.IsLinear(payloadType, in ast))
+        {
+            int flags = MirLocalFlags.IsRefLocal | MirLocalFlags.IsPatternBind | MirLocalFlags.IsBorrowedBind | MirLocalFlags.IsSharedBind;
+            int alias = BindExpressionLocal(bindNameId, payloadType, flags, fctx.ScopeDepth, tokIdx, ref fctx, in ast, in ta, in names, ref diags);
+            int place = mir.AddPlaceLocal(payloadLid, payloadType);
+            fctx.LocalInitializerInsts[alias] = fctx.StagedInsts.Count;
+            fctx.Emit(new MirInst(MirOp.BindRef, -1, alias, 0, payloadType, alias, place, 0, 0, tokIdx));
+            return;
+        }
+        RegisterScopedName(bindNameId, fctx.ScopeDepth, tokIdx, ref fctx, in ast, in ta, in names, ref diags);
+        fctx.Vars.Push(new VarBinding(bindNameId, payloadLid, fctx.ScopeDepth, 0, TypeIds.Void, 0));
+    }
+
+    // Mask of native Option tags matched without inspecting the payload;
+    // -1 means that the pattern needs the general pattern machinery.
+    private static int CursorTagPatternMask(int patNodeId, in AstArena ast, in BinderCtx bctx)
+    {
+        AstNode pat = ast.Nodes[patNodeId];
+        if (pat.Kind == AstKind.PatWildcard || (pat.Kind == AstKind.PatDecl && pat.A < 0 && pat.B < 0)) return 3;
+        if (pat.Kind == AstKind.PatUnion && pat.B < 0)
+        {
+            // An irrefutable payload discard must not be confused with a
+            // nested union pattern that happens to cover both of its tags.
+            if (pat.D >= 0)
+            {
+                AstNode payload = ast.Nodes[pat.D];
+                if (payload.Kind != AstKind.PatWildcard && !(payload.Kind == AstKind.PatDecl && payload.A < 0 && payload.B < 0)) return -1;
+            }
+            int head = ast.Nodes[pat.A].A;
+            if (head == bctx.IdSome) return 1;
+            if (head == bctx.IdNoneType || head == bctx.IdNone) return 2;
+        }
+        if (pat.Kind == AstKind.PatNot)
+        {
+            int mask = CursorTagPatternMask(pat.A, in ast, in bctx);
+            return mask < 0 ? -1 : 3 ^ mask;
+        }
+        if (pat.Kind == AstKind.PatLogic)
+        {
+            int left = CursorTagPatternMask(pat.B, in ast, in bctx);
+            int right = CursorTagPatternMask(pat.C, in ast, in bctx);
+            if (left < 0 || right < 0) return -1;
+            return pat.A == 0 ? left & right : left | right;
+        }
+        return -1;
+    }
+
+    private static void ValidateCursorTagPattern(int patNodeId, int payloadType, ref FuncLowerCtx fctx,
+        in AstArena ast, in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
+    {
+        AstNode pat = ast.Nodes[patNodeId];
+        if (pat.Kind == AstKind.PatUnion)
+        {
+            int type = ast.Nodes[pat.A].A == bctx.IdSome ? payloadType : TypeIds.NoneUnit;
+            UnpackPatUnion(in pat, type, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out _, out _, out _);
+        }
+        else if (pat.Kind == AstKind.PatNot)
+        {
+            ValidateCursorTagPattern(pat.A, payloadType, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+        }
+        else if (pat.Kind == AstKind.PatLogic)
+        {
+            ValidateCursorTagPattern(pat.B, payloadType, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            ValidateCursorTagPattern(pat.C, payloadType, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+        }
+    }
+
     // Tests a whole-union arm pattern (`not NoneType`, `var o`, `A or B`, ...)
     // once the variant is known. A shared in-place match tests the scrutinee
-    // place itself when the pattern binds nothing; otherwise the union is
+    // place itself when the pattern binds nothing or binds the whole union by
+    // value (which moves it). Otherwise the union is
     // rebuilt from the payload into a temporary. Returns the rebuilt place, or
     // -1 when the scrutinee place was tested.
     private static int EmitWholeUnionArmTest(
@@ -18602,8 +19456,21 @@ public static class FuncLowerer
         ref DiagnosticBag diags)
     {
         int patTok = ast.Nodes[patNodeId].TokIdx;
+        if (sti.Kind == TypeKinds.OptionMut || sti.Kind == TypeKinds.OptionRef)
+        {
+            int mask = CursorTagPatternMask(patNodeId, in ast, in bctx);
+            if (mask >= 0)
+            {
+                ValidateCursorTagPattern(patNodeId, sti.A, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                // Dispatch already knows the tag. Reconstructing an owning
+                // Option here would move a payload out of a mutable cursor.
+                int target = (mask & (isFirstVariant ? 1 : 2)) != 0 ? matchBlk : failBlk;
+                fctx.Terminate(new MirTerm(MirTermKind.Goto, target, 0, 0, 0, 0, 0, patTok));
+                return -1;
+            }
+        }
         int outerUnionT = sti.Kind == TypeKinds.Result ? types.MakeResult(sti.A, sti.B) : types.MakeOption(sti.A);
-        if (scrutPlace >= 0 && !PatternHasDeclBind(patNodeId, in ast))
+        if (scrutPlace >= 0 && (!PatternHasDeclBind(patNodeId, in ast) || IsWholeUnionValueBinding(in ast.Nodes[patNodeId])))
         {
             LowerPatternOnPlaceBranch(scrutPlace, outerUnionT, patNodeId, patTok, matchBlk, failBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, subBorrow, subShared);
             return -1;
@@ -18671,6 +19538,8 @@ public static class FuncLowerer
         bool isBorrowed,
         bool isShared,
         int scrutPlace,
+        int guardPlace,
+        int rvalueViewLoan,
         int entryBlk,
         int resType,
         int resPl,
@@ -18716,6 +19585,7 @@ public static class FuncLowerer
 
         var variantSubPats = new Vec<int>(armCount);
         bool sourceRemainder = true;
+        bool wholePlaceMayHaveMoved = false;
 
         for (int i = 0; i < armCount; i++)
         {
@@ -18723,6 +19593,8 @@ public static class FuncLowerer
             AstNode pat = ast.Nodes[arm.A];
 
             bool sourceUnguarded = IsSourceUnguardedPattern(arm.A, arm.C, ref fctx, in ast, in ta, in names, in bctx, in types);
+            int armPayloadLid = payloadLid;
+            int retestEntry = -1;
             bool canMatch = false;
             bool uncondDirectArm = false;
             int bindNameId = -1;
@@ -18736,7 +19608,16 @@ public static class FuncLowerer
                 headNameId = ast.Nodes[pat.A].A;
                 bool patIsFirst = (sti.Kind == TypeKinds.Result) ? (headNameId == bctx.IdOk) : (headNameId == bctx.IdSome);
                 bool patIsSecond = (sti.Kind == TypeKinds.Result) ? (headNameId == bctx.IdErr) : (headNameId == bctx.IdNoneType || headNameId == bctx.IdNone);
-                if ((isFirstVariant && !patIsFirst) || (!isFirstVariant && !patIsSecond)) continue;
+                if ((isFirstVariant && !patIsFirst) || (!isFirstVariant && !patIsSecond))
+                {
+                    if (wholePlaceMayHaveMoved) EmitUnionTagRead(scrutPlace, sti, pat.TokIdx, ref fctx, ref mir);
+                    continue;
+                }
+                if (wholePlaceMayHaveMoved)
+                {
+                    retestEntry = fctx.CurBlock;
+                    armPayloadLid = EmitUnionVariantRetest(scrutPlace, sti, isFirstVariant, payloadType, pat.TokIdx, ref fctx, in ast, in types);
+                }
                 canMatch = true;
                 UnpackPatUnion(in pat, payloadType, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out bindNameId, out wrapNameId, out innerSubPat);
                 if (sourceUnguarded)
@@ -18781,27 +19662,32 @@ public static class FuncLowerer
                 useWholeUnionFallback = true;
             }
             if (!canMatch) continue;
-            sourceTargets.Push(fctx.CurBlock);
+            if (payloadLid < 0 && isFirstVariant && (sti.Kind == TypeKinds.OptionMut || sti.Kind == TypeKinds.OptionRef) && guardPlace >= 0 &&
+                (bindNameId >= 0 || wrapNameId >= 0 || innerSubPat >= 0 || (useWholeUnionFallback && CursorTagPatternMask(arm.A, in ast, in bctx) < 0)))
+            {
+                retestEntry = fctx.CurBlock;
+                armPayloadLid = EmitUnionVariantRetest(guardPlace, sti, true, payloadType, pat.TokIdx, ref fctx, in ast, in types);
+            }
+            // Enter before re-extraction, never with an unassigned payload.
+            int sourceTarget = retestEntry >= 0 ? retestEntry : fctx.CurBlock;
+            sourceTargets.Push(sourceTarget);
             // The CLR union has a nominal source remainder even after both native
             // tags are covered. Retain its dispatch snapshot after extraction,
             // without introducing a runtime edge into otherwise omitted bodies.
             if (sourceRemainder && SourceUnionRemainderMatches(arm.A, in ast))
             {
-                fctx.SourceSwitchContinuations.Push(new SourceSwitchAssignmentEdge(entryBlk, -1, fctx.CurBlock));
+                fctx.SourceSwitchContinuations.Push(new SourceSwitchAssignmentEdge(entryBlk, -1, sourceTarget));
                 if (sourceUnguarded) sourceRemainder = false;
             }
 
             if (uncondDirectArm)
             {
                 PushScope(ref fctx);
-                if (bindNameId >= 0 && payloadLid >= 0)
-                {
-                    RegisterScopedName(bindNameId, fctx.ScopeDepth, pat.TokIdx, ref fctx, in ast, in ta, in names, ref diags);
-                    fctx.Vars.Push(new VarBinding(bindNameId, payloadLid, fctx.ScopeDepth, 0, TypeIds.Void, 0));
-                }
+                BindSwitchPayload(bindNameId, armPayloadLid, payloadType, pat.TokIdx, sharedRetry: false,
+                    ref fctx, in ast, in ta, in names, in types, ref mir, ref diags);
                 if (wrapNameId >= 0)
                 {
-                    EmitUnionWrapperBind(wrapNameId, headNameId, payloadLid, payloadType, pat.TokIdx, ref fctx, in ast, in ta, in names, in bctx, ref types, ref mir, ref diags);
+                    EmitUnionWrapperBind(wrapNameId, headNameId, armPayloadLid, payloadType, pat.TokIdx, ref fctx, in ast, in ta, in names, in bctx, ref types, ref mir, ref diags);
                 }
                 int directBody = fctx.NewBlock();
                 fctx.Terminate(new MirTerm(MirTermKind.Goto, directBody, 0, 0, 0, 0, 0, arm.TokIdx));
@@ -18829,27 +19715,27 @@ public static class FuncLowerer
                 int afterWholeBlk = arm.C >= 0 ? fctx.NewBlock() : armBlk;
                 bool restorePayload = WholeUnionArmRestoresPayload(sti, isFirstVariant, payloadLid, payloadType, isBorrowed, arm.A, in ast, in types);
                 int failBlk = restorePayload ? fctx.NewBlock() : nextBlk;
-                int rebuildPl = EmitWholeUnionArmTest(sti, isFirstVariant, payloadLid, payloadType, scrutPlace, arm.A, arm.TokIdx, afterWholeBlk, failBlk, subBorrow, subShared, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+                int rebuildPl = EmitWholeUnionArmTest(sti, isFirstVariant, armPayloadLid, payloadType, scrutPlace, arm.A, arm.TokIdx, afterWholeBlk, failBlk, subBorrow, subShared, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
                 if (arm.C >= 0)
                 {
                     fctx.CurBlock = afterWholeBlk;
-                    LowerCondBranch(arm.C, armBlk, failBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, hoistOutVarsToParentScope: false);
+                    bool laterWhole = HasLaterScrutineeArm(in n, i, in ast);
+                    LowerSwitchGuard(arm.C, guardPlace, armBlk, failBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, laterWhole, laterWhole ? rvalueViewLoan : -1);
                 }
                 if (restorePayload) EmitWholeUnionPayloadRestore(sti, isFirstVariant, payloadLid, rebuildPl, failBlk, nextBlk, arm.TokIdx, ref fctx, in ast, ref types, ref mir);
             }
             else
             {
-                if (bindNameId >= 0 && payloadLid >= 0)
-                {
-                    RegisterScopedName(bindNameId, fctx.ScopeDepth, pat.TokIdx, ref fctx, in ast, in ta, in names, ref diags);
-                    fctx.Vars.Push(new VarBinding(bindNameId, payloadLid, fctx.ScopeDepth, 0, TypeIds.Void, 0));
-                }
+                bool laterTest = arm.C >= 0 && HasLaterScrutineeArm(in n, i, in ast);
+                bool sharedRetry = !isBorrowed && laterTest;
+                BindSwitchPayload(bindNameId, armPayloadLid, payloadType, pat.TokIdx, sharedRetry,
+                    ref fctx, in ast, in ta, in names, in types, ref mir, ref diags);
                 int wrapStageBlk = wrapNameId >= 0 ? fctx.NewBlock() : (arm.C >= 0 ? fctx.NewBlock() : armBlk);
                 int afterSubBlk = wrapNameId >= 0 ? (arm.C >= 0 ? fctx.NewBlock() : armBlk) : wrapStageBlk;
-                if (innerSubPat >= 0 && payloadLid >= 0)
+                if (innerSubPat >= 0 && armPayloadLid >= 0)
                 {
-                    int subPl = mir.AddPlaceLocal(payloadLid, payloadType);
-                    LowerPatternOnPlaceBranch(subPl, payloadType, innerSubPat, pat.TokIdx, wrapStageBlk, nextBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, subBorrow, subShared);
+                    int subPl = mir.AddPlaceLocal(armPayloadLid, payloadType);
+                    LowerPatternOnPlaceBranch(subPl, payloadType, innerSubPat, pat.TokIdx, wrapStageBlk, nextBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, subBorrow || sharedRetry, subShared || sharedRetry);
                 }
                 else
                 {
@@ -18858,17 +19744,17 @@ public static class FuncLowerer
                 if (wrapNameId >= 0)
                 {
                     fctx.CurBlock = wrapStageBlk;
-                    if (IsRejectedGuardedWrapperMove(wrapNameId, headNameId, arm.C, payloadLid, payloadType, isBorrowed,
-                            HasLaterScrutineeArm(in n, i, in ast), in ast, in bctx, in types))
+                    if (IsRejectedGuardedWrapperMove(wrapNameId, headNameId, arm.C, armPayloadLid, payloadType, isBorrowed,
+                            laterTest, in ast, in bctx, in types))
                         EmitRejectedGuardedWrapperBind(wrapNameId, headNameId, payloadType, sti, pat.TokIdx, ref fctx, in ast, in ta, in names, in bctx, ref types, ref mir, ref diags);
                     else
-                        EmitUnionWrapperBind(wrapNameId, headNameId, payloadLid, payloadType, pat.TokIdx, ref fctx, in ast, in ta, in names, in bctx, ref types, ref mir, ref diags);
+                        EmitUnionWrapperBind(wrapNameId, headNameId, armPayloadLid, payloadType, pat.TokIdx, ref fctx, in ast, in ta, in names, in bctx, ref types, ref mir, ref diags);
                     fctx.Terminate(new MirTerm(MirTermKind.Goto, afterSubBlk, 0, 0, 0, 0, 0, pat.TokIdx));
                 }
                 if (arm.C >= 0)
                 {
                     fctx.CurBlock = afterSubBlk;
-                    LowerCondBranch(arm.C, armBlk, nextBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, hoistOutVarsToParentScope: false);
+                    LowerSwitchGuard(arm.C, guardPlace, armBlk, nextBlk, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, laterTest, laterTest ? rvalueViewLoan : -1);
                 }
             }
 
@@ -18879,6 +19765,7 @@ public static class FuncLowerer
             EmitScopeExitsDownTo(fctx.ScopeDepth, arm.TokIdx, ref fctx, ref mir);
             if (!fctx.IsBlockTerminated(fctx.CurBlock)) fctx.Terminate(new MirTerm(MirTermKind.Goto, mergeBlk, 0, 0, 0, 0, 0, arm.TokIdx));
 
+            if (scrutPlace >= 0 && arm.C >= 0 && IsWholeUnionValueBinding(in pat) && !types.IsCopy(mir.Places[scrutPlace].TypeId, in ast)) wholePlaceMayHaveMoved = true;
             fctx.CurBlock = nextBlk;
         }
 

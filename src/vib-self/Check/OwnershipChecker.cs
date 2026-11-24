@@ -6,6 +6,13 @@ public static class LoanKinds
     public const int StackSpan = 2;
     public const int StepCursor = 3;
     public const int SnapshotOrigin = 4;
+    public const int RepointOrigin = 5;
+    // Diagnostic provenance only. An implicit address preparation has
+    // already reported VIB004; projections of it must not add a guard error.
+    public const int RejectedSharedMutation = 6;
+    // A named ref slot traversed to compute this temporary address. Unlike
+    // an ordinary loan, this does not survive copying the reference to a local.
+    public const int RefAccessPath = 7;
 }
 
 public readonly struct Loan
@@ -389,6 +396,13 @@ public static class OwnershipChecker
                 }
 
                 case MirOp.BindRef:
+                    if ((mir.Locals[fn.LocalStart + inst.A].Flags & MirLocalFlags.IsAnalysisBorrow) != 0)
+                    {
+                        // The original source place has already been read. A
+                        // synthetic loan neither reads nor moves it again.
+                        SetRuntimeState(inst.A, InitOk, in slots, ref curInit);
+                        break;
+                    }
                     if ((inst.Flags & 4) != 0)
                     {
                         _ = ResolveRuntimeSlot(inst.B, tok, emitDiags, 0, in fn, in ta, in mir, in slots, in snapshots, in curInit, ref diags);
@@ -1169,7 +1183,15 @@ public static class OwnershipChecker
                 break;
             case MirOp.BindRef:
                 live[inst.A] = 0;
-                MarkPlaceRead(inst.B, in mir, ref live);
+                // A synthetic switch-guard borrow copies provenance without
+                // reading the scrutinee ref at runtime; ref liveness across
+                // earlier guards is controlled explicitly by KeepBorrowAlive.
+                if ((mir.Locals[fn.LocalStart + inst.A].Flags & MirLocalFlags.IsSwitchGuardBorrow) == 0)
+                    MarkPlaceRead(inst.B, in mir, ref live);
+                break;
+            case MirOp.SnapshotRefLoan:
+                live[inst.A] = 0;
+                live[inst.B] = 1;
                 break;
             case MirOp.Call:
                 for (int a = 0; a < inst.C; a++)
@@ -1222,6 +1244,7 @@ public static class OwnershipChecker
                 }
                 break;
             }
+            case MirOp.KeepBorrowAlive:
             case MirOp.DisposeResource:
                 live[inst.A] = 1;
                 break;
@@ -1784,19 +1807,62 @@ public static class OwnershipChecker
                     break;
                 }
 
+                case MirOp.SnapshotRefLoan:
+                {
+                    // Snapshot the pre-repoint loan set, without taking a new
+                    // borrow (in particular, without reserving another &mut).
+                    rhsLoans.Clear();
+                    for (int i = 0; i < curLoans.Count; i++)
+                    {
+                        CarrierLoan loan = curLoans[i];
+                        if (loan.CarrierId == inst.B) AddLoanUnique(loan.LoanVal, ref rhsLoans);
+                    }
+                    AddLoanUnique(new Loan(LoanKinds.RepointOrigin, inst.B, -1, -1, 0), ref rhsLoans);
+                    SetCarrierLoans(inst.A, in rhsLoans, ref curLoans);
+                    break;
+                }
+
                 case MirOp.BindRef:
                 {
                     bool isMut = (inst.Flags & 1) != 0;
                     bool reserveTwoPhase = isMut && isTwoPhase;
-                    if (emitDiags && isMut && IsMutatingThroughShared(inst.B, isMethodOrRef: true, in fn, in types, in mir, isReceiverCall: reserveTwoPhase))
+                    bool throughShared = isMut && IsMutatingThroughShared(inst.B, isMethodOrRef: true, in fn, in types, in mir, isReceiverCall: reserveTwoPhase);
+                    if (emitDiags && throughShared)
                     {
                         diags.ReportTok(VibCodes.MutateSharedBorrow, tok, "Cannot take a mutable reference through a shared borrow."u8);
                     }
-                    bool operandCapture = (mir.Locals[fn.LocalStart + inst.A].Flags & MirLocalFlags.IsCallOperandLoan) != 0;
+                    int destFlags = mir.Locals[fn.LocalStart + inst.A].Flags;
+                    if (emitDiags && (destFlags & (MirLocalFlags.IsRefLocal | MirLocalFlags.IsTemp)) == MirLocalFlags.IsRefLocal)
+                        CheckSwitchGuardRefRebind(inst.A, tok, in fn, in mir, in curLoans, in liveSlice, ref diags);
+                    bool operandCapture = (destFlags & MirLocalFlags.IsCallOperandLoan) != 0;
+                    bool rejectedSharedAddress = throughShared || HasRejectedSharedMutationAddress(inst.B, in fn, in mir, in curLoans);
                     CheckBorrowCreationConflicts(inst.B, isMut && !reserveTwoPhase, inst.A, tok, emitDiags, in fn, in mir, in curLoans, in liveSlice, ref diags,
-                        deferCallOperandOverlap: operandCapture);
+                        deferCallOperandOverlap: operandCapture, ignoreGuardLoan: rejectedSharedAddress);
                     rhsLoans.Clear();
-                    ComputeLoansForPlaceBorrow(inst.B, isMut, in curLoans, in mir, ref rhsLoans, reserveTwoPhase, (inst.Flags & 4) != 0);
+                    if ((inst.Flags & 4) != 0 && (destFlags & MirLocalFlags.IsAnalysisBorrow) != 0)
+                    {
+                        // Rvalue view guard window: retain referent loans as shared without borrowing the consumed view temp.
+                        int vLid = mir.Places[inst.B].LocalId;
+                        for (int i = 0; i < curLoans.Count; i++)
+                        {
+                            if (curLoans[i].CarrierId != vLid) continue;
+                            Loan baseLoan = curLoans[i].LoanVal;
+                            if (baseLoan.Kind == LoanKinds.RefAccessPath) continue;
+                            AddLoanUnique(baseLoan.Kind == LoanKinds.Place
+                                ? new Loan(LoanKinds.Place, baseLoan.RootLocalId, baseLoan.Field0, baseLoan.Field1, 0, 0)
+                                : baseLoan, ref rhsLoans);
+                        }
+                        if (inst.C > 0)
+                            AddLoanUnique(new Loan(LoanKinds.RepointOrigin, inst.C - 1, -1, -1, 0), ref rhsLoans);
+                    }
+                    else
+                    {
+                        ComputeLoansForPlaceBorrow(inst.B, isMut, in curLoans, in mir, ref rhsLoans, reserveTwoPhase, (inst.Flags & 4) != 0);
+                    }
+                    if ((destFlags & MirLocalFlags.IsTemp) != 0)
+                        CollectRefAccessPath(inst.B, in fn, in mir, in curLoans, ref rhsLoans);
+                    if (rejectedSharedAddress && (destFlags & MirLocalFlags.IsTemp) != 0)
+                        AddLoanUnique(new Loan(LoanKinds.RejectedSharedMutation, -1, -1, -1, 0), ref rhsLoans);
                     CheckTempRvalueEscape(inst.A, in rhsLoans, tok, emitDiags, in fn, in mir, in isBorrowCarrier, ref diags);
                     if (emitDiags && inst.A >= 0)
                     {
@@ -2072,6 +2138,7 @@ public static class OwnershipChecker
 
             var thisArgLoans = new Vec<Loan>(4);
             bool argIsExclusive = false;
+            bool argRejectedShared = false;
 
             if (ca.Mode == PassMode.ByValue)
             {
@@ -2098,11 +2165,15 @@ public static class OwnershipChecker
                 MirOperand rop = mir.Operands[ca.OperandOrPlaceId];
                 if (rop.Kind == MirOpKinds.CopyOrMove)
                 {
-                    if (emitDiags && argIsExclusive && IsMutatingThroughShared(rop.PlaceOrLitIdx, isMethodOrRef: true, in fn, in types, in mir, isReceiverCall: true))
+                    bool throughShared = argIsExclusive && IsMutatingThroughShared(rop.PlaceOrLitIdx, isMethodOrRef: true, in fn, in types, in mir, isReceiverCall: true);
+                    if (emitDiags && throughShared)
                     {
                         diags.ReportTok(VibCodes.MutateSharedBorrow, argTok, "Cannot call [Mut] method through shared borrow."u8);
                     }
-                    CheckBorrowCreationConflicts(rop.PlaceOrLitIdx, argIsExclusive, destCarrier, argTok, emitDiags, in fn, in mir, in curLoans, in liveAfter, ref diags);
+                    argRejectedShared = throughShared || HasRejectedSharedMutationAddress(rop.PlaceOrLitIdx, in fn, in mir, in curLoans);
+                    CheckBorrowCreationConflicts(rop.PlaceOrLitIdx, argIsExclusive, destCarrier, argTok, emitDiags, in fn, in mir, in curLoans, in liveAfter, ref diags,
+                        deferCallOperandOverlap: false,
+                        ignoreGuardLoan: argRejectedShared);
                     MirPlace rpl = mir.Places[rop.PlaceOrLitIdx];
                     if (argIsExclusive && rpl.ProjCount > 0 && mir.Projs[rpl.ProjStart].Kind == MirProjKinds.Deref)
                     {
@@ -2116,7 +2187,8 @@ public static class OwnershipChecker
                 // Struct receiver or `in` / `ref` / `out` place
                 argIsExclusive = ca.Mode == PassMode.Ref || ca.Mode == PassMode.Out || ca.Mode == PassMode.ThisMut;
                 bool isRecv = ca.Mode == PassMode.ThisShared || ca.Mode == PassMode.ThisMut;
-                if (emitDiags && argIsExclusive && IsMutatingThroughShared(ca.OperandOrPlaceId, isMethodOrRef: true, in fn, in types, in mir, isReceiverCall: isRecv))
+                bool throughShared = argIsExclusive && IsMutatingThroughShared(ca.OperandOrPlaceId, isMethodOrRef: true, in fn, in types, in mir, isReceiverCall: isRecv);
+                if (emitDiags && throughShared)
                 {
                     diags.ReportTok(VibCodes.MutateSharedBorrow, argTok, "Cannot pass shared borrow as mutable reference or receiver."u8);
                 }
@@ -2127,7 +2199,10 @@ public static class OwnershipChecker
                 }
                 else
                 {
-                    CheckBorrowCreationConflicts(ca.OperandOrPlaceId, argIsExclusive, destCarrier, argTok, emitDiags, in fn, in mir, in curLoans, in liveAfter, ref diags);
+                    argRejectedShared = throughShared || HasRejectedSharedMutationAddress(ca.OperandOrPlaceId, in fn, in mir, in curLoans);
+                    CheckBorrowCreationConflicts(ca.OperandOrPlaceId, argIsExclusive, destCarrier, argTok, emitDiags, in fn, in mir, in curLoans, in liveAfter, ref diags,
+                        deferCallOperandOverlap: false,
+                        ignoreGuardLoan: argRejectedShared);
                     MirPlace apl = mir.Places[ca.OperandOrPlaceId];
                     if (argIsExclusive && apl.ProjCount > 0 && mir.Projs[apl.ProjStart].Kind == MirProjKinds.Deref)
                     {
@@ -2163,12 +2238,30 @@ public static class OwnershipChecker
                 }
                 if (canFlowToReturn)
                 {
+                    if (IsTempCarrier(inst.RefDestLocalId, in fn, in mir))
+                    {
+                        if (ca.Mode != PassMode.ByValue)
+                        {
+                            if ((ca.Mode == PassMode.ThisShared || ca.Mode == PassMode.ThisMut) && IsClassOwnerFunc(inst.A, in mir))
+                            {
+                                MirOperand arg = mir.Operands[ca.OperandOrPlaceId];
+                                if (arg.Kind == MirOpKinds.CopyOrMove)
+                                    CollectRefAccessPath(arg.PlaceOrLitIdx, in fn, in mir, in curLoans, ref rhsLoans);
+                            }
+                            else
+                            {
+                                CollectRefAccessPath(ca.OperandOrPlaceId, in fn, in mir, in curLoans, ref rhsLoans);
+                            }
+                        }
+                    }
                     bool retMut = (callee.Flags & DeclFlags.ReturnRefMut) != 0 || types.IsExclusiveView(callee.ReturnTypeId);
                     for (int i = 0; i < thisArgLoans.Count; i++)
                     {
                         Loan ln = thisArgLoans[i];
                         AddLoanUnique(new Loan(ln.Kind, ln.RootLocalId, ln.Field0, ln.Field1, retMut ? 1 : ln.IsMut, 0), ref rhsLoans);
                     }
+                    if (argRejectedShared && IsTempCarrier(inst.RefDestLocalId, in fn, in mir))
+                        AddLoanUnique(new Loan(LoanKinds.RejectedSharedMutation, -1, -1, -1, 0), ref rhsLoans);
                 }
             }
         }
@@ -2261,6 +2354,8 @@ public static class OwnershipChecker
                     }
                     var spBorrowLoans = new Vec<Loan>(4);
                     ComputeLoansForPlaceBorrow(vop0.PlaceOrLitIdx, spanExcl, in curLoans, in mir, ref spBorrowLoans, reserveSpanRef);
+                    if (IsTempCarrier(inst.RefDestLocalId, in fn, in mir))
+                        CollectRefAccessPath(vop0.PlaceOrLitIdx, in fn, in mir, in curLoans, ref rhsLoans);
                     for (int i = 0; i < spBorrowLoans.Count; i++) AddLoanUnique(spBorrowLoans[i], ref rhsLoans);
                 }
             }
@@ -2282,24 +2377,26 @@ public static class OwnershipChecker
             int recvPl = mir.ExtraLists[plStart];
             bool mutRecv = IsMutatingIntrinsic(intr, refMut);
             bool reserveVecIdx = intr == MirIntrinsic.VecIndexRef && mutRecv && isTwoPhase;
-            if (emitDiags && mutRecv && IsMutatingThroughShared(recvPl, isMethodOrRef: true, in fn, in types, in mir, isReceiverCall: true))
+            bool throughShared = mutRecv && IsMutatingThroughShared(recvPl, isMethodOrRef: true, in fn, in types, in mir, isReceiverCall: true);
+            if (emitDiags && throughShared)
             {
                 diags.ReportTok(VibCodes.MutateSharedBorrow, tok, "Cannot call mutating operation through a shared borrow."u8);
             }
 
+            bool rejectedSharedAddress = throughShared || HasRejectedSharedMutationAddress(recvPl, in fn, in mir, in curLoans);
             if (intr == MirIntrinsic.OptionMutSet || intr == MirIntrinsic.OptionMutTake || intr == MirIntrinsic.OptionMutReplace)
             {
-                CheckCursorMutationConflicts(recvPl, destCarrier, tok, emitDiags, in fn, in mir, in curLoans, in liveAfter, ref diags);
+                CheckCursorMutationConflicts(recvPl, destCarrier, tok, emitDiags, in fn, in mir, in curLoans, in liveAfter, ref diags, rejectedSharedAddress);
             }
 
             bool checkWithValueArgs = mutRecv && !IntrinsicPropagatesPlaceLoan(intr);
             if (checkWithValueArgs)
             {
-                CheckBorrowCreationConflicts(recvPl, isExclusive: true, destCarrier, tok, emitDiags, in fn, in mir, in curLoans, in liveDuringIntr, ref diags, deferCallOperandOverlap: operandViewPreparation);
+                CheckBorrowCreationConflicts(recvPl, isExclusive: true, destCarrier, tok, emitDiags, in fn, in mir, in curLoans, in liveDuringIntr, ref diags, deferCallOperandOverlap: operandViewPreparation, ignoreGuardLoan: rejectedSharedAddress);
             }
             else
             {
-                CheckBorrowCreationConflicts(recvPl, isExclusive: mutRecv && !reserveVecIdx, destCarrier, tok, emitDiags, in fn, in mir, in curLoans, in liveAfter, ref diags, deferCallOperandOverlap: operandViewPreparation);
+                CheckBorrowCreationConflicts(recvPl, isExclusive: mutRecv && !reserveVecIdx, destCarrier, tok, emitDiags, in fn, in mir, in curLoans, in liveAfter, ref diags, deferCallOperandOverlap: operandViewPreparation, ignoreGuardLoan: rejectedSharedAddress);
             }
 
             MirPlace rpl = mir.Places[recvPl];
@@ -2314,7 +2411,11 @@ public static class OwnershipChecker
 
             if (IntrinsicPropagatesPlaceLoan(intr))
             {
+                if (IsTempCarrier(inst.RefDestLocalId, in fn, in mir))
+                    CollectRefAccessPath(recvPl, in fn, in mir, in curLoans, ref rhsLoans);
                 for (int i = 0; i < recvLoans.Count; i++) AddLoanUnique(recvLoans[i], ref rhsLoans);
+                if (rejectedSharedAddress && IsTempCarrier(inst.RefDestLocalId, in fn, in mir))
+                    AddLoanUnique(new Loan(LoanKinds.RejectedSharedMutation, -1, -1, -1, 0), ref rhsLoans);
             }
         }
 
@@ -2499,7 +2600,7 @@ public static class OwnershipChecker
     {
         for (int i = 0; i < curLoans.Count; i++)
         {
-            if (curLoans[i].CarrierId == carrierId)
+            if (curLoans[i].CarrierId == carrierId && curLoans[i].LoanVal.Kind != LoanKinds.RefAccessPath)
             {
                 AddLoanUnique(curLoans[i].LoanVal, ref outLoans);
             }
@@ -2565,6 +2666,7 @@ public static class OwnershipChecker
         {
             if (curLoans[i].CarrierId != pl.LocalId) continue;
             Loan baseLoan = curLoans[i].LoanVal;
+            if (baseLoan.Kind == LoanKinds.RefAccessPath) continue;
             if (baseLoan.Kind == LoanKinds.Place)
             {
                 int nf0 = baseLoan.Field0;
@@ -2688,7 +2790,7 @@ public static class OwnershipChecker
                 rejectedMoves[opId] = rejectedOwner + 1;
             }
             else if (rejectedMoves[opId] <= 0 &&
-                CheckWriteOrMoveConflicts(plId, isMove: true, excludedCarrier, tok, emitDiags, in fn, in mir, in curLoans, in liveAfter, ref diags))
+                CheckWriteOrMoveConflicts(plId, isMove: true, excludedCarrier, tok, emitDiags, in fn, in mir, in curLoans, in liveAfter, ref diags, ignoreGuardLoan: false))
             {
                 rejectedMoves[opId] = -(pl.LocalId + 1);
             }
@@ -2755,13 +2857,15 @@ public static class OwnershipChecker
             }
         }
 
-        if (emitDiags && IsMutatingThroughShared(destPlaceId, isMethodOrRef: false, in fn, in types, in mir))
+        bool throughShared = IsMutatingThroughShared(destPlaceId, isMethodOrRef: false, in fn, in types, in mir);
+        if (emitDiags && throughShared)
         {
             diags.ReportTok(VibCodes.MutateSharedBorrow, tok, "Cannot mutate through a shared borrow."u8);
         }
 
         int excluded = dpl.ProjCount == 0 ? dpl.LocalId : -1;
-        _ = CheckWriteOrMoveConflicts(destPlaceId, isMove: false, excluded, tok, emitDiags, in fn, in mir, in curLoans, in liveAfter, ref diags);
+        bool rejectedSharedAddress = throughShared || HasRejectedSharedMutationAddress(destPlaceId, in fn, in mir, in curLoans);
+        _ = CheckWriteOrMoveConflicts(destPlaceId, isMove: false, excluded, tok, emitDiags, in fn, in mir, in curLoans, in liveAfter, ref diags, ignoreGuardLoan: rejectedSharedAddress);
         if (dpl.ProjCount > 0 && mir.Projs[dpl.ProjStart].Kind == MirProjKinds.Deref)
         {
             ActivateCarrierLoans(dpl.LocalId, ref curLoans);
@@ -2790,16 +2894,71 @@ public static class OwnershipChecker
         }
     }
 
+    private static bool IsTempCarrier(int local, in MirFunc fn, in MirModuleArena mir) =>
+        local >= 0 && (mir.Locals[fn.LocalStart + local].Flags & MirLocalFlags.IsTemp) != 0;
+
+    private static void CollectRefAccessPath(int placeId, in MirFunc fn, in MirModuleArena mir,
+        in Vec<CarrierLoan> curLoans, ref Vec<Loan> path)
+    {
+        MirPlace place = mir.Places[placeId];
+        int flags = mir.Locals[fn.LocalStart + place.LocalId].Flags;
+        if ((flags & MirLocalFlags.IsTemp) == 0)
+        {
+            // A named ref is a boundary: following it reaches its current
+            // referent, not any other ref slot from which it was copied.
+            if ((flags & MirLocalFlags.IsRefLocal) != 0 && place.ProjCount > 0 && mir.Projs[place.ProjStart].Kind == MirProjKinds.Deref)
+                AddLoanUnique(new Loan(LoanKinds.RefAccessPath, place.LocalId, -1, -1, 0), ref path);
+            return;
+        }
+        for (int i = 0; i < curLoans.Count; i++)
+        {
+            CarrierLoan loan = curLoans[i];
+            if (loan.CarrierId == place.LocalId && loan.LoanVal.Kind == LoanKinds.RefAccessPath)
+                AddLoanUnique(loan.LoanVal, ref path);
+        }
+    }
+
+    private static void CheckSwitchGuardRefRebind(int refLocal, Token tok, in MirFunc fn, in MirModuleArena mir,
+        in Vec<CarrierLoan> curLoans, in Vec<byte> liveAfter, ref DiagnosticBag diags)
+    {
+        // A ref assignment does not write the old referent, but it does
+        // change the access path through which a switch matches that referent.
+        for (int i = 0; i < curLoans.Count; i++)
+        {
+            CarrierLoan cl = curLoans[i];
+            if (cl.LoanVal.Kind != LoanKinds.RefAccessPath || cl.LoanVal.RootLocalId != refLocal || liveAfter[cl.CarrierId] == 0 ||
+                (mir.Locals[fn.LocalStart + cl.CarrierId].Flags & MirLocalFlags.IsSwitchGuardBorrow) == 0) continue;
+            diags.ReportTok(VibCodes.ConflictActiveBorrow, tok, "Cannot rebind a reference used by an active switch match."u8);
+            return;
+        }
+    }
+
     private static bool IsAncestorCarrier(int childCarrierId, int candidateAncId, in Vec<CarrierLoan> curLoans)
     {
         if (childCarrierId == candidateAncId) return true;
         for (int i = 0; i < curLoans.Count; i++)
         {
             CarrierLoan cl = curLoans[i];
-            if (cl.CarrierId == childCarrierId && cl.LoanVal.RootLocalId == candidateAncId)
+            if (cl.CarrierId == childCarrierId && cl.LoanVal.Kind != LoanKinds.RefAccessPath && cl.LoanVal.RootLocalId == candidateAncId)
             {
                 return true;
             }
+        }
+        return false;
+    }
+
+    // A snapshot holds the same loan, not an independent borrow. Access
+    // through the original carrier (or a reborrow of it) is still allowed;
+    // direct access to the saved owner is subject to the ordinary conflict.
+    private static bool IsRefRepointSnapshotOfAccess(int child, int snapshot, in MirFunc fn, in MirModuleArena mir,
+        in Vec<CarrierLoan> curLoans)
+    {
+        if ((mir.Locals[fn.LocalStart + snapshot].Flags & MirLocalFlags.IsRepointLoanSnapshot) == 0) return false;
+        for (int i = 0; i < curLoans.Count; i++)
+        {
+            CarrierLoan loan = curLoans[i];
+            if (loan.CarrierId == snapshot && loan.LoanVal.Kind == LoanKinds.RepointOrigin &&
+                IsAncestorCarrier(child, loan.LoanVal.RootLocalId, in curLoans)) return true;
         }
         return false;
     }
@@ -2925,7 +3084,7 @@ public static class OwnershipChecker
         in Vec<CarrierLoan> curLoans,
         in Vec<byte> liveAfter,
         ref DiagnosticBag diags) =>
-        CheckBorrowCreationConflicts(targetPlaceId, isExclusive, excludedCarrier, tok, emitDiags, in fn, in mir, in curLoans, in liveAfter, ref diags, false);
+        CheckBorrowCreationConflicts(targetPlaceId, isExclusive, excludedCarrier, tok, emitDiags, in fn, in mir, in curLoans, in liveAfter, ref diags, false, false);
 
     private static void CheckBorrowCreationConflicts(
         int targetPlaceId,
@@ -2938,7 +3097,22 @@ public static class OwnershipChecker
         in Vec<CarrierLoan> curLoans,
         in Vec<byte> liveAfter,
         ref DiagnosticBag diags,
-        bool deferCallOperandOverlap)
+        bool deferCallOperandOverlap) =>
+        CheckBorrowCreationConflicts(targetPlaceId, isExclusive, excludedCarrier, tok, emitDiags, in fn, in mir, in curLoans, in liveAfter, ref diags, deferCallOperandOverlap, false);
+
+    private static void CheckBorrowCreationConflicts(
+        int targetPlaceId,
+        bool isExclusive,
+        int excludedCarrier,
+        Token tok,
+        bool emitDiags,
+        in MirFunc fn,
+        in MirModuleArena mir,
+        in Vec<CarrierLoan> curLoans,
+        in Vec<byte> liveAfter,
+        ref DiagnosticBag diags,
+        bool deferCallOperandOverlap,
+        bool ignoreGuardLoan)
     {
         if (!emitDiags || targetPlaceId < 0) return;
         MirPlace tpl = mir.Places[targetPlaceId];
@@ -2953,12 +3127,15 @@ public static class OwnershipChecker
             CarrierLoan cl = curLoans[i];
             int liveId = cl.CarrierId;
             if (liveId == excludedCarrier || liveId == tpl.LocalId || liveAfter[liveId] == 0) continue;
+            if ((mir.Locals[fn.LocalStart + liveId].Flags & MirLocalFlags.IsMovedReceiverWindow) != 0) continue;
+            if (IgnoreRedundantGuardLoan(ignoreGuardLoan, liveId, in fn, in mir)) continue;
             // Pure preparations of sibling operands activate together (VIB002).
             // An enclosing invocation has a distinct identity and stays active.
             int activation = excludedCarrier >= 0 ? mir.Locals[fn.LocalStart + excludedCarrier].CallActivationId : -1;
             if (deferCallOperandOverlap && activation >= 0 &&
                 mir.Locals[fn.LocalStart + liveId].CallActivationId == activation) continue;
-            if (throughCarrier && IsAncestorCarrier(tpl.LocalId, liveId, in curLoans)) continue;
+            if (throughCarrier && (IsAncestorCarrier(tpl.LocalId, liveId, in curLoans) ||
+                IsRefRepointSnapshotOfAccess(tpl.LocalId, liveId, in fn, in mir, in curLoans))) continue;
             Loan active = cl.LoanVal;
             if (!isExclusive && active.IsActiveMut == 0) continue;
             if (active.Kind != LoanKinds.Place) continue;
@@ -2977,6 +3154,29 @@ public static class OwnershipChecker
         _ = fn;
     }
 
+    private static bool HasRejectedSharedMutationAddress(int placeId, in MirFunc fn, in MirModuleArena mir, in Vec<CarrierLoan> curLoans)
+    {
+        MirPlace place = mir.Places[placeId];
+        if (place.ProjCount == 0 || mir.Projs[place.ProjStart].Kind != MirProjKinds.Deref) return false;
+        bool isTemp = IsTempCarrier(place.LocalId, in fn, in mir);
+        for (int i = 0; i < curLoans.Count; i++)
+        {
+            CarrierLoan c = curLoans[i];
+            if (c.CarrierId != place.LocalId) continue;
+            if (c.LoanVal.Kind == LoanKinds.RejectedSharedMutation) return true;
+            if (isTemp && c.LoanVal.Kind == LoanKinds.Place && c.LoanVal.RootLocalId >= 0 &&
+                (mir.Locals[fn.LocalStart + c.LoanVal.RootLocalId].Flags & MirLocalFlags.IsSharedBind) != 0)
+                return true;
+        }
+        return false;
+    }
+
+    // Already rejected as a mutation through a shared path (VIB004). The
+    // implicit guard loan adds no independent conflict on that same path;
+    // ordinary loans, receiver reservations and ref-repoint snapshots do.
+    private static bool IgnoreRedundantGuardLoan(bool throughShared, int carrier, in MirFunc fn, in MirModuleArena mir) =>
+        throughShared && (mir.Locals[fn.LocalStart + carrier].Flags & MirLocalFlags.IsSwitchGuardBorrow) != 0;
+
     private static bool CheckWriteOrMoveConflicts(
         int targetPlaceId,
         bool isMove,
@@ -2987,7 +3187,8 @@ public static class OwnershipChecker
         in MirModuleArena mir,
         in Vec<CarrierLoan> curLoans,
         in Vec<byte> liveAfter,
-        ref DiagnosticBag diags)
+        ref DiagnosticBag diags,
+        bool ignoreGuardLoan)
     {
         if ((!emitDiags && !isMove) || targetPlaceId < 0) return false;
         MirPlace tpl = mir.Places[targetPlaceId];
@@ -3023,8 +3224,11 @@ public static class OwnershipChecker
             CarrierLoan cl = curLoans[i];
             int liveId = cl.CarrierId;
             if (liveId == excludedCarrier || liveAfter[liveId] == 0) continue;
+            if (isMove && (mir.Locals[fn.LocalStart + liveId].Flags & MirLocalFlags.IsMovedReceiverWindow) != 0) continue;
+            if (IgnoreRedundantGuardLoan(ignoreGuardLoan, liveId, in fn, in mir)) continue;
             if (writesWholeLocal && isMove && liveId == tpl.LocalId) continue;
-            if (throughCarrier && IsAncestorCarrier(tpl.LocalId, liveId, in curLoans)) continue;
+            if (throughCarrier && (IsAncestorCarrier(tpl.LocalId, liveId, in curLoans) ||
+                IsRefRepointSnapshotOfAccess(tpl.LocalId, liveId, in fn, in mir, in curLoans))) continue;
 
             Loan active = cl.LoanVal;
             if (writesWholeLocal && active.Kind == LoanKinds.StepCursor && active.RootLocalId == tpl.LocalId)
@@ -3076,7 +3280,8 @@ public static class OwnershipChecker
         in MirModuleArena mir,
         in Vec<CarrierLoan> curLoans,
         in Vec<byte> liveAfter,
-        ref DiagnosticBag diags)
+        ref DiagnosticBag diags,
+        bool ignoreGuardLoan)
     {
         if (!emitDiags || cursorPlaceId < 0) return;
         MirPlace cpl = mir.Places[cursorPlaceId];
@@ -3088,6 +3293,9 @@ public static class OwnershipChecker
             CarrierLoan cl = curLoans[i];
             int liveId = cl.CarrierId;
             if (liveId == excludedCarrier || liveId == cpl.LocalId || liveAfter[liveId] == 0) continue;
+            if ((mir.Locals[fn.LocalStart + liveId].Flags & MirLocalFlags.IsMovedReceiverWindow) != 0) continue;
+            if (IgnoreRedundantGuardLoan(ignoreGuardLoan, liveId, in fn, in mir)) continue;
+            if (IsRefRepointSnapshotOfAccess(cpl.LocalId, liveId, in fn, in mir, in curLoans)) continue;
             Loan active = cl.LoanVal;
             if (cpl.ProjCount == 0 && active.Kind == LoanKinds.StepCursor && active.RootLocalId == cpl.LocalId)
             {

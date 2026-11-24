@@ -767,7 +767,7 @@ public static class SourceValidityChecker
         {
             MirCallArg arg = mir.CallArgs[inst.B + a];
             MirParamSig parameter = mir.ParamSigs[callee.ParamSigStart + a];
-            if (arg.Mode == PassMode.Out) continue;
+            if (arg.Mode == PassMode.Out && (parameter.Flags & 2) == 0) continue;
             bool operand = ArgumentIsOperand(inst.A, a, arg.Mode, in types, in mir);
             bool scoped = IsSourceScoped(inst.A, a, in ast, in mir);
             int value = operand
