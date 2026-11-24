@@ -26,7 +26,20 @@ public static class SubsetCuts
     {
         for (int cut = 10; cut <= 20; cut++)
             if (Bytes.Eq(message, Message(cut))) return true;
-        return Bytes.Eq(message, Message(24)) || Bytes.Eq(message, Message(25));
+        return Bytes.Eq(message, Message(24)) || Bytes.Eq(message, Message(25)) ||
+            Bytes.Eq(message, FieldInitializerMessage(TokKind.AmpAmp)) || Bytes.Eq(message, FieldInitializerMessage(TokKind.PipePipe)) ||
+            Bytes.Eq(message, FieldInitializerMessage(TokKind.Question)) || Bytes.Eq(message, FieldInitializerMessage(TokKind.KwSwitch)) ||
+            Bytes.Eq(message, FieldInitializerMessage(TokKind.KwIs));
+    }
+
+    // C23, by the kind of its anchor token: `&&`, `||`, the `?` of `?:`, `switch` or `is`.
+    public static ReadOnlySpan<byte> FieldInitializerMessage(TokKind anchor)
+    {
+        if (anchor == TokKind.AmpAmp) return "'&&' is not supported in a field or property initializer in Vibranium v0.2; assign the field in the constructor."u8;
+        if (anchor == TokKind.PipePipe) return "'||' is not supported in a field or property initializer in Vibranium v0.2; assign the field in the constructor."u8;
+        if (anchor == TokKind.Question) return "The '?:' operator is not supported in a field or property initializer in Vibranium v0.2; assign the field in the constructor."u8;
+        if (anchor == TokKind.KwSwitch) return "A switch expression is not supported in a field or property initializer in Vibranium v0.2; assign the field in the constructor."u8;
+        return "An 'is' expression is not supported in a field or property initializer in Vibranium v0.2; assign the field in the constructor."u8;
     }
 
     public static void Normalize(ref DiagnosticBag diags)

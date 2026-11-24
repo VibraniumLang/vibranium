@@ -251,6 +251,59 @@ public sealed class Round12FieldInitializerCutTests
                 public static bool Id(bool b) => b;
             }
             """];
+        yield return ["out-var-and-explicit-ctor", "&&", "'&&'", """
+            WriteLine(new C().B);
+            class C { const int v = 7; public bool A = int.TryParse("5", out int v) /*C23*/&& v > 0; public int B; public C() { B = v; } }
+            """];
+        yield return ["out-var-and-implicit-ctor", "&&", "'&&'", """
+            var c = new C();
+            WriteLine(c.B);
+            WriteLine(c.A);
+            class C { const int v = 7; public bool A = int.TryParse("5", out int v) /*C23*/&& v > 0; public int B = v; }
+            """];
+        yield return ["out-var-and-primary-ctor", "&&", "'&&'", """
+            WriteLine(new C(1).B);
+            class C(int k) { const int v = 7; public bool A = int.TryParse("5", out int v) /*C23*/&& v > k; public int B = v; }
+            """];
+        yield return ["out-var-and-struct-ctor", "&&", "'&&'", """
+            WriteLine(new S(1).B);
+            struct S { const int v = 7; public bool A = int.TryParse("5", out int v) /*C23*/&& v > 0; public int B; public S(int k) { B = v + k - 1; } }
+            """];
+        yield return ["out-var-or-explicit-ctor", "||", "'||'", """
+            WriteLine(new C().B);
+            class C { const int v = 7; public bool A = H.Get(out int v) /*C23*/|| v > 0; public int B; public C() { B = v; } }
+
+            static class H
+            {
+                public static bool Get(out int x) { x = 5; return false; }
+            }
+            """];
+        yield return ["out-var-conditional-explicit-ctor", "?", "The '?:' operator", """
+            WriteLine(new C().B);
+            class C { const int v = 7; public int A = int.TryParse("5", out int v) /*C23*/? v : 0; public int B; public C() { B = v; } }
+            """];
+        yield return ["pattern-var-implicit-ctor", "is", "An 'is' expression", """
+            WriteLine(new C().A);
+            class C { public bool A = H.Opt() /*C23*/is Some<int>(var q); }
+
+            static class H
+            {
+                public static Option<int> Opt() => Some(5);
+            }
+            """];
+        yield return ["switch-arm-var-primary-ctor", "switch", "A switch expression", """
+            WriteLine(new C(1).A);
+            class C(int k) { public int A = k /*C23*/switch { 4 => 0, var q => q }; }
+            """];
+        yield return ["nested-type-field-first-token", "?", "The '?:' operator", """
+            WriteLine(new C.N().X + new C().Y);
+            class C { public class N { public int X = H.Num() > 0 /*C23*/? 1 : 2; } public int Y = H.Num() switch { _ => 3 }; }
+
+            static class H
+            {
+                public static int Num() => 5;
+            }
+            """];
         yield return ["constructor-overloads-first-token", "&&", "'&&'", """
             WriteLine(new C(1).X);
             class C
@@ -302,6 +355,12 @@ public sealed class Round12FieldInitializerCutTests
             var position = live.Location.GetLineSpan().StartLinePosition;
             Assert.Equal(position.Line + 1, cut.Span.Line);
             Assert.Equal(position.Character + 1, cut.Span.Column);
+            var self = Round12RuleWitness.Run(Round11AuditAssertions.DotnetExe, null, Round11AuditAssertions.SelfCompiler,
+                "check", path, "--sysroot", Path.Combine(Round11AuditAssertions.RepoRoot, "src"));
+            var selfErrors = (self.Out + self.Err).Split('\n').Where(l => l.Contains(": error VIB", StringComparison.Ordinal)).ToArray();
+            Assert.True(self.Exit == 1 && selfErrors.All(l => l.Contains(": error VIB000: ", StringComparison.Ordinal)), self.Out + self.Err);
+            var selfCut = Assert.Single(selfErrors, l => l.EndsWith(Suffix, StringComparison.Ordinal));
+            Assert.EndsWith($"({cut.Span.Line},{cut.Span.Column}): error VIB000: {cut.Message}", selfCut, StringComparison.Ordinal);
         }
         finally
         {

@@ -498,21 +498,9 @@ public static class DeclBinder
             }
             if (!hasCtor)
             {
-                // Synthesize default constructor assigning any field initializers
-                var stmts = new Vec<int>();
-                for (int f = 0; f < td.FieldCount; f++)
-                {
-                    FieldDecl fld = ast.Fields[td.FieldStart + f];
-                    if ((fld.Flags & DeclFlags.Static) == 0 && fld.InitExpr >= 0)
-                    {
-                        int thisNode = ast.AddNode(AstKind.ExprThis, fld.TokIdx, 0, 0, 0, 0);
-                        int memNode = ast.AddNode(AstKind.ExprMember, fld.TokIdx, thisNode, fld.NameId, 0, 0);
-                        int asgn = ast.AddNode(AstKind.ExprAssign, fld.TokIdx, (int)TokKind.Eq, memNode, fld.InitExpr, 0);
-                        stmts.Push(ast.AddNode(AstKind.StmtExpr, fld.TokIdx, asgn, 0, 0, 0));
-                    }
-                }
-                int stmtsStart = ast.PushExtraSpan(stmts.AsReadOnlySpan());
-                int blk = ast.AddNode(AstKind.StmtBlock, td.TokIdx, stmtsStart, stmts.Count, 0, 0);
+                // Synthesize an empty default constructor: constructor lowering runs the
+                // field initializers before every constructor body (FuncLowerer).
+                int blk = ast.AddNode(AstKind.StmtBlock, td.TokIdx, 0, 0, 0, 0);
                 int voidNode = ast.AddNode(AstKind.TypePrim, td.TokIdx, (int)TokKind.KwVoid, 0, 0, 0);
 
                 // Copy existing funcs + new implicit ctor into contiguous slice

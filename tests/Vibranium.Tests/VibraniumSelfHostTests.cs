@@ -2288,9 +2288,10 @@ public sealed class VibraniumSelfHostTests
                 public int this[int idx] { get => _items[idx]; set => _items[idx] = value; }
             }
 
-            sealed class CtorBranchHolder(bool flag)
+            sealed class CtorBranchHolder
             {
-                public string Tag = flag ? "ctor-true" : "ctor-false";
+                public string Tag;
+                public CtorBranchHolder(bool flag) { Tag = flag ? "ctor-true" : "ctor-false"; }
             }
 
             static class Factory<T>

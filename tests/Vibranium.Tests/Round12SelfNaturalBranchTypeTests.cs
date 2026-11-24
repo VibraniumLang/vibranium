@@ -22,10 +22,14 @@ public sealed class Round12SelfNaturalBranchTypeTests
     [InlineData("bool b = true; Result<int,int> r = b ? default : Err(2); WriteLine(r.IsOk);", "VIB008")]
     public Task RejectsWithExactFrontendParity(string source, string expected) => Round12RuleWitness.RejectAsync(source, expected, exact: true);
 
-    [Theory(Skip = "Pending C23 in self-fix-z; field initializers containing ?: will have exactly VIB000.")]
+    // C23 on every frontend, with Stage-0's message. Stage-0 and the analyzer also report VIB008 for the `default`
+    // (their syntax gatekeeper); vib-self does not lower a cut initializer, so it reports VIB000 alone (SPEC §4: a cut
+    // construct, the ID sets may differ).
+    [Theory]
     [InlineData("WriteLine(new C().B.IsSome); class C { public readonly Option<int> B = Pick() ? Some(2) : default; static bool Pick() => false; }")]
     [InlineData("WriteLine(new S().B.IsSome); struct S { public readonly Option<int> B = Pick() ? Some(2) : default; public S() { } static bool Pick() => false; }")]
-    public Task FieldInitializerPendingC23(string source) => Round12RuleWitness.RejectAsync(source, "VIB000", exact: true);
+    public Task FieldInitializerIsCutC23(string source) => Round12RuleWitness.RejectAsync(source, "VIB000",
+        message: "The '?:' operator is not supported in a field or property initializer in Vibranium v0.2; assign the field in the constructor.", banned: true);
 
     [Theory]
     [InlineData("bool b = false; int n = 2; byte x = b ? (byte)1 : n; WriteLine(x);", "CS0266")]

@@ -75,6 +75,22 @@ public static class SourceLexicalScopeChecker
         CollectEnclosingBindings(funcId, in ast, ref outerBindings);
         int owner = fn.OwnerDeclId;
         for (int i = 0; i < outerBindings.Count && owner < 0; i++) owner = ast.Funcs[outerBindings[i].FunctionId].OwnerDeclId;
+        CheckScopes(in scopes, in outerBindings, owner, in ast, in ta, in names, ref diags);
+    }
+
+    // An instance field initializer is a declaration space of its own (C#), apart from every
+    // constructor body: its out and pattern variables get a body's checks.
+    public static void CheckFieldInitializer(int exprId, int owner, in AstArena ast, in TokenArena ta, in Interner names, ref DiagnosticBag diags)
+    {
+        var scopes = new SourceLexicalScopes();
+        VisitExpression(exprId, 0, 0, -1, -1, false, ref scopes, in ast);
+        var noOuterBindings = new Vec<SourceLexicalBinding>();
+        CheckScopes(in scopes, in noOuterBindings, owner, in ast, in ta, in names, ref diags);
+    }
+
+    private static void CheckScopes(in SourceLexicalScopes scopes, in Vec<SourceLexicalBinding> outerBindings, int owner,
+        in AstArena ast, in TokenArena ta, in Interner names, ref DiagnosticBag diags)
+    {
         for (int i = 0; i < scopes.Bindings.Count; i++)
         {
             SourceLexicalBinding binding = scopes.Bindings[i];

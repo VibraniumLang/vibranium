@@ -130,6 +130,8 @@ public struct FuncLowerCtx
     public Vec<int> StagedNext;
     public int CurBlock;
     public int OutVarScopeOverride;
+    // True while an instance field initializer is lowered: it has no `this` (CS0236, CS0027).
+    public bool InFieldInitializer;
     public int UncheckedDepth;
     public int InferDepth;
     // > 0 while the conversion classifier types a collection-literal element
@@ -197,6 +199,7 @@ public struct FuncLowerCtx
         StagedNext = new Vec<int>(64);
         CurBlock = -1;
         OutVarScopeOverride = -1;
+        InFieldInitializer = false;
         UncheckedDepth = 0;
         InferDepth = 0;
         ElementRetypeDepth = 0;
@@ -811,7 +814,9 @@ public static class FuncLowerer
                 fctx.CtorFieldLocals.Push(flid);
             }
 
-            // Emit field initializers on explicit constructors too
+            // Every constructor (implicit, explicit, primary) runs each instance field
+            // initializer once, in declaration order, before its body. Like C#, each
+            // initializer is its own scope: its out and pattern variables end with it.
             for (int f = 0; f < otd.FieldCount; f++)
             {
                 FieldDecl fld = ast.Fields[otd.FieldStart + f];
@@ -822,9 +827,23 @@ public static class FuncLowerer
                     {
                         int flid = fctx.CtorFieldLocals[slotIdx];
                         int fType = fctx.Locals[flid].TypeId;
-                        int initOp = LowerExprAsOperand(fld.InitExpr, fType, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+                        PushScope(ref fctx);
+                        int initOp;
+                        if ((fld.Flags & DeclFlags.InitializerCut) != 0)
+                        {
+                            // Like Stage-0, keep a C23-rejected field initialized without lowering any of it.
+                            initOp = mir.AddOperand(new MirOperand(MirOpKinds.ZeroDefault, -1, 0, fType, fld.TokIdx));
+                        }
+                        else
+                        {
+                            SourceLexicalScopeChecker.CheckFieldInitializer(fld.InitExpr, oti.A, in ast, in ta, in names, ref diags);
+                            fctx.InFieldInitializer = true;
+                            initOp = LowerExprAsOperand(fld.InitExpr, fType, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+                            fctx.InFieldInitializer = false;
+                        }
                         int destPl = mir.AddPlaceLocal(flid, fType);
                         fctx.Emit(new MirInst(MirOp.AssignUse, destPl, -1, 0, fType, initOp, 0, 0, 0, fld.TokIdx));
+                        PopScope(fld.TokIdx, ref fctx, ref mir);
                     }
                 }
             }
@@ -9866,6 +9885,8 @@ public static class FuncLowerer
                     {
                         if (fctx.IsCtor && fIdx < fctx.CtorFieldLocals.Count)
                         {
+                            if (fctx.InFieldInitializer)
+                                diags.ReportTok(VibCodes.Unsupported, ta.Tokens[tokIdx], "A field initializer cannot reference the non-static field, method, or property (CS0236)."u8);
                             int flid = fctx.CtorFieldLocals[fIdx];
                             return mir.AddPlaceLocal(flid, fctx.Locals[flid].TypeId);
                         }
@@ -9965,6 +9986,8 @@ public static class FuncLowerer
                     int fIdx = FindInstanceFieldIndex(fctx.OwnerTypeId, n.B, in types);
                     if (fIdx >= 0 && fIdx < fctx.CtorFieldLocals.Count)
                     {
+                        if (fctx.InFieldInitializer)
+                            diags.ReportTok(VibCodes.Unsupported, ta.Tokens[ast.Nodes[n.A].TokIdx], "Keyword 'this' is not available in the current context (CS0027)."u8);
                         int flid = fctx.CtorFieldLocals[fIdx];
                         return mir.AddPlaceLocal(flid, fctx.Locals[flid].TypeId);
                     }

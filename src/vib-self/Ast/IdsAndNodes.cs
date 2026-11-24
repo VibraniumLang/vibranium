@@ -194,6 +194,7 @@ public static class DeclFlags
     public const int ReturnRefMut = 1 << 20;
     public const int IsConst = 1 << 21;
     public const int IsScoped = 1 << 22;
+    public const int InitializerCut = 1 << 23; // C23 rejected the field's initializer; it is not lowered
     public const int UnmanagedConstraint = 1 << 24;
     public const int ClassConstraint = 1 << 25;
     public const int IsCapturedPrimaryParam = 1 << 26;

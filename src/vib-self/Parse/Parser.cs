@@ -903,6 +903,15 @@ public static class Parser
         return "Constructor chaining (: this(...)) is not supported in Vibranium v0.2; initialize every field in each constructor or use a static factory method."u8;
     }
 
+    // C23: one VIB000 per file, at the first such token of any instance field initializer,
+    // which is the first one parsed (Stage-0: CfgMirLowerer.CheckFieldInitializerControlFlow).
+    private static void ReportFieldInitializerCut(ref ParserCtx ctx, Token token, ref DiagnosticBag diags)
+    {
+        if ((ctx.ReportedSubsetCuts & 32) != 0) return;
+        ctx.ReportedSubsetCuts |= 32;
+        diags.ReportTok(VibCodes.Unsupported, token, SubsetCuts.FieldInitializerMessage(token.Kind));
+    }
+
     private static void ReportSubsetCut(ref ParserCtx ctx, int cut, Token token, ref DiagnosticBag diags)
     {
         if ((ctx.ReportedSubsetCuts & cut) != 0) return;
@@ -2103,23 +2112,10 @@ public static class Parser
         ref DiagnosticBag diags)
     {
         if (!hasPrimaryCtor) return;
+        // Constructor lowering runs the instance field initializers before this body (FuncLowerer).
         var bodyStmts = new Vec<int>();
 
-        // 1. Explicit instance field initializers run FIRST in primary .ctor
-        for (int i = 0; i < localFields.Count; i++)
-        {
-            FieldDecl fd = localFields[i];
-            if ((fd.Flags & DeclFlags.Static) == 0 && fd.InitExpr >= 0)
-            {
-                int thisExpr = ast.AddNode(AstKind.ExprThis, fd.TokIdx, 0, 0, 0, 0);
-                int lhs = ast.AddNode(AstKind.ExprMember, fd.TokIdx, thisExpr, fd.NameId, 0, 0);
-                int assign = ast.AddNode(AstKind.ExprAssign, fd.TokIdx, (int)TokKind.Eq, lhs, fd.InitExpr, 0);
-                bodyStmts.Push(ast.AddNode(AstKind.StmtExpr, fd.TokIdx, assign, 0, 0, 0));
-                localFields[i] = new FieldDecl(fd.NameId, fd.TypeNode, -1, fd.Flags, fd.ConstVal, fd.HasConstVal, fd.TokIdx);
-            }
-        }
-
-        // 2. Synthesize backing fields `__pctor_<name>` for any primary-ctor parameter captured by an instance member body
+        // Synthesize backing fields `__pctor_<name>` for any primary-ctor parameter captured by an instance member body
         var shadowed = new Vec<int>(16);
         for (int p = 0; p < primaryParams.Count; p++)
         {
@@ -2845,18 +2841,29 @@ public static class Parser
 
         int curFieldName = memberNameId;
         int curFieldTok = memberTokIdx;
+        bool curFieldNamed = rawMemberNameId >= 0;
         while (true)
         {
             int fInit = -1;
+            int fFlags = mFlags;
             if (Match(ref ctx, in ta, TokKind.Eq))
             {
+                int firstInitNode = ast.Nodes.Count;
                 fInit = ParseExpression(ref ctx, in ta, ref names, ref ast, ref diags);
+                // A nameless field is parse recovery (an auto-property initializer, say), not a field.
+                int cutTok = curFieldNamed && (mFlags & DeclFlags.Static) == 0 ? FirstControlFlowToken(in ast, firstInitNode) : -1;
+                if (cutTok >= 0)
+                {
+                    fFlags |= DeclFlags.InitializerCut;
+                    ReportFieldInitializerCut(ref ctx, ta.Tokens[cutTok], ref diags);
+                }
             }
-            localFields.Push(new FieldDecl(curFieldName, retOrFieldType, fInit, mFlags, 0, 0, curFieldTok));
+            localFields.Push(new FieldDecl(curFieldName, retOrFieldType, fInit, fFlags, 0, 0, curFieldTok));
             if (!Match(ref ctx, in ta, TokKind.Comma)) break;
             curFieldTok = ctx.Pos;
             int rawNextField = ExpectDeclaredIdent(ref ctx, in ta, ref names, ref diags, "Expected field name."u8, out _);
             curFieldName = rawNextField >= 0 ? rawNextField : names.Intern("_ErrField"u8);
+            curFieldNamed = rawNextField >= 0;
         }
         Expect(ref ctx, in ta, TokKind.Semi, ref diags, "Expected ';' after field declaration."u8);
     }
@@ -4136,26 +4143,27 @@ public static class Parser
             int isRefAssign = (opTok.Kind == TokKind.Eq && Match(ref ctx, in ta, TokKind.KwRef)) ? 1 : 0;
             int firstRhsNode = ast.Nodes.Count;
             int right = ParseAssignment(ref ctx, in ta, ref names, ref ast, ref diags);
-            if (isRefAssign != 0 && HasRefAssignmentControlFlow(in ast, firstRhsNode))
+            if (isRefAssign != 0 && FirstControlFlowToken(in ast, firstRhsNode) >= 0)
                 SubsetCuts.Report(25, ta.Tokens[refTok], ref diags);
             return ast.AddNode(AstKind.ExprAssign, opTokIdx, (int)opTok.Kind, left, right, isRefAssign);
         }
         return left;
     }
 
-    // The RHS is an append-only slice of the syntax arena. Inspect every
-    // subexpression, not just the final target or the evaluated branch.
-    private static bool HasRefAssignmentControlFlow(in AstArena ast, int firstRhsNode)
+    // The expression is an append-only slice of the syntax arena. Inspect every
+    // subexpression, not just the final target or the evaluated branch. Returns the
+    // first `&&`, `||`, `?`, `switch` or `is` token in source order, or -1 (C23, C25).
+    private static int FirstControlFlowToken(in AstArena ast, int firstNode)
     {
-        for (int i = firstRhsNode; i < ast.Nodes.Count; i++)
+        int first = -1;
+        for (int i = firstNode; i < ast.Nodes.Count; i++)
         {
             AstNode node = ast.Nodes[i];
-            if (node.Kind == AstKind.ExprCond || node.Kind == AstKind.ExprSwitch || node.Kind == AstKind.ExprIsPattern)
-                return true;
-            if (node.Kind == AstKind.ExprBinary && ((TokKind)node.A == TokKind.AmpAmp || (TokKind)node.A == TokKind.PipePipe))
-                return true;
+            bool controlFlow = node.Kind == AstKind.ExprCond || node.Kind == AstKind.ExprSwitch || node.Kind == AstKind.ExprIsPattern ||
+                (node.Kind == AstKind.ExprBinary && ((TokKind)node.A == TokKind.AmpAmp || (TokKind)node.A == TokKind.PipePipe));
+            if (controlFlow && (first < 0 || node.TokIdx < first)) first = node.TokIdx;
         }
-        return false;
+        return first;
     }
 
     private static bool IsAssignOp(TokKind k) =>

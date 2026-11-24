@@ -219,7 +219,8 @@ public sealed class Round11Stage0Tests
         Assert.True(self.Exit != 0, caseName + " unexpectedly passed vib-self check");
         string selfText = self.Out + self.Err;
         Assert.Single(selfText.Split('\n'), line => line.Contains("VIB000", StringComparison.Ordinal));
-        Assert.Contains(GenericPatternBoundaryMessage, selfText, StringComparison.Ordinal);
+        // vib-self does not lower a cut initializer, so its one VIB000 line there is C23's, not C4's.
+        Assert.Contains(fieldInitializer ? initializerCut : GenericPatternBoundaryMessage, selfText, StringComparison.Ordinal);
         Assert.DoesNotContain("VIB001", selfText, StringComparison.Ordinal);
     }
 
