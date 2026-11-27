@@ -414,14 +414,7 @@ public sealed class Round10Stage0DefiniteAssignmentTests
 
     private static (int Exit, string Out, string Err) Run(string command, params string[] arguments)
     {
-        var start = new ProcessStartInfo("heavy")
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        };
-        start.ArgumentList.Add(command);
-        foreach (string argument in arguments) start.ArgumentList.Add(argument);
+        var start = HeavyGateProcess.CreateStartInfo(command, arguments);
         start.Environment["ASAN_OPTIONS"] = "detect_leaks=1:halt_on_error=1";
         using var process = Process.Start(start)!;
         var output = process.StandardOutput.ReadToEndAsync();

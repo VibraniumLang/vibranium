@@ -7,6 +7,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import xml.sax.saxutils
 
@@ -15,8 +16,11 @@ parser.add_argument("--root", required=True, type=Path)
 parser.add_argument("--results", required=True, type=Path)
 parser.add_argument("--ids", nargs="*")
 args = parser.parse_args()
-if not shutil.which("heavy"):
-    raise SystemExit("heavy is required; refusing an ungated build")
+is_ci = os.environ.get("CI") == "true"
+if not is_ci and not shutil.which("heavy"):
+    print("heavy is required outside CI; refusing an ungated build", file=sys.stderr)
+    raise SystemExit(75)
+build_command = ["dotnet", "build"] if is_ci else ["heavy", "dotnet", "build"]
 root = args.root.resolve()
 results = args.results.resolve()
 selected = sorted((results / "repros").glob("*.json"))
@@ -44,7 +48,7 @@ for sidecar in selected:
     <ProjectReference Include="{relative(root / "src/Vibranium.Analyzer/Vibranium.Analyzer.csproj")}" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 </Project>\n''')
-        completed = subprocess.run(["heavy", "dotnet", "build", "--disable-build-servers", str(scratch / "App.csproj"), "-c", "Debug", "-v:q"],
+        completed = subprocess.run(build_command + ["--disable-build-servers", str(scratch / "App.csproj"), "-c", "Debug", "-v:q"],
             cwd=root, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
         if completed.returncode == 75:
             raise SystemExit(75)

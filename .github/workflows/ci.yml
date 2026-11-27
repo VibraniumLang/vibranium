@@ -14,80 +14,101 @@ concurrency:
   cancel-in-progress: "${{ github.event_name == 'pull_request' }}"
 
 jobs:
-  build-and-test:
-    name: Build & Differential Tests (.NET 11 + LLVM 18)
+  build-and-smoke:
+    name: Build, Smoke & Bootstrap
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install LLVM 18 & Clang 18 (with ASan/LSan runtime)
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends clang-18 llvm-18 libclang-rt-18-dev
-          clang-18 --version
-          opt-18 --version
-
-      - name: Install .NET 11.0.100 SDK
-        run: |
-          curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
-          bash /tmp/dotnet-install.sh --version 11.0.100 --install-dir "$HOME/.dotnet"
-          rm -f /tmp/dotnet-install.sh
-          echo "$HOME/.dotnet" >> "$GITHUB_PATH"
-          echo "DOTNET_ROOT=$HOME/.dotnet" >> "$GITHUB_ENV"
-          echo "DOTNET_CLI_TELEMETRY_OPTOUT=1" >> "$GITHUB_ENV"
-          echo "DOTNET_NOLOGO=1" >> "$GITHUB_ENV"
-
-      - name: Verify .NET SDK version
-        run: dotnet --info
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-toolchain
 
       - name: Build Vibranium.slnx (0 warnings, 0 errors)
         run: dotnet build --disable-build-servers Vibranium.slnx
 
-      - name: Run xUnit Differential & Analyzer Parity Suite
-        run: dotnet test --disable-build-servers Vibranium.slnx --no-build --logger "console;verbosity=normal"
+      - name: Verify exhaustive xUnit shard coverage
+        run: |
+          python3 eng/ci/xunit-shards.py self-test
+          python3 eng/ci/xunit-shards.py verify --shards 6 --solution Vibranium.slnx
 
       - name: Smoke-test vib CLI (check, emit-ll, build)
         run: |
+          scratch=$(mktemp -d)
+          trap 'rm -rf "$scratch"' EXIT
           dotnet run --project src/vib/vib.csproj --no-build -- check samples/demo/Program.cs
-          dotnet run --project src/vib/vib.csproj --no-build -- emit-ll samples/demo/Program.cs -o /tmp/demo.ll
-          opt-18 -passes=verify -disable-output /tmp/demo.ll
-          dotnet run --project src/vib/vib.csproj --no-build -- build samples/demo/Program.cs -O3 -o /tmp/demo-native
-          /tmp/demo-native
-          rm -f /tmp/demo.ll /tmp/demo-native
+          dotnet run --project src/vib/vib.csproj --no-build -- emit-ll samples/demo/Program.cs -o "$scratch/demo.ll"
+          opt-18 -passes=verify -disable-output "$scratch/demo.ll"
+          dotnet run --project src/vib/vib.csproj --no-build -- build samples/demo/Program.cs -O3 -o "$scratch/demo-native"
+          "$scratch/demo-native"
 
       - name: Verify Self-Hosting Triple-Identity Bootstrap (vib-self)
         run: ./eng/bootstrap/bootstrap.sh --skip-benchmark
+
+  xunit:
+    name: "xUnit Differential & Analyzer Parity (${{ matrix.shard }}/6)"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-toolchain
+
+      - name: Build Vibranium.slnx
+        run: dotnet build --disable-build-servers Vibranium.slnx
+
+      - name: Run xUnit shard
+        env:
+          XUNIT_SHARD: "${{ matrix.shard }}"
+        run: python3 eng/ci/xunit-shards.py run --shard "$XUNIT_SHARD" --shards 6 --solution Vibranium.slnx -- --logger "console;verbosity=normal"
+
+  conformance:
+    name: Differential Conformance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-toolchain
 
       - name: Differential conformance fuzzer (fixed budget, see docs/CONFORMANCE.md)
         env:
           CONF_FAIL_ON: open
         run: ./eng/conformance/run-conformance.sh ci
 
-      - name: Conformance activation profile (fixed budget, see docs/CONFORMANCE.md)
+      - name: Conformance activation profile
         env:
           CONF_FAIL_ON: open
           CONF_PROFILE: activation
           CONF_SKIP_BUILD: "1"
         run: ./eng/conformance/run-conformance.sh ci
 
-      - name: Conformance soundness profile (accepted programs run ASan/LSan-clean at -O0 and -O3, see docs/CONFORMANCE.md)
+      - name: Conformance soundness profile (ASan/LSan at -O0 and -O3)
         env:
           CONF_FAIL_ON: open
           CONF_PROFILE: soundness
           CONF_SKIP_BUILD: "1"
         run: ./eng/conformance/run-conformance.sh ci
 
-      - name: Conformance feature matrix (banned, cut and decided rows on every frontend, see docs/CONFORMANCE.md)
+      - name: Conformance feature matrix
         env:
           CONF_SKIP_BUILD: "1"
         run: ./eng/conformance/run-conformance.sh matrix
 
+  mutation:
+    name: Mutation Oracle & Regression Gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-toolchain
+        with:
+          install-llvm: "false"
+
       - name: Mutation oracle self-test
         run: ./eng/mutation/run-mutation.sh self-test
 
-      - name: Mutation diagnostic regression gate (empty known-open list, not release sign-off)
+      - name: Mutation diagnostic regression gate (not release sign-off)
         env:
           MUTATION_SKIP_BUILD: "1"
         run: ./eng/mutation/run-mutation.sh ci
@@ -97,16 +118,14 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install elan & Lean 4 toolchain
+        shell: bash
         run: |
-          curl -sSf https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          curl --retry 3 --retry-delay 2 -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
           echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
 
       - name: Build VibraniumFormal & Run Proof Verifier
         working-directory: formal
-        run: |
-          lake build
-          lake exe vibranium-formal-verify
+        run: lake build && lake exe vibranium-formal-verify
