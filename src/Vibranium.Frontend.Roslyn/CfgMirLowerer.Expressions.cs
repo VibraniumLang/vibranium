@@ -5187,8 +5187,10 @@ internal sealed partial class CfgMirLowerer
             case IImplicitIndexerReferenceOperation implIdx:
             {
                 var elemT = MapMirType(SubstituteType(implIdx.Type));
-                int refTmp = CreateTempRefLocal(elemT, isMutableAccess, span);
-                if (TryEmitRefProducingOperationInto(implIdx, refTmp, isMutableAccess, span, isTwoPhaseBorrow))
+                // N128: `ros[^1]` is a ref readonly element, as `ros[0]` is (the property case above).
+                bool refMut = isMutableAccess && implIdx.IndexerSymbol is not IPropertySymbol { ReturnsByRefReadonly: true };
+                int refTmp = CreateTempRefLocal(elemT, refMut, span);
+                if (TryEmitRefProducingOperationInto(implIdx, refTmp, refMut, span, isTwoPhaseBorrow))
                 {
                     return new MirPlace(refTmp, new MirProjection[] { new MirProjection.Deref(elemT) });
                 }

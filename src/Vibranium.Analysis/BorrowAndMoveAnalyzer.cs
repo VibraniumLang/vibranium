@@ -1029,6 +1029,18 @@ public static class BorrowAndMoveAnalyzer
             return insideReadonlyValueProjection;
         }
 
+        // N118 (Q-INSPAN): a mutable span reached through a read-only path is a read-only view. Taking it as a mutable span
+        // without a move (a by-value argument or its reborrow temp, a mutable slice such as a `foreach (ref …)` source) is
+        // VIB004, as an element write through it is.
+        private void CheckMutableSpanTake(MirPlace place, MirType type, VibraniumSpan span, bool emitDiagnostics)
+        {
+            if (emitDiagnostics && type is MirType.SpanType { IsReadOnly: false } &&
+                IsMutatingThroughSharedBorrow(place, isIndirectOrMethodReceiver: true))
+            {
+                Emit(VibraniumDiagnosticIds.MutateThroughSharedBorrow, "Cannot take a mutable span through a read-only path.", span);
+            }
+        }
+
         // =====================================================================
         // Backward Liveness of Borrow-Bearing Locals (NLL / Polonius)
         // =====================================================================
@@ -2298,6 +2310,10 @@ public static class BorrowAndMoveAnalyzer
                         liveDuringRhs = new HashSet<int>(liveAfter);
                         AddPlaceTargetCarrierUses(a.Target, liveDuringRhs);
                     }
+                    if (a.Rvalue is MirRvalue.Use { IsCallOperandReborrow: true, Operand: MirOperand.CopyOrMove reborrowed })
+                    {
+                        CheckMutableSpanTake(reborrowed.Place, reborrowed.Type, a.Span, emitDiagnostics);
+                    }
                     var rhsLoans = EvaluateBorrowRvalue(a.Rvalue, a.Target, prov, liveDuringRhs, a.Span, emitDiagnostics);
 
                     if (emitDiagnostics &&
@@ -2459,6 +2475,7 @@ public static class BorrowAndMoveAnalyzer
                             {
                                 // Span arguments implicitly reborrow; a force-copy
                                 // read alone misses their exclusive call-time use.
+                                CheckMutableSpanTake(spanArgument.Place, spanArgument.Type, arg.Span, emitDiagnostics);
                                 CheckBorrowCreationConflicts(spanArgument.Place, isExclusive: true, -1,
                                     prov, remainingLive, arg.Span, emitDiagnostics);
                             }
@@ -2687,6 +2704,7 @@ public static class BorrowAndMoveAnalyzer
                     case MirIntrinsicKind.SpanSlice:
                     {
                         bool spanExcl = intr.ResultType is MirType.SpanType { IsReadOnly: false };
+                        CheckMutableSpanTake(receiverPlace, intr.ResultType, intr.Span, emitDiagnostics);
                         CheckBorrowCreationConflicts(receiverPlace, isExclusive: spanExcl, destCarrier, prov, liveAfter, intr.Span, emitDiagnostics);
                         producedLoans.UnionWith(ComputeLoansForPlaceBorrow(receiverPlace, isExclusive: spanExcl, prov));
                         break;
