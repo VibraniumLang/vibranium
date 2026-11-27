@@ -1204,6 +1204,7 @@ public static class BorrowAndMoveAnalyzer
                     }
                     foreach (var arg in c.Args)
                     {
+                        if (arg.Hold is int callHold) live.Add(callHold);
                         if (arg.ValueOperand is not null) AddOperandCarrierUses(arg.ValueOperand, live);
                         if (arg.BorrowPlace is not null)
                         {
@@ -1228,6 +1229,7 @@ public static class BorrowAndMoveAnalyzer
                     }
                     foreach (var v in intr.ValueArgs) AddOperandCarrierUses(v, live);
                     foreach (var p in intr.PlaceArgs) AddPlaceReadCarrierUses(p, live);
+                    if (intr.Hold is int intrHold) live.Add(intrHold);
                     break;
 
                 case MirStatement.DisposeResource dr:
@@ -1454,7 +1456,7 @@ public static class BorrowAndMoveAnalyzer
                     break;
 
                 case MirStatement.BindRef br:
-                    if (IsSwitchMatchBorrow(br.RefLocalId)) break;
+                    if (IsSwitchMatchBorrow(br.RefLocalId) || IsCallHold(br.RefLocalId)) break;
                     if (br.RefLocalId >= 0 && br.RefLocalId < _localCount &&
                         _fn.Locals[br.RefLocalId].IsCompilerTemp &&
                         br.Target.LocalId >= 0 && br.Target.LocalId < _localCount)
@@ -1495,6 +1497,13 @@ public static class BorrowAndMoveAnalyzer
                             ApplyWriteToPlace(arg.BorrowPlace, state, arg.Span, emitDiagnostics);
                         }
                     }
+                    foreach (var arg in c.Args)
+                    {
+                        if (arg.ReleasesMovedPlace is int held && state.Init[held].IsHeld)
+                        {
+                            state.Init[held] = LocalInitState.Moved;
+                        }
+                    }
                     if (c.Dest is not null)
                     {
                         VerifyTargetBaseStillValidAfterRhs(c.Dest, state, c.Span, emitDiagnostics);
@@ -1519,6 +1528,10 @@ public static class BorrowAndMoveAnalyzer
                     foreach (var p in intr.PlaceArgs)
                     {
                         EvaluatePlaceBorrowed(p, isOut: false, state, intr.Span, emitDiagnostics);
+                    }
+                    if (intr.ReleasesMovedPlace is int intrHeld && state.Init[intrHeld].IsHeld)
+                    {
+                        state.Init[intrHeld] = LocalInitState.Moved;
                     }
                     if (intr.Dest is not null)
                     {
@@ -2646,6 +2659,8 @@ public static class BorrowAndMoveAnalyzer
                     case MirIntrinsicKind.SpanToReadOnly:
                         CheckBorrowCreationConflicts(receiverPlace, isExclusive: false, destCarrier, prov, liveAfter, intr.Span, emitDiagnostics);
                         producedLoans.UnionWith(ComputeLoansForPlaceBorrow(receiverPlace, isExclusive: false, prov));
+                        if (intr.Hold is int intrHold) producedLoans.UnionWith(prov.GetLoans(intrHold));
+                        if (intr.ReleasesMovedPlace is int intrHeld) producedLoans.UnionWith(ComputeLoansForPlaceBorrow(MirPlace.Local(intrHeld), isExclusive: false, prov));
                         break;
 
                     case MirIntrinsicKind.OptionAsMut:
@@ -3291,6 +3306,8 @@ public static class BorrowAndMoveAnalyzer
                     }
                     bool excl = arg.PassKind is MirPassKind.Ref or MirPassKind.Out or MirPassKind.ImplicitThisMut;
                     result.UnionWith(ComputeLoansForPlaceBorrow(arg.BorrowPlace, excl, prov));
+                    if (arg.Hold is int callHold) result.UnionWith(prov.GetLoans(callHold));
+                    if (arg.ReleasesMovedPlace is int movedHeld) result.UnionWith(ComputeLoansForPlaceBorrow(MirPlace.Local(movedHeld), isExclusive: false, prov));
                 }
                 else if (arg.ValueOperand is MirOperand.CopyOrMove cm &&
                          cm.Place.LocalId >= 0 &&
@@ -3322,7 +3339,9 @@ public static class BorrowAndMoveAnalyzer
                 if (arg.BorrowPlace is not null && arg.PassKind != MirPassKind.ByValue)
                 {
                     bool excl = arg.PassKind is MirPassKind.Ref or MirPassKind.Out or MirPassKind.ImplicitThisMut;
-                    argPaths.Add((ExpandEffectivePaths(arg.BorrowPlace, prov), excl, arg.Span));
+                    var paths = ExpandEffectivePaths(arg.BorrowPlace, prov);
+                    if (arg.Hold is int callHold) paths.AddRange(ExpandEffectivePaths(MirPlace.Local(callHold), prov));
+                    argPaths.Add((paths, excl, arg.Span));
                 }
                 else if (arg.ValueOperand is MirOperand.CopyOrMove cm &&
                          cm.Place.LocalId >= 0 &&
@@ -3422,6 +3441,9 @@ public static class BorrowAndMoveAnalyzer
         private bool IsSwitchMatchBorrow(int localId) =>
             localId >= 0 && localId < _localCount && _fn.Locals[localId].IsSwitchMatchBorrow;
 
+        private bool IsCallHold(int localId) =>
+            localId >= 0 && localId < _localCount && _fn.Locals[localId].IsCallHold;
+
         private void CheckSwitchMatchRefRebind(int refLocalId, ProvenanceState prov, HashSet<int> liveAfter,
             VibraniumSpan span, bool emitDiagnostics)
         {
@@ -3504,11 +3526,9 @@ public static class BorrowAndMoveAnalyzer
                 targetPlace.LocalId < _localCount &&
                 _fn.Locals[targetPlace.LocalId] is { IsParam: true, PassKind: MirPassKind.ByValue } viewParam &&
                 _module.IsViewLike(viewParam.Type);
-            var targetPaths = isRebindingByValueViewParam
-                ? new List<PlacePath>()
-                : (writesWholeLocal
-                    ? new List<PlacePath> { PlacePath.FromPlace(targetPlace) }
-                    : ExpandEffectivePaths(targetPlace, prov));
+            var targetPaths = writesWholeLocal
+                ? new List<PlacePath> { PlacePath.FromPlace(targetPlace) }
+                : ExpandEffectivePaths(targetPlace, prov);
             var reservedPlace = ResolveReservations(targetPlace);
             // Only a write through a reserving temp reaches the place it reserved; a whole write sets the temp (the reborrow's Assign).
             if (!writesWholeLocal && reservedPlace.LocalId != targetPlace.LocalId)
@@ -3552,7 +3572,12 @@ public static class BorrowAndMoveAnalyzer
                             span);
                         return;
                     }
-                    if (loan.Kind == LoanKind.PlaceBorrow && loan.Path is not null)
+                    // D3: rebinding a by-value view parameter leaves the loans on its old referent alone; only an F13 match
+                    // whose scrutinee is the parameter itself stops it (N91).
+                    if (loan.Kind == LoanKind.PlaceBorrow && loan.Path is not null &&
+                        (!isRebindingByValueViewParam ||
+                         IsSwitchMatchBorrow(liveId) && _sourceLocalAliases.TryGetValue(liveId, out var scrutinee) &&
+                         scrutinee.LocalId == targetPlace.LocalId && scrutinee.Projections.Count == 0))
                     {
                         foreach (var tp in targetPaths)
                         {

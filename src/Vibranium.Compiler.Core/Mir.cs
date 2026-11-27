@@ -231,7 +231,14 @@ public sealed record MirCallArg(
     MirPassKind PassKind,
     MirOperand? ValueOperand,
     MirPlace? BorrowPlace,
-    VibraniumSpan Span);
+    VibraniumSpan Span)
+{
+    // N90, analysis only. The receiver or `in` argument copies a Core wrapper's payload that C# reads in place at the
+    // call. Hold: the Copy wrapper's analysis-only borrow (MirLocal.IsCallHold), which the call reads.
+    // ReleasesMovedPlace: the !Copy wrapper that the copy moved out under a D1-W hold, which the call ends.
+    public int? Hold { get; init; }
+    public int? ReleasesMovedPlace { get; init; }
+}
 
 public abstract record MirRvalue
 {
@@ -269,7 +276,12 @@ public abstract record MirStatement(VibraniumSpan Span)
         public IReadOnlyList<int>? SwitchMatchRefSlots { get; init; }
     }
     public sealed record Call(MirPlace? Dest, int? RefDestLocalId, bool RefDestIsMutable, string CalleeKey, IReadOnlyList<MirCallArg> Args, VibraniumSpan Span) : MirStatement(Span);
-    public sealed record Intrinsic(MirIntrinsicKind Kind, MirPlace? Dest, int? RefDestLocalId, bool RefDestIsMutable, IReadOnlyList<MirOperand> ValueArgs, IReadOnlyList<MirPlace> PlaceArgs, MirType ResultType, VibraniumSpan Span, bool IsTwoPhaseBorrow = false) : MirStatement(Span);
+    public sealed record Intrinsic(MirIntrinsicKind Kind, MirPlace? Dest, int? RefDestLocalId, bool RefDestIsMutable, IReadOnlyList<MirOperand> ValueArgs, IReadOnlyList<MirPlace> PlaceArgs, MirType ResultType, VibraniumSpan Span, bool IsTwoPhaseBorrow = false) : MirStatement(Span)
+    {
+        // N90, analysis only (OptionAsRef on a wrapper payload): Hold / ReleasesMovedPlace as on MirCallArg.
+        public int? Hold { get; init; }
+        public int? ReleasesMovedPlace { get; init; }
+    }
     public sealed record DisposeResource(int LocalId, string DisposeMethodKey, VibraniumSpan Span) : MirStatement(Span);
     public sealed record ScopeExit(IReadOnlyList<int> ExitingLocals, VibraniumSpan Span) : MirStatement(Span);
     // Neither of these accesses a runtime slot. Remember captures loan provenance before
@@ -315,9 +327,12 @@ public sealed record MirLocal(
     VibraniumSpan Span,
     bool IsForeachLoan = false,
     bool IsSwitchMatchBorrow = false,
-    int? RefRepointSnapshotOf = null)
+    int? RefRepointSnapshotOf = null,
+    bool IsCallHold = false)
 {
-    public bool IsAnalysisOnlyBorrow => IsSwitchMatchBorrow || RefRepointSnapshotOf.HasValue;
+    // IsCallHold: no slot; it keeps a call argument's place borrowed in the checker from where C# evaluates the argument
+    // (a wrapper whose payload is read in place, N90; an `out` target before a branching later argument, N116).
+    public bool IsAnalysisOnlyBorrow => IsSwitchMatchBorrow || RefRepointSnapshotOf.HasValue || IsCallHold;
 }
 
 public sealed record MirBasicBlock(

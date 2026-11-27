@@ -725,7 +725,7 @@ internal sealed partial class CfgMirLowerer
             var callArgs = new List<MirCallArg>();
             if (saSetCap.SetRecvPass is { } setPass && saSetCap.CapturedRecvPlace is { } setRecv)
             {
-                callArgs.Add(new MirCallArg(setPass, null, setRecv, saSetCap.CapturedRecvSpan));
+                callArgs.Add(WithCallHold(new MirCallArg(setPass, null, setRecv, saSetCap.CapturedRecvSpan), saSetCap.Hold));
             }
             if (saSetCap.CapturedIndexArgs is { Count: > 0 } idxArgs)
             {
@@ -752,11 +752,13 @@ internal sealed partial class CfgMirLowerer
                 bool isMutSetRecv = setRecvPass == MirPassKind.ImplicitThisMut;
                 var recvMirT = MapMirType(SubstituteType(setProp.Instance.Type));
                 var recvSpan = VibraniumSymbolHelpers.ToVibraniumSpan(setProp.Instance.Syntax);
+                var wrapperRead = ReadsReceiverInPlace(substSetter, setProp.Instance, substSetter.Parameters.Length) ? BeginWrapperRead(setProp.Instance) : null;
                 var recvPlace = isMutSetRecv
                     ? LowerPlace(setProp.Instance, isMutableAccess: true, isTwoPhaseBorrow: true)
                     : LowerPlaceOrMaterializeTemp(setProp.Instance, recvMirT, isMutableAccess: false, recvSpan);
+                EndWrapperRead(wrapperRead);
                 recvPlace = ReserveReceiverPlaceBeforeArgs(recvPlace, recvMirT, isMutable: isMutSetRecv, isTwoPhaseBorrow: isMutSetRecv, recvSpan);
-                callArgs.Add(new MirCallArg(setRecvPass.Value, null, recvPlace, recvSpan));
+                callArgs.Add(WithCallHold(new MirCallArg(setRecvPass.Value, null, recvPlace, recvSpan), wrapperRead));
             }
             if (setProp.Arguments.Length > 0)
             {
@@ -1087,7 +1089,7 @@ internal sealed partial class CfgMirLowerer
             {
                 getArgs.Add(new MirCallArg(getRecvPass.Value, null, recvPlace, recvSpan));
             }
-            getArgs.AddRange(evalIdxArgs);
+            AddGetterIndexArgs(getArgs, evalIdxArgs);
 
             int propOldTemp = CreateTempLocal(valMirType, span, "__cmp_old");
             _currentStmts.Add(new MirStatement.Call(
@@ -1413,7 +1415,7 @@ internal sealed partial class CfgMirLowerer
             {
                 getArgs.Add(new MirCallArg(getRecvPass.Value, null, recvPlace, recvSpan));
             }
-            getArgs.AddRange(evalIdxArgs);
+            AddGetterIndexArgs(getArgs, evalIdxArgs);
 
             int propOldTemp = CreateTempLocal(valType, span);
             _currentStmts.Add(new MirStatement.Call(
@@ -1709,19 +1711,19 @@ internal sealed partial class CfgMirLowerer
                     if (VibraniumSymbolHelpers.IsVibraniumCoreType(fOwner, "Some") && fieldRef.Field.Name == "Value" && fieldRef.Instance is not null)
                     {
                         var innerT = MapMirType(SubstituteType(fOwner.TypeArguments[0]));
-                        var wrapOp = LowerOperand(fieldRef.Instance, new MirType.SomeWrapperType(innerT));
+                        var wrapOp = NoteWrapperRead(fieldRef, LowerOperand(fieldRef.Instance, new MirType.SomeWrapperType(innerT)));
                         return new MirRvalue.UnwrapSomeWrapper(innerT, wrapOp);
                     }
                     if (VibraniumSymbolHelpers.IsVibraniumCoreType(fOwner, "Ok") && fieldRef.Field.Name == "Value" && fieldRef.Instance is not null)
                     {
                         var okT = MapMirType(SubstituteType(fOwner.TypeArguments[0]));
-                        var wrapOp = LowerOperand(fieldRef.Instance, new MirType.OkWrapperType(okT));
+                        var wrapOp = NoteWrapperRead(fieldRef, LowerOperand(fieldRef.Instance, new MirType.OkWrapperType(okT)));
                         return new MirRvalue.UnwrapOkWrapper(okT, wrapOp);
                     }
                     if (VibraniumSymbolHelpers.IsVibraniumCoreType(fOwner, "Err") && fieldRef.Field.Name == "Error" && fieldRef.Instance is not null)
                     {
                         var errT = MapMirType(SubstituteType(fOwner.TypeArguments[0]));
-                        var wrapOp = LowerOperand(fieldRef.Instance, new MirType.ErrWrapperType(errT));
+                        var wrapOp = NoteWrapperRead(fieldRef, LowerOperand(fieldRef.Instance, new MirType.ErrWrapperType(errT)));
                         return new MirRvalue.UnwrapErrWrapper(errT, wrapOp);
                     }
                 }
@@ -2818,12 +2820,14 @@ internal sealed partial class CfgMirLowerer
             var recvMirType = MapMirType(SubstituteType(inv.Instance.Type));
             var recvSpan = VibraniumSymbolHelpers.ToVibraniumSpan(inv.Instance.Syntax);
             bool isMutRecv = recvPass == MirPassKind.ImplicitThisMut;
+            var wrapperRead = ReadsReceiverInPlace(method, inv.Instance, inv.Arguments.Length) ? BeginWrapperRead(inv.Instance) : null;
             var recvPlace = LowerPlaceOrMaterializeTemp(
                 inv.Instance,
                 recvMirType,
                 isMutableAccess: isMutRecv,
                 recvSpan,
                 isTwoPhaseBorrow: isMutRecv && inv.Arguments.Length > 0);
+            EndWrapperRead(wrapperRead);
             if (inv.Arguments.Length > 0)
             {
                 recvPlace = ReserveReceiverPlaceBeforeArgs(
@@ -2833,7 +2837,7 @@ internal sealed partial class CfgMirLowerer
                     isTwoPhaseBorrow: isMutRecv,
                     recvSpan);
             }
-            callArgs.Add(new MirCallArg(recvPass.Value, null, recvPlace, recvSpan));
+            callArgs.Add(WithCallHold(new MirCallArg(recvPass.Value, null, recvPlace, recvSpan), wrapperRead));
         }
 
         if (!(method.IsStatic && inv.Instance is not null && method.Parameters.Length > 0))
@@ -3232,10 +3236,16 @@ internal sealed partial class CfgMirLowerer
                     case "AsRef":
                     {
                         var resT = new MirType.OptionRefType(innerT);
+                        var wrapperRead = BeginWrapperRead(slotExpr);
                         var slotPlace = LowerPlaceOrMaterializeTemp(slotExpr, new MirType.OptionType(innerT), isMutableAccess: false, span);
+                        EndWrapperRead(wrapperRead);
                         var dest = destPlace ?? MirPlace.Local(CreateTempLocal(resT, span));
                         _currentStmts.Add(new MirStatement.Intrinsic(
-                            MirIntrinsicKind.OptionAsRef, dest, null, false, Array.Empty<MirOperand>(), new[] { slotPlace }, resT, span));
+                            MirIntrinsicKind.OptionAsRef, dest, null, false, Array.Empty<MirOperand>(), new[] { slotPlace }, resT, span)
+                        {
+                            Hold = wrapperRead?.Hold,
+                            ReleasesMovedPlace = wrapperRead?.Held,
+                        });
                         result = new MirOperand.CopyOrMove(dest, resT, span);
                         return true;
                     }
@@ -3591,13 +3601,19 @@ internal sealed partial class CfgMirLowerer
                     {
                         var vecMirType = new MirType.VecType(elemT);
                         var resT = new MirType.SpanType(elemT, true);
+                        var wrapperRead = BeginWrapperRead(inv.Instance);
                         var vecPlace = LowerPlaceOrMaterializeTemp(inv.Instance, vecMirType, isMutableAccess: false, span);
+                        EndWrapperRead(wrapperRead);
                         vecPlace = ReserveReceiverPlaceBeforeArgs(vecPlace, vecMirType, isMutable: false, isTwoPhaseBorrow: false, span);
                         var startOp = LowerOperand(inv.Arguments[0].Value, MirType.Int32);
                         var lenOp = LowerOperand(inv.Arguments[1].Value, MirType.Int32);
                         int roTmp = CreateTempLocal(resT, span);
                         _currentStmts.Add(new MirStatement.Intrinsic(
-                            MirIntrinsicKind.VecAsReadOnlySpan, MirPlace.Local(roTmp), null, false, Array.Empty<MirOperand>(), new[] { vecPlace }, resT, span));
+                            MirIntrinsicKind.VecAsReadOnlySpan, MirPlace.Local(roTmp), null, false, Array.Empty<MirOperand>(), new[] { vecPlace }, resT, span)
+                        {
+                            Hold = wrapperRead?.Hold,
+                            ReleasesMovedPlace = wrapperRead?.Held,
+                        });
                         var dest = destPlace ?? MirPlace.Local(CreateTempLocal(resT, span));
                         _currentStmts.Add(new MirStatement.Intrinsic(
                             MirIntrinsicKind.SpanSlice, dest, null, false, new[] { startOp, lenOp }, new[] { MirPlace.Local(roTmp) }, resT, span));
@@ -4122,12 +4138,14 @@ internal sealed partial class CfgMirLowerer
                 propRecvPass = VibraniumSymbolHelpers.GetReceiverPassKind(substGetter);
                 bool isMutPropRecv = propRecvPass == MirPassKind.ImplicitThisMut;
                 var recvMirT = MapMirType(SubstituteType(prop.Instance.Type));
+                var wrapperRead = ReadsReceiverInPlace(substGetter, prop.Instance, prop.Arguments.Length) ? BeginWrapperRead(prop.Instance) : null;
                 var recvPlace = LowerPlaceOrMaterializeTemp(prop.Instance, recvMirT, isMutPropRecv, span, isTwoPhaseBorrow: isMutPropRecv && prop.Arguments.Length > 0);
+                EndWrapperRead(wrapperRead);
                 if (prop.Arguments.Length > 0)
                 {
                     recvPlace = ReserveReceiverPlaceBeforeArgs(recvPlace, recvMirT, isMutable: isMutPropRecv, isTwoPhaseBorrow: isMutPropRecv, span);
                 }
-                callArgs.Add(new MirCallArg(propRecvPass.Value, null, recvPlace, span));
+                callArgs.Add(WithCallHold(new MirCallArg(propRecvPass.Value, null, recvPlace, span), wrapperRead));
             }
             callArgs.AddRange(OrderCallArguments(prop.Arguments, substGetter.Parameters, span, materializeByValueTemps: propRecvPass == MirPassKind.ImplicitThisMut));
 
@@ -4589,11 +4607,13 @@ internal sealed partial class CfgMirLowerer
                     bool isMutRecv = recvPass == MirPassKind.ImplicitThisMut;
                     var recvMirT = MapMirType(SubstituteType(idxInst.Type));
                     var recvSpan = VibraniumSymbolHelpers.ToVibraniumSpan(idxInst.Syntax);
+                    var wrapperRead = ReadsReceiverInPlace(substGetter, idxInst, propIdx.Arguments.Length) ? BeginWrapperRead(idxInst) : null;
                     var recvPlace = isMutRecv
                         ? LowerPlace(idxInst, isMutableAccess: true, isTwoPhaseBorrow: true)
                         : LowerPlaceOrMaterializeTemp(idxInst, recvMirT, isMutableAccess: false, recvSpan);
+                    EndWrapperRead(wrapperRead);
                     recvPlace = ReserveReceiverPlaceBeforeArgs(recvPlace, recvMirT, isMutable: isMutRecv, isTwoPhaseBorrow: isMutRecv, recvSpan);
-                    var callArgs = new List<MirCallArg> { new(recvPass, null, recvPlace, recvSpan) };
+                    var callArgs = new List<MirCallArg> { WithCallHold(new(recvPass, null, recvPlace, recvSpan), wrapperRead) };
                     callArgs.AddRange(OrderCallArguments(propIdx.Arguments, substGetter.Parameters, span, materializeByValueTemps: isMutRecv));
                     bool retMut = substGetter.ReturnsByRef && !substGetter.ReturnsByRefReadonly;
                     _currentStmts.Add(new MirStatement.Call(null, refDestLocalId, retMut, VibraniumSymbolHelpers.GetMethodKey(substGetter), callArgs, span));
@@ -4618,14 +4638,16 @@ internal sealed partial class CfgMirLowerer
                     bool isMutRecv = recvPass == MirPassKind.ImplicitThisMut;
                     var recvMirT = MapMirType(SubstituteType(propRef.Instance.Type));
                     var recvSpan = VibraniumSymbolHelpers.ToVibraniumSpan(propRef.Instance.Syntax);
+                    var wrapperRead = ReadsReceiverInPlace(substGetter, propRef.Instance, propRef.Arguments.Length) ? BeginWrapperRead(propRef.Instance) : null;
                     var recvPlace = isMutRecv
                         ? LowerPlace(propRef.Instance, isMutableAccess: true, isTwoPhaseBorrow: propRef.Arguments.Length > 0)
                         : LowerPlaceOrMaterializeTemp(propRef.Instance, recvMirT, isMutableAccess: false, recvSpan);
+                    EndWrapperRead(wrapperRead);
                     if (propRef.Arguments.Length > 0)
                     {
                         recvPlace = ReserveReceiverPlaceBeforeArgs(recvPlace, recvMirT, isMutable: isMutRecv, isTwoPhaseBorrow: isMutRecv, recvSpan);
                     }
-                    callArgs.Add(new MirCallArg(recvPass.Value, null, recvPlace, recvSpan));
+                    callArgs.Add(WithCallHold(new MirCallArg(recvPass.Value, null, recvPlace, recvSpan), wrapperRead));
                 }
                 callArgs.AddRange(OrderCallArguments(propRef.Arguments, substGetter.Parameters, span, materializeByValueTemps: recvPass == MirPassKind.ImplicitThisMut));
                 bool retMut = substGetter.ReturnsByRef && !substGetter.ReturnsByRefReadonly;
@@ -4728,12 +4750,14 @@ internal sealed partial class CfgMirLowerer
                             var recvMirT = MapMirType(SubstituteType(refCallInv.Instance.Type));
                             var recvSpan = VibraniumSymbolHelpers.ToVibraniumSpan(refCallInv.Instance.Syntax);
                             bool isMutRecv = recvPass == MirPassKind.ImplicitThisMut;
+                            var wrapperRead = ReadsReceiverInPlace(method, refCallInv.Instance, refCallInv.Arguments.Length) ? BeginWrapperRead(refCallInv.Instance) : null;
                             var recvPlace = LowerPlaceOrMaterializeTemp(
                                 refCallInv.Instance,
                                 recvMirT,
                                 isMutRecv,
                                 recvSpan,
                                 isTwoPhaseBorrow: isMutRecv && refCallInv.Arguments.Length > 0);
+                            EndWrapperRead(wrapperRead);
                             if (refCallInv.Arguments.Length > 0)
                             {
                                 recvPlace = ReserveReceiverPlaceBeforeArgs(
@@ -4743,7 +4767,7 @@ internal sealed partial class CfgMirLowerer
                                     isTwoPhaseBorrow: isMutRecv,
                                     recvSpan);
                             }
-                            callArgs.Add(new MirCallArg(recvPass.Value, null, recvPlace, recvSpan));
+                            callArgs.Add(WithCallHold(new MirCallArg(recvPass.Value, null, recvPlace, recvSpan), wrapperRead));
                         }
                         var explicitArgs = OrderCallArguments(refCallInv.Arguments, method.Parameters, span, recvPass == MirPassKind.ImplicitThisMut);
                         callArgs.AddRange(explicitArgs);
@@ -4797,15 +4821,19 @@ internal sealed partial class CfgMirLowerer
     // Call the returned function after lowering the arguments.
     private Func<MirOperand> ReserveReceiverOperandBeforeArgs(IOperation instance, MirType recvT, VibraniumSpan span)
     {
+        // A flow capture hands over the hold of a Copy wrapper it read before a branching argument.
+        var wrapperRead = BeginWrapperRead(instance);
         if (!CanLowerAsDirectPlace(instance))
         {
             var operand = LowerOperand(instance, recvT);
-            return () => operand;
+            EndWrapperRead(wrapperRead);
+            return () => KeepCallHold(wrapperRead, operand, span);
         }
         if (!_module.IsCopy(recvT))
         {
             int temp = CreateTempLocal(recvT, span);
             var value = LowerOperand(instance, recvT);
+            EndWrapperRead(wrapperRead);
             // A capture that moved the receiver before a branching argument already holds it.
             int? held = UnwrapImplicitIdentityConversion(instance) is IFlowCaptureReferenceOperation fcr &&
                 _captures.TryGetValue(fcr.Id, out var capture) ? capture.MovedPlaceLocalId : null;
@@ -4817,9 +4845,135 @@ internal sealed partial class CfgMirLowerer
             var moved = new MirOperand.CopyOrMove(MirPlace.Local(temp), recvT, span) { ReleasesMovedPlace = held };
             return () => moved;
         }
-        var reserved = ReserveReceiverPlaceBeforeArgs(LowerPlace(instance, isMutableAccess: false), recvT, isMutable: false, isTwoPhaseBorrow: false, span);
-        return () => new MirOperand.CopyOrMove(reserved, recvT, span);
+        var reservedBase = LowerPlace(instance, isMutableAccess: false);
+        EndWrapperRead(wrapperRead);
+        var reserved = ReserveReceiverPlaceBeforeArgs(reservedBase, recvT, isMutable: false, isTwoPhaseBorrow: false, span);
+        return () => KeepCallHold(wrapperRead, new MirOperand.CopyOrMove(reserved, recvT, span), span);
     }
+
+    // N90: C# reads a Core wrapper's payload (`s.Value`, `k.Value`, `e.Error`) — or a value-type field chain inside it —
+    // that is a struct receiver or an `in` argument in place, after the later arguments, while MIR copies it before them.
+    // The wrapper stays borrowed until the call (and through any ref/view return): a Copy wrapper by an analysis-only
+    // shared hold, a !Copy one, which the copy moves, by a D1-W hold.
+    private sealed class CallHold
+    {
+        public IFieldReferenceOperation? Field;
+        public int? Hold;
+        public int? Held;
+    }
+
+    private readonly Dictionary<IFieldReferenceOperation, CallHold> _pendingWrapperReads = new();
+
+    // Call before lowering `op` and EndWrapperRead after it. A flow capture hands over the read it lowered.
+    private CallHold? BeginWrapperRead(IOperation op)
+    {
+        op = UnwrapImplicitIdentityConversion(op);
+        if (op is IFlowCaptureReferenceOperation fcr && _captures.TryGetValue(fcr.Id, out var capture))
+        {
+            var captured = capture.Hold;
+            capture.Hold = null;
+            return captured;
+        }
+        IFieldReferenceOperation? deepestWrapper = null;
+        while (op is IFieldReferenceOperation { Instance: { } inst } field)
+        {
+            if (IsWrapperFieldUnwrap(field))
+            {
+                deepestWrapper = field;
+            }
+            else if (SubstituteType(inst.Type) is not { IsValueType: true })
+            {
+                break;
+            }
+            op = UnwrapImplicitIdentityConversion(inst);
+        }
+        if (deepestWrapper is null)
+        {
+            return null;
+        }
+        var read = new CallHold { Field = deepestWrapper };
+        _pendingWrapperReads[deepestWrapper] = read;
+        return read;
+    }
+
+    private void EndWrapperRead(CallHold? read)
+    {
+        if (read?.Field is { } field) _pendingWrapperReads.Remove(field);
+    }
+
+    private MirOperand NoteWrapperRead(IFieldReferenceOperation field, MirOperand wrapper)
+    {
+        if (!_pendingWrapperReads.TryGetValue(field, out var read) || !_pendingWrapperReads.Remove(field) ||
+            wrapper is not MirOperand.CopyOrMove { Place.LocalId: >= 0 } copy)
+        {
+            return wrapper;
+        }
+        // A Copy wrapper is read through a snapshot: hold the place that the snapshot copied.
+        var place = copy.Place;
+        if (_currentStmts.Count > 0 &&
+            _currentStmts[_currentStmts.Count - 1] is MirStatement.Assign
+            { Target: { Projections.Count: 0 } snapshot, Rvalue: MirRvalue.Use { Operand: MirOperand.CopyOrMove source } } &&
+            place.Projections.Count == 0 && snapshot.LocalId == place.LocalId && _module.IsCopy(copy.Type))
+        {
+            place = source.Place;
+        }
+        if (place.LocalId < 0 || place.Projections.Count == 0 && _locals[place.LocalId].IsCompilerTemp)
+        {
+            return wrapper;
+        }
+        if (!_module.IsCopy(copy.Type))
+        {
+            return HoldMovedPlace(wrapper, out read.Held);
+        }
+        int hold = CreateTempRefLocal(copy.Type, isMutable: false, copy.Span, "__wrap_hold", isCallHold: true);
+        _currentStmts.Add(new MirStatement.BindRef(hold, false, place, copy.Span));
+        read.Hold = hold;
+        return wrapper;
+    }
+
+    // A built-in reads its receiver operand at the intrinsic, after the arguments, which are values by then.
+    private MirOperand KeepCallHold(CallHold? read, MirOperand receiver, VibraniumSpan span)
+    {
+        KeepCallHold(read, span);
+        if (read?.Held is int held && receiver is MirOperand.CopyOrMove cm && cm.ReleasesMovedPlace is null)
+        {
+            return cm with { ReleasesMovedPlace = held };
+        }
+        return receiver;
+    }
+
+    private void KeepCallHold(CallHold? read, VibraniumSpan span)
+    {
+        if (read?.Hold is int hold)
+        {
+            _currentStmts.Add(new MirStatement.KeepAnalysisBorrow(hold, span));
+        }
+    }
+
+    private static void AddGetterIndexArgs(List<MirCallArg> getArgs, List<MirCallArg> evalIdxArgs)
+    {
+        // A compound update reuses these arguments for the setter. Only the setter may release the moved wrapper;
+        // the getter can read it, but the RHS can still change the slot before the setter reads it again.
+        foreach (var arg in evalIdxArgs)
+        {
+            getArgs.Add(arg.ReleasesMovedPlace is null ? arg : arg with { ReleasesMovedPlace = null });
+        }
+    }
+
+    private static MirCallArg WithCallHold(MirCallArg arg, CallHold? read) =>
+        read is null ? arg : arg with { Hold = read.Hold, ReleasesMovedPlace = read.Held };
+
+    // F14 and N90: C# passes a struct receiver of a `readonly` member by reference and reads it after the arguments
+    // (or returns a reference or view borrowing it).
+    private bool ReadsReceiverInPlace(IMethodSymbol method, IOperation? instance, int argCount) =>
+        instance is not null && !method.IsStatic &&
+        (argCount > 0 ||
+         ((method.ReturnsByRef || method.ReturnsByRefReadonly ||
+           (!method.ReturnsVoid && _module.IsViewLike(MapMirType(SubstituteType(method.ReturnType))))) &&
+          (VibraniumSymbolHelpers.HasUnscopedRefAttribute(method) ||
+           (method.AssociatedSymbol is IPropertySymbol assocProp && VibraniumSymbolHelpers.HasUnscopedRefAttribute(assocProp))))) &&
+        VibraniumSymbolHelpers.GetReceiverPassKind(method) == MirPassKind.ImplicitThisShared &&
+        SubstituteType(instance.Type) is { IsValueType: true };
 
     // D1-W: C# reads a moved receiver's place only after the arguments, so the moved local is held until then: an
     // argument that writes it is VIB003, while any other use of it stays a use of a moved value (VIB001).
@@ -5125,15 +5279,20 @@ internal sealed partial class CfgMirLowerer
                 bool needMutRecv = getRecvPass == MirPassKind.ImplicitThisMut || setRecvPass == MirPassKind.ImplicitThisMut;
                 var recvMirT = MapMirType(SubstituteType(propRef.Instance.Type));
                 var recvSpan = VibraniumSymbolHelpers.ToVibraniumSpan(propRef.Instance.Syntax);
+                var wrapperRead = !info.NeedsOldValueRead &&
+                    ReadsReceiverInPlace(substSetter, propRef.Instance, substSetter.Parameters.Length)
+                    ? BeginWrapperRead(propRef.Instance) : null;
                 var recvPlace = needMutRecv
                     ? LowerPlace(propRef.Instance, isMutableAccess: true, isTwoPhaseBorrow: true)
                     : LowerPlaceOrMaterializeTemp(propRef.Instance, recvMirT, isMutableAccess: false, recvSpan);
+                EndWrapperRead(wrapperRead);
                 recvPlace = ReserveReceiverPlaceBeforeArgs(recvPlace, recvMirT, isMutable: needMutRecv, isTwoPhaseBorrow: needMutRecv, recvSpan);
 
                 info.GetRecvPass = getRecvPass;
                 info.SetRecvPass = setRecvPass;
                 info.CapturedRecvPlace = recvPlace;
                 info.CapturedRecvSpan = recvSpan;
+                info.Hold = wrapperRead;
             }
 
             var idxParams = substSetter.Parameters.Take(substSetter.Parameters.Length - 1).ToImmutableArray();
@@ -5149,7 +5308,7 @@ internal sealed partial class CfgMirLowerer
                 {
                     getArgs.Add(new MirCallArg(getPass, null, getRecv, info.CapturedRecvSpan));
                 }
-                getArgs.AddRange(evalIdxArgs);
+                AddGetterIndexArgs(getArgs, evalIdxArgs);
                 _currentStmts.Add(new MirStatement.Call(
                     MirPlace.Local(info.PrimaryLocalId),
                     null,
@@ -5348,6 +5507,7 @@ internal sealed partial class CfgMirLowerer
         }
 
         MirPlace borrowPlace;
+        CallHold? hold = null;
         if (passKind == MirPassKind.Out && valueExpr is IDeclarationExpressionOperation { Expression: ILocalReferenceOperation outLr })
         {
             int outId = GetOrCreateLocalId(outLr.Local, isPatternBindingOverride: null);
@@ -5360,7 +5520,9 @@ internal sealed partial class CfgMirLowerer
         }
         else if (passKind == MirPassKind.In)
         {
+            hold = BeginWrapperRead(valueExpr);
             borrowPlace = LowerPlaceOrMaterializeTemp(valueExpr, pType, isMutableAccess: false, argSpan);
+            EndWrapperRead(hold);
             if (hasSubsequentExplicitArgs)
             {
                 borrowPlace = ReserveReceiverPlaceBeforeArgs(borrowPlace, pType, isMutable: false, isTwoPhaseBorrow: false, argSpan);
@@ -5373,14 +5535,20 @@ internal sealed partial class CfgMirLowerer
             {
                 EmitDiag(VibraniumDiagnosticIds.MutateThroughSharedBorrow, $"Cannot pass captured primary-constructor parameter '{argPr.Parameter.Name}' by '{(passKind == MirPassKind.Out ? "out" : "ref")}'.", argSpan);
             }
+            // N116: the hold an `out` target capture took before a branching later argument ends here, where the
+            // argument's own borrow takes over.
+            var outHold = BeginWrapperRead(valueExpr);
             borrowPlace = LowerPlace(valueExpr, isMutableAccess: true, isTwoPhaseBorrow: true);
+            EndWrapperRead(outHold);
+            KeepCallHold(outHold, argSpan);
         }
+        // N116: an `out` target is borrowed exclusively until the call returns, so later arguments cannot use it.
         if (hasSubsequentExplicitArgs && passKind is MirPassKind.Ref or MirPassKind.Out)
         {
             borrowPlace = ReserveReceiverPlaceBeforeArgs(borrowPlace, pType, isMutable: true,
-                isTwoPhaseBorrow: true, argSpan, isOut: passKind == MirPassKind.Out);
+                isTwoPhaseBorrow: passKind == MirPassKind.Ref, argSpan, isOut: passKind == MirPassKind.Out);
         }
-        return new MirCallArg(passKind, null, borrowPlace, argSpan);
+        return WithCallHold(new MirCallArg(passKind, null, borrowPlace, argSpan), hold);
     }
 
     private List<MirCallArg> OrderCallArguments(
@@ -5423,6 +5591,7 @@ internal sealed partial class CfgMirLowerer
         {
             explicitArgs.Insert(0, reducedExtensionReceiverArg);
         }
+        CheckOutDeclarationsUnusedByLaterArgs(explicitArgs);
 
         bool hasOutOfOrderNamedArgs = false;
         for (int idx = 1; idx < explicitArgs.Count; idx++)
@@ -5498,6 +5667,41 @@ internal sealed partial class CfgMirLowerer
         }
 
         return result;
+    }
+
+    // N116: an `out var` declared in an argument is borrowed until the call returns, so a later argument may not name it.
+    // Roslyn evaluates the declaration after a branching later argument, so no MIR borrow spans that argument.
+    private void CheckOutDeclarationsUnusedByLaterArgs(List<IArgumentOperation> args)
+    {
+        for (int i = 0; i < args.Count - 1; i++)
+        {
+            if (args[i].Parameter?.RefKind != RefKind.Out ||
+                args[i].Value is not IDeclarationExpressionOperation { Expression: ILocalReferenceOperation { Local: var declared } })
+            {
+                continue;
+            }
+            for (int j = i + 1; j < args.Count; j++)
+            {
+                // A direct ref/out/in argument of the same call (`F(out int y, out y)`) is an overlapping
+                // call borrow (VIB002, N68), already reported by CheckOverlappingCallBorrows.
+                if (args[j].Parameter?.RefKind is RefKind.Ref or RefKind.Out or RefKind.In &&
+                    UnwrapImplicitIdentityConversion(args[j].Value) is ILocalReferenceOperation { Local: var directArgLocal } &&
+                    SymbolEqualityComparer.Default.Equals(directArgLocal, declared))
+                {
+                    continue;
+                }
+                foreach (var use in args[j].Syntax.DescendantNodesAndSelf().OfType<IdentifierNameSyntax>())
+                {
+                    if (use.Identifier.ValueText == declared.Name &&
+                        SymbolEqualityComparer.Default.Equals(_compilation.GetSemanticModel(use.SyntaxTree).GetSymbolInfo(use).Symbol, declared))
+                    {
+                        EmitDiag(VibraniumDiagnosticIds.ConflictWithActiveBorrow,
+                            $"Cannot use '{declared.Name}' while the 'out' argument that declares it is borrowed for the call.",
+                            VibraniumSymbolHelpers.ToVibraniumSpan(use));
+                    }
+                }
+            }
+        }
     }
 
     private bool TryMakeConstantOperand(
@@ -5755,7 +5959,7 @@ internal sealed partial class CfgMirLowerer
             IsCompilerTemp: true,
             span));
 
-    private int CreateTempRefLocal(MirType targetType, bool isMutable, VibraniumSpan span, string prefix = "__ref", bool isSwitchMatchBorrow = false) =>
+    private int CreateTempRefLocal(MirType targetType, bool isMutable, VibraniumSpan span, string prefix = "__ref", bool isSwitchMatchBorrow = false, bool isCallHold = false) =>
         AddLocal(new MirLocal(
             _locals.Count,
             $"{prefix}_{_tempCounter++}",
@@ -5769,7 +5973,8 @@ internal sealed partial class CfgMirLowerer
             IsPatternBinding: false,
             IsCompilerTemp: true,
             span,
-            IsSwitchMatchBorrow: isSwitchMatchBorrow));
+            IsSwitchMatchBorrow: isSwitchMatchBorrow,
+            IsCallHold: isCallHold));
 
     private int AddLocal(MirLocal local)
     {

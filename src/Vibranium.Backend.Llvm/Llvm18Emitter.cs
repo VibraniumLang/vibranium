@@ -1431,7 +1431,7 @@ internal sealed class FunctionEmitter(ModuleEmitter mod, MirFunction fn)
 
             case MirStatement.RememberRefRepointLoan:
             case MirStatement.KeepAnalysisBorrow:
-            case MirStatement.BindRef bindRef when _fn.Locals[bindRef.RefLocalId].IsSwitchMatchBorrow:
+            case MirStatement.BindRef bindRef when _fn.Locals[bindRef.RefLocalId].IsAnalysisOnlyBorrow:
                 break;
 
             case MirStatement.BindRef bindRef:

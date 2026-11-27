@@ -79,6 +79,11 @@ internal sealed partial class CfgMirLowerer(
         public int PatternUseCount;
         public bool HoldsMovedPlace;
         public int? MovedPlaceLocalId;
+        // N90 and N116: the capture takes the hold of a wrapper its consumer reads in place, or of the `out` target its
+        // call writes, before the branch; Hold is handed over to that consumer.
+        public bool ReadsWrapperInPlace;
+        public bool HoldsOutTarget;
+        public CallHold? Hold;
     }
 
     private readonly Dictionary<CaptureId, CaptureInfo> _captures = new();
@@ -653,6 +658,8 @@ internal sealed partial class CfgMirLowerer(
         var usedAsScalarCompoundOrIncDecTarget = new HashSet<CaptureId>();
         var usedAsOutArg = new HashSet<CaptureId>();
         var movedReceiverOfCall = new HashSet<CaptureId>();
+        var wrapperReadInPlace = new HashSet<CaptureId>();
+        var capturedPropReceivers = new List<(IPropertyReferenceOperation PropOp, CaptureId PropFcrId)>();
 
         foreach (var block in cfg.Blocks)
         {
@@ -761,6 +768,10 @@ internal sealed partial class CfgMirLowerer(
                                                            UnwrapImplicitIdentityConversion(argOp.Value) is IFlowCaptureReferenceOperation argFcr:
                             usedAsPlaceOrLvalue.Add(argFcr.Id);
                             usedOutsideIsPatternAsPlace.Add(argFcr.Id);
+                            if (VibraniumSymbolHelpers.GetParamPassKind(argOp.Parameter) == MirPassKind.In && IsUserCallTarget(argOp.Parent))
+                            {
+                                wrapperReadInPlace.Add(argFcr.Id);
+                            }
                             if (argOp.Parameter.RefKind is RefKind.Ref or RefKind.Out)
                             {
                                 usedMutablyAsPlace.Add(argFcr.Id);
@@ -773,6 +784,10 @@ internal sealed partial class CfgMirLowerer(
 
                         case IInvocationOperation invOp when invOp.Instance is not null &&
                                                              UnwrapImplicitIdentityConversion(invOp.Instance) is IFlowCaptureReferenceOperation invFcr:
+                            if (ReadsCapturedReceiverInPlace(invOp))
+                            {
+                                wrapperReadInPlace.Add(invFcr.Id);
+                            }
                             if (!IsConsumingByValueReceiverInvocation(invOp))
                             {
                                 usedAsPlaceOrLvalue.Add(invFcr.Id);
@@ -790,6 +805,7 @@ internal sealed partial class CfgMirLowerer(
 
                         case IPropertyReferenceOperation propOp when propOp.Instance is not null &&
                                                                      UnwrapImplicitIdentityConversion(propOp.Instance) is IFlowCaptureReferenceOperation propFcr:
+                            capturedPropReceivers.Add((propOp, propFcr.Id));
                             usedAsPlaceOrLvalue.Add(propFcr.Id);
                             usedOutsideIsPatternAsPlace.Add(propFcr.Id);
                             if (IsMutatingPropertyReceiverUse(propOp, usedMutablyAsPlace))
@@ -929,6 +945,13 @@ internal sealed partial class CfgMirLowerer(
             }
         }
 
+        foreach (var (propOp, propFcrId) in capturedPropReceivers)
+        {
+            if (ReadsCapturedPropertyReceiverInPlace(propOp, usedAsDirectSimpleAssignTarget, usedAsCompoundAssignTarget, usedAsIncDecTarget))
+            {
+                wrapperReadInPlace.Add(propFcrId);
+            }
+        }
         var nonDeclUsingCaptures = new Dictionary<CaptureId, ControlFlowRegion>();
         CollectNonDeclarationUsingCaptures(cfg, cfg.Root, defsByCapture, nonDeclUsingCaptures);
         var mappedNonDeclUsingLocals = new HashSet<int>();
@@ -1115,7 +1138,7 @@ internal sealed partial class CfgMirLowerer(
                             PrimaryLocalId = rLoc,
                             MirType = firstValMirType,
                             IsMutable = reserveMut,
-                            IsTwoPhaseBorrow = reserveMut,
+                            IsTwoPhaseBorrow = reserveMut && !usedAsOutArg.Contains(capId),
                             SingleValueOp = firstVal,
                         };
                         continue;
@@ -1126,6 +1149,7 @@ internal sealed partial class CfgMirLowerer(
                         Kind = CaptureKind.DirectPlace,
                         MirType = firstValMirType,
                         SingleValueOp = firstVal,
+                        HoldsOutTarget = usedAsOutArg.Contains(capId),
                     };
                     continue;
                 }
@@ -1142,7 +1166,7 @@ internal sealed partial class CfgMirLowerer(
                         PrimaryLocalId = rLoc,
                         MirType = firstValMirType,
                         IsMutable = reserveMut,
-                        IsTwoPhaseBorrow = reserveMut,
+                        IsTwoPhaseBorrow = reserveMut && !usedAsOutArg.Contains(capId),
                         SingleValueOp = firstVal,
                     };
                     continue;
@@ -1179,6 +1203,7 @@ internal sealed partial class CfgMirLowerer(
                 MirType = valMirType,
                 PatternUseCount = patternUsesByCapture.TryGetValue(capId, out int patUseCnt) ? patUseCnt : 0,
                 HoldsMovedPlace = defs.Count == 1 && movedReceiverOfCall.Contains(capId) && CanLowerAsDirectPlace(firstVal),
+                ReadsWrapperInPlace = defs.Count == 1 && wrapperReadInPlace.Contains(capId),
             };
         }
 
@@ -1668,6 +1693,81 @@ internal sealed partial class CfgMirLowerer(
     // The Option and Result members that read their receiver after their arguments (F14; D1-W once D1 has moved it).
     private static bool ReadsReceiverAfterArguments(IInvocationOperation invOp) => invOp.TargetMethod.Name is "UnwrapOr" or "Expect";
 
+    // N90: the captured receivers whose lowering takes over a wrapper read (BeginWrapperRead), so a !Copy hold always ends.
+    private bool ReadsCapturedReceiverInPlace(IInvocationOperation invOp)
+    {
+        var owner = SubstituteType(invOp.TargetMethod.ContainingType);
+        if (string.Equals(owner?.ContainingAssembly?.Name, "Vibranium.Core", StringComparison.Ordinal))
+        {
+            if (VibraniumSymbolHelpers.IsVibraniumCoreType(owner, "Option") || VibraniumSymbolHelpers.IsVibraniumCoreType(owner, "Result"))
+            {
+                return ReadsReceiverAfterArguments(invOp);
+            }
+            if (VibraniumSymbolHelpers.IsVibraniumCoreType(owner, "Vec"))
+            {
+                return invOp.TargetMethod.Name == "ReadOnlySlice";
+            }
+        }
+        var method = SubstituteMethod(invOp.TargetMethod);
+        return IsUserCallTarget(invOp) &&
+            (method.IsStatic
+                ? method.Parameters.Length > 0 && VibraniumSymbolHelpers.GetParamPassKind(method.Parameters[0]) == MirPassKind.In
+                : ReadsReceiverInPlace(method, invOp.Instance, invOp.Arguments.Length));
+    }
+
+    private bool ReadsCapturedPropertyReceiverInPlace(
+        IPropertyReferenceOperation propOp,
+        HashSet<CaptureId> directSimpleAssignTargets,
+        HashSet<CaptureId> compoundAssignTargets,
+        HashSet<CaptureId> incDecTargets)
+    {
+        if (!IsUserCallTarget(propOp))
+        {
+            return false;
+        }
+        if (propOp.Property.ReturnsByRef || propOp.Property.ReturnsByRefReadonly)
+        {
+            return propOp.Property.GetMethod is { } refGetter &&
+                ReadsReceiverInPlace(SubstituteMethod(refGetter), propOp.Instance, propOp.Arguments.Length);
+        }
+        IOperation cur = propOp;
+        while (cur.Parent is IConversionOperation conv && SymbolEqualityComparer.Default.Equals(conv.Type, conv.Operand.Type))
+        {
+            cur = conv;
+        }
+        if (cur.Parent is ISimpleAssignmentOperation { IsRef: false } sa && sa.Target == cur ||
+            cur.Parent is IFlowCaptureOperation fc && fc.Value == cur && directSimpleAssignTargets.Contains(fc.Id))
+        {
+            return propOp.Property.SetMethod is { } propSetter &&
+                ReadsReceiverInPlace(SubstituteMethod(propSetter), propOp.Instance, propSetter.Parameters.Length);
+        }
+        if (cur.Parent is ICompoundAssignmentOperation { Target: var caT } && caT == cur ||
+            cur.Parent is IIncrementOrDecrementOperation { Target: var idT } && idT == cur ||
+            cur.Parent is IFlowCaptureOperation fc2 && fc2.Value == cur &&
+            (compoundAssignTargets.Contains(fc2.Id) || incDecTargets.Contains(fc2.Id)))
+        {
+            return false;
+        }
+        return propOp.Property.GetMethod is { } propGetter &&
+            ReadsReceiverInPlace(SubstituteMethod(propGetter), propOp.Instance, propOp.Arguments.Length);
+    }
+
+    // A call, constructor or property of user or Std code, lowered with OrderCallArguments and the user receiver path.
+    private bool IsUserCallTarget(IOperation? call)
+    {
+        var target = call switch
+        {
+            IInvocationOperation inv => inv.TargetMethod,
+            IObjectCreationOperation create => create.Constructor,
+            IPropertyReferenceOperation prop => prop.Property.GetMethod ?? prop.Property.SetMethod,
+            _ => null,
+        };
+        var owner = target?.ContainingType;
+        return owner is not null &&
+            !string.Equals(owner.ContainingAssembly?.Name, "Vibranium.Core", StringComparison.Ordinal) &&
+            IsInCompilationOrVibraniumStd(owner.ContainingAssembly);
+    }
+
     private bool IsConsumingByValueReceiverInvocation(IInvocationOperation invOp)
     {
         var owner = SubstituteType(invOp.TargetMethod.ContainingType);
@@ -1933,6 +2033,13 @@ internal sealed partial class CfgMirLowerer(
             case CaptureKind.DirectPlace:
                 matchPlace = info.ResolvedDirectPlace = LowerPlace(
                     switchSyntax is not null ? UnwrapSwitchSelectorPlace(fc.Value) : fc.Value, isMutableAccess: false);
+                if (info.HoldsOutTarget)
+                {
+                    // N116: no runtime reservation here (the target may be uninitialized); the call reads this hold.
+                    int outHold = CreateTempRefLocal(info.MirType, isMutable: true, span, "__out_hold", isCallHold: true);
+                    _currentStmts.Add(new MirStatement.BindRef(outHold, true, info.ResolvedDirectPlace, span));
+                    info.Hold = new CallHold { Hold = outHold };
+                }
                 break;
 
             case CaptureKind.SetterPropertyOrIndexer:
@@ -1973,7 +2080,11 @@ internal sealed partial class CfgMirLowerer(
                     value = UnwrapSwitchSelectorPlace(value);
                 }
                 int firstStatement = _currentStmts.Count;
+                var wrapperRead = info.ReadsWrapperInPlace ? BeginWrapperRead(value) : null;
                 var rv = LowerRvalue(value, info.MirType);
+                EndWrapperRead(wrapperRead);
+                info.Hold = wrapperRead;
+                info.MovedPlaceLocalId ??= wrapperRead?.Held;
                 if (switchSyntax is not null)
                 {
                     matchPlace = RecoverSwitchMatchPlace(value, rv, firstStatement);
