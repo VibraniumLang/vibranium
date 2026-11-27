@@ -20,8 +20,8 @@ public readonly struct VarBinding
     }
 }
 
-// The natural type of one arm of a conditional or switch expression, and the
-// bindings its inference had in scope for that arm (N106).
+// The natural type of one arm of a conditional/switch or element of a
+// collection literal, and the bindings in scope for it (N106, N112, N115).
 public readonly struct BranchArmFact
 {
     public readonly int TypeId;
@@ -134,12 +134,9 @@ public struct FuncLowerCtx
     public bool InFieldInitializer;
     public int UncheckedDepth;
     public int InferDepth;
-    // > 0 while the conversion classifier types a collection-literal element
-    // again for one candidate type: no operand is visited for its declarations
-    // only (they are lost with the element, N115; a visit per candidate is N112).
-    public int ElementRetypeDepth;
-    // Arm facts of the last natural-type inference of each conditional and
-    // switch expression; a conversion to a target type reads them (N106).
+    // Arm and collection-element facts of the last natural-type inference of
+    // each conditional, switch, and collection expression; conversions and
+    // overload betterness read them without re-typing (N106, N112, N115).
     public IntMap<int> BranchFactSlots;
     public Vec<BranchArmFact> BranchArmFacts;
     public Vec<VarBinding> BranchArmScopes;
@@ -202,7 +199,6 @@ public struct FuncLowerCtx
         InFieldInitializer = false;
         UncheckedDepth = 0;
         InferDepth = 0;
-        ElementRetypeDepth = 0;
         BranchFactSlots = new IntMap<int>(0);
         BranchArmFacts = new Vec<BranchArmFact>();
         BranchArmScopes = new Vec<VarBinding>();
@@ -231,8 +227,8 @@ public struct FuncLowerCtx
         }
     }
 
-    // The arm slots of a conditional (two) or a switch expression (one per arm).
-    // Every inference of the same expression writes the same slots.
+    // The slots of a conditional (two), switch (one per arm), or collection
+    // literal (one per element). Every inference writes the same slots.
     public int BranchFactsFor(int exprId, int armCount)
     {
         int entry = BranchFactSlots.Find(exprId);
@@ -244,7 +240,7 @@ public struct FuncLowerCtx
     }
 
     // Vars[scopeStart..scopeEnd) are the bindings the expression's inference had
-    // pushed when it reached this arm.
+    // pushed when it reached this arm or element.
     public void RecordBranchArm(int slot, int typeId, int scopeStart, int scopeEnd)
     {
         BranchArmFact old = BranchArmFacts[slot];
@@ -7323,7 +7319,7 @@ public static class FuncLowerer
                 // resolution types them and declares its out variables (N111).
                 TypeInfo newInfo = types.Items[newType];
                 var ctorCands = new Vec<int>();
-                if (fctx.ElementRetypeDepth == 0 && n.C > 0 && (newInfo.Kind == TypeKinds.Class || newInfo.Kind == TypeKinds.Struct))
+                if (n.C > 0 && (newInfo.Kind == TypeKinds.Class || newInfo.Kind == TypeKinds.Struct))
                     CollectTypeMethodCandidates(newInfo.A, -1, allowInstance: true, allowStatic: false, isCtor: true, ref fctx, in ast, in bctx, ref ctorCands);
                 if (ctorCands.Count > 0)
                     _ = ResolveBestOverload(ctorCands.AsReadOnlySpan(), newType, -1, 0, 0, n.B, n.C, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out _, out _);
@@ -7627,6 +7623,19 @@ public static class FuncLowerer
             {
                 int natural = InferSwitchNaturalType(exprId, in n, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                 return natural >= 0 ? natural : TypeIds.Error;
+            }
+            case AstKind.ExprCollLit:
+            {
+                int scopeStart = fctx.Vars.Count;
+                int slot = fctx.BranchFactsFor(exprId, n.B);
+                for (int i = 0; i < n.B; i++)
+                {
+                    int elemExpr = ast.Extra[n.A + i];
+                    int elemScopeEnd = fctx.Vars.Count;
+                    int elemType = InferExprType(elemExpr, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+                    fctx.RecordBranchArm(slot + i, elemType, scopeStart, elemScopeEnd);
+                }
+                return TypeIds.Error;
             }
             case AstKind.ExprAssign:
             {
@@ -7932,19 +7941,10 @@ public static class FuncLowerer
                 InferArgumentDeclarations(callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
                 return recvT;
             }
-            if (rti.Kind == TypeKinds.Class || rti.Kind == TypeKinds.Struct)
-            {
-                var imCands = new Vec<int>();
-                CollectTypeMethodCandidates(rti.A, callee.B, allowInstance: true, allowStatic: false, isCtor: false, ref fctx, in ast, in bctx, ref imCands);
-                int bestIm = ResolveBestOverload(imCands.AsReadOnlySpan(), recvT, -1, callee.C, callee.D, callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out _, out int imRetT);
-                if (bestIm >= 0) return imRetT;
-            }
-
-            // Extension method fallback
-            var extCands = new Vec<int>();
-            CollectExtensionCandidates(callee.B, ref fctx, in ast, in bctx, ref extCands);
-            int bestExt = ResolveBestOverload(extCands.AsReadOnlySpan(), -1, recvT, callee.C, callee.D, callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out _, out int extRetT);
-            if (bestExt >= 0) return extRetT;
+            int bestMethod = ResolveMemberMethodCall(in callee, callNode.TokIdx, recvT, callNode.B, argCount, true, false,
+                ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out bool isExtension, out bool amb, out int retT);
+            if (amb && !isExtension) return TypeIds.Error;
+            if (bestMethod >= 0) return retT;
         }
         return TypeIds.Void;
     }
@@ -8071,11 +8071,13 @@ public static class FuncLowerer
 
         var actualArgModes = new Vec<int>(callArgCount);
         var actualArgTypes = new Vec<int>(callArgCount);
+        var actualArgExprs = new Vec<int>(callArgCount);
         if (fromEndSyntax)
         {
             InferOperandDeclarations(idxNode.D, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
             actualArgModes.Push((int)PassMode.ByValue);
             actualArgTypes.Push(TypeIds.I32);
+            actualArgExprs.Push(idxNode.D);
         }
         else
         {
@@ -8083,6 +8085,7 @@ public static class FuncLowerer
             {
                 AstNode cArg = ast.Nodes[ast.Extra[idxNode.B + a]];
                 actualArgModes.Push((int)CallArgBits.Mode(in cArg));
+                actualArgExprs.Push(cArg.B);
                 actualArgTypes.Push(InferCallArgActualType(in cArg, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags));
             }
         }
@@ -8094,6 +8097,7 @@ public static class FuncLowerer
         var appUsesDefaults = new Vec<int>(declTokIdxs.Count);
         var appParamTypes = new Vec<int>(declTokIdxs.Count * stride);
         var appParamModes = new Vec<int>(declTokIdxs.Count * stride);
+        var appParamTypeNodes = new Vec<int>(declTokIdxs.Count * stride);
 
         for (int s = 0; s < declTokIdxs.Count; s++)
         {
@@ -8107,13 +8111,14 @@ public static class FuncLowerer
             int exclTrailing = gId >= 0 ? 0 : 1;
             var candPTypes = new Vec<int>(stride);
             var candPModes = new Vec<int>(stride);
+            var candPTypeNodes = new Vec<int>(stride);
 
             bool okCand;
             int candRetT;
             bool candUsesDef;
             if (fromEndSyntax)
             {
-                okCand = TryEvaluateFromEndIndexerCandidate(repId, exclTrailing, ownerTypeId, in ast, in ta, in names, ref bctx, ref types, ref diags, ref candPTypes, ref candPModes, out candRetT, out candUsesDef);
+                okCand = TryEvaluateFromEndIndexerCandidate(repId, exclTrailing, ownerTypeId, in ast, in ta, in names, ref bctx, ref types, ref diags, ref candPTypes, ref candPModes, ref candPTypeNodes, out candRetT, out candUsesDef);
             }
             else
             {
@@ -8135,6 +8140,7 @@ public static class FuncLowerer
                     ref diags,
                     ref candPTypes,
                     ref candPModes,
+                    ref candPTypeNodes,
                     out candRetT,
                     out candUsesDef,
                     exclTrailing);
@@ -8150,6 +8156,7 @@ public static class FuncLowerer
                 {
                     appParamTypes.Push(candPTypes[k]);
                     appParamModes.Push(candPModes[k]);
+                    appParamTypeNodes.Push(candPTypeNodes[k]);
                 }
             }
         }
@@ -8174,13 +8181,17 @@ public static class FuncLowerer
                         appUsesDefaults[i] != 0,
                         appParamTypes.AsReadOnlySpan().Slice(i * stride, stride),
                         appParamModes.AsReadOnlySpan().Slice(i * stride, stride),
+                        appParamTypeNodes.AsReadOnlySpan().Slice(i * stride, stride),
                         appRepIds[j],
                         appUsesDefaults[j] != 0,
                         appParamTypes.AsReadOnlySpan().Slice(j * stride, stride),
                         appParamModes.AsReadOnlySpan().Slice(j * stride, stride),
+                        appParamTypeNodes.AsReadOnlySpan().Slice(j * stride, stride),
                         -1,
+                        actualArgExprs.AsReadOnlySpan(),
                         actualArgTypes.AsReadOnlySpan(),
                         actualArgModes.AsReadOnlySpan(),
+                        in fctx,
                         in ast,
                         in types))
                     {
@@ -8224,6 +8235,7 @@ public static class FuncLowerer
         ref DiagnosticBag diags,
         ref Vec<int> outParamTypes,
         ref Vec<int> outParamModes,
+        ref Vec<int> outParamTypeNodes,
         out int resolvedRetType,
         out bool usesDefaults)
     {
@@ -8255,8 +8267,10 @@ public static class FuncLowerer
 
         outParamTypes.Push(-1);
         outParamModes.Push((int)PassMode.ByValue);
+        outParamTypeNodes.Push(-1);
         outParamTypes.Push(p0Type);
         outParamModes.Push((int)p0.Mode);
+        outParamTypeNodes.Push(p0.TypeNode);
 
         int elemNode = excludeTrailing > 0
             ? ast.Params[fd.ParamStart + fd.ParamCount - 1].TypeNode
@@ -9155,13 +9169,22 @@ public static class FuncLowerer
         GetActiveUsingSlice(-1, tokIdx, in fctx, in ast, in ta, out int callerUnit, out int curNs, out _, out int uStart, out int uCount);
         if (callerUnit != UnitKinds.App) return false;
 
+        int savedBest = -1;
+        int savedOwnerTid = -1;
+        int savedRetT = TypeIds.Void;
+        var savedOutTypes = new Vec<int>();
+        var exprs = new Vec<int>();
+        var argTypes = new Vec<int>();
+        var modes = new Vec<int>();
+        var seenKeys = new Vec<long>(4);
+        bool seenPrelude = false;
+        bool factsReady = false;
+        bool preludeName = IsOverloadablePreludeName(calleeNameId, in bctx);
         int step = 0;
         while (DeclBinder.TryStepEnclosingNamespace(curNs, ref step, in ast, in names, out int nsCursor))
         {
-            var seenKeys = new Vec<long>(4);
             var tierCands = new Vec<int>(8);
             var tierOwnerTids = new Vec<int>(8);
-            bool hasUsingStaticAtTier = false;
             bool tierHasPrelude = false;
 
             for (int u = 0; u < uCount; u++)
@@ -9185,7 +9208,6 @@ public static class FuncLowerer
                     }
                     if (dup) continue;
                     seenKeys.Push(key);
-                    hasUsingStaticAtTier = true;
                     int prevCount = tierCands.Count;
                     CollectTypeMethodCandidates(stDeclId, calleeNameId, allowInstance: false, allowStatic: true, isCtor: false, ref fctx, in ast, in bctx, ref tierCands);
                     for (int c = prevCount; c < tierCands.Count; c++)
@@ -9193,9 +9215,8 @@ public static class FuncLowerer
                         tierOwnerTids.Push(ast.Types[stDeclId].TypeParamCount > 0 ? stTid : -1);
                     }
                 }
-                else if (bk == 3 && bctx.UsingBoundId[uIdx] == BuiltinStaticIds.Prelude)
+                else if (!seenPrelude && bk == 3 && bctx.UsingBoundId[uIdx] == BuiltinStaticIds.Prelude)
                 {
-                    hasUsingStaticAtTier = true;
                     tierHasPrelude = true;
                 }
             }
@@ -9222,28 +9243,53 @@ public static class FuncLowerer
                         }
                     }
                 }
-                int bestCu = ResolveBestOverloadWithOwners(tierCands.AsReadOnlySpan(), tierOwnerTids.AsReadOnlySpan(), -1, explicitTaStart, explicitTaCount, callArgStart, callArgCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out isAmbiguous, out resolvedRetTypeId, out bestOwnerTypeId, includePreludeCompetitors: true, preludeCalleeNameId: calleeNameId);
-                if (isAmbiguous || bestCu != -1)
-                {
-                    bestFuncDeclOrIntrinsic = bestCu;
-                    return true;
-                }
-                return false;
             }
 
-            if (hasUsingStaticAtTier && (tierCands.Count > 0 || tierHasPrelude))
+            bool includePrelude = preludeName && (tierHasPrelude || (nsCursor == -1 && !seenPrelude));
+            if (tierHasPrelude) seenPrelude = true;
+            if (tierCands.Count == 0 && !includePrelude) continue;
+            if (!factsReady)
             {
-                int bestInner = ResolveBestOverloadWithOwners(tierCands.AsReadOnlySpan(), tierOwnerTids.AsReadOnlySpan(), -1, explicitTaStart, explicitTaCount, callArgStart, callArgCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out isAmbiguous, out resolvedRetTypeId, out bestOwnerTypeId, includePreludeCompetitors: tierHasPrelude, preludeCalleeNameId: calleeNameId);
-                if (isAmbiguous || bestInner != -1)
-                {
-                    bestFuncDeclOrIntrinsic = bestInner;
-                    return true;
-                }
+                fctx.InferDepth += 1;
+                InferCallArgFacts(callArgStart, callArgCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out exprs, out argTypes, out modes);
+                factsReady = true;
             }
+            int varMark = fctx.Vars.Count;
+            int diagMark = diags.Items.Count;
+            int best = ResolveBestOverloadWithPrecomputedArgs(tierCands.AsReadOnlySpan(), tierOwnerTids.AsReadOnlySpan(), -1, -1,
+                explicitTaStart, explicitTaCount, callArgStart, exprs.AsReadOnlySpan(), argTypes.AsReadOnlySpan(), modes.AsReadOnlySpan(),
+                ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out isAmbiguous, out int retType, out int ownerType,
+                out bool anyApplicableHasTypeParam, out Vec<int> outTypes, includePrelude, calleeNameId);
+            if (savedBest != -1)
+            {
+                fctx.Vars.Truncate(varMark);
+                diags.Items.Truncate(diagMark);
+                isAmbiguous = anyApplicableHasTypeParam && (isAmbiguous || (best != -1 && (best != savedBest || ownerType != savedOwnerTid)));
+                if (isAmbiguous) break;
+                continue;
+            }
+            if (isAmbiguous) break;
+            if (best == -1) continue;
+            savedBest = best;
+            savedOwnerTid = ownerType;
+            savedRetT = retType;
+            savedOutTypes = outTypes;
+            if (fctx.TpNames.Count == 0 || nsCursor == -1) break;
         }
 
-        return false;
+        if (factsReady) fctx.LeaveSpeculativeInfer();
+        if (isAmbiguous) return true;
+        if (savedBest == -1) return false;
+        bestFuncDeclOrIntrinsic = savedBest;
+        bestOwnerTypeId = savedOwnerTid;
+        resolvedRetTypeId = savedRetT;
+        BindInferredOutArgs(callArgStart, callArgCount, savedOutTypes.AsReadOnlySpan(), ref fctx, in ast);
+        return true;
     }
+
+    private static bool IsOverloadablePreludeName(int nameId, in BinderCtx bctx) =>
+        nameId == bctx.IdWrite || nameId == bctx.IdWriteLine || nameId == bctx.IdSome ||
+        nameId == bctx.IdOk || nameId == bctx.IdErr || nameId == bctx.IdMove;
 
     // C# natural type of `c ? e1 : e2` (§12.18, as Roslyn computes it): a
     // branch type is a candidate when the other branch expression converts to
@@ -9351,7 +9397,7 @@ public static class FuncLowerer
     private static void InferOperandDeclarations(int exprId, ref FuncLowerCtx fctx, in AstArena ast,
         in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
     {
-        if (exprId < 0 || fctx.ElementRetypeDepth > 0) return;
+        if (exprId < 0) return;
         AstNode n = ast.Nodes[exprId];
         if (n.Kind == AstKind.ExprRange)
         {
@@ -9367,7 +9413,6 @@ public static class FuncLowerer
     private static void InferArgumentDeclarations(int argStart, int argCount, ref FuncLowerCtx fctx, in AstArena ast,
         in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
     {
-        if (fctx.ElementRetypeDepth > 0) return;
         for (int a = 0; a < argCount; a++)
         {
             AstNode arg = ast.Nodes[ast.Extra[argStart + a]];
@@ -9403,14 +9448,15 @@ public static class FuncLowerer
         if (declares) _ = InferExprType(recvExprId, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
     }
 
-    // Whether every arm of a conditional or switch expression converts
-    // implicitly to targetType, from the arm types and scopes that the last
-    // natural-type inference of the expression recorded. It infers nothing.
+    // Whether every arm of a conditional/switch or element of a collection
+    // literal converts implicitly to targetType, from the types and scopes
+    // recorded by the last natural-type inference. It infers nothing.
     private static int ClassifyBranchArmConversions(int exprId, in AstNode n, int targetType, ref FuncLowerCtx fctx,
         in AstArena ast, in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
     {
+        bool isColl = n.Kind == AstKind.ExprCollLit;
         bool isCond = n.Kind == AstKind.ExprCond;
-        int armCount = isCond ? 2 : n.C;
+        int armCount = isColl ? n.B : (isCond ? 2 : n.C);
         int entry = fctx.BranchFactSlots.Find(exprId);
         if (entry < 0)
         {
@@ -9421,7 +9467,7 @@ public static class FuncLowerer
         int slot = fctx.BranchFactSlots.ValueAt(entry);
         for (int i = 0; i < armCount; i++)
         {
-            int armExpr = isCond ? (i == 0 ? n.B : n.C) : ast.Nodes[ast.Extra[n.B + i]].B;
+            int armExpr = isColl ? ast.Extra[n.A + i] : (isCond ? (i == 0 ? n.B : n.C) : ast.Nodes[ast.Extra[n.B + i]].B);
             BranchArmFact arm = fctx.BranchArmFacts[slot + i];
             int mark = fctx.Vars.Count;
             for (int p = 0; p < arm.ScopeCount; p++) fctx.Vars.Push(fctx.BranchArmScopes[arm.ScopeStart + p]);
@@ -9430,7 +9476,7 @@ public static class FuncLowerer
             fctx.Vars.Truncate(mark);
             if (conversion < 0) return -1;
         }
-        return armCount > 0 ? 1 : -1;
+        return (isColl || armCount > 0) ? 1 : -1;
     }
 
     private static int MergeCommonBranchType(
@@ -10545,36 +10591,18 @@ public static class FuncLowerer
             }
 
             int instRecvT = InferReceiverType(callee.A, out bool instRecvDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-            TypeInfo irti = types.Items[instRecvT];
-            if (irti.Kind == TypeKinds.Class || irti.Kind == TypeKinds.Struct)
+            int methodId = ResolveMemberMethodCall(in callee, tokIdx, instRecvT, callNode.B, argCount, false, instRecvDeclares,
+                ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out bool isExtension, out _, out _);
+            if (methodId >= 0 && (ast.Funcs[methodId].Flags & DeclFlags.ReturnsByRef) != 0)
             {
-                var imCands = new Vec<int>();
-                CollectTypeMethodCandidates(irti.A, callee.B, allowInstance: true, allowStatic: false, isCtor: false, ref fctx, in ast, in bctx, ref imCands);
-                EnterReceiverScope(callee.A, instRecvDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-                int imId = ResolveBestOverload(imCands.AsReadOnlySpan(), instRecvT, -1, callee.C, callee.D, callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out bool imAmb, out _);
-                fctx.LeaveSpeculativeInfer();
-                if (imId >= 0 && (ast.Funcs[imId].Flags & DeclFlags.ReturnsByRef) != 0)
-                {
-                    PassMode recvMode = DeclBinder.GetReceiverPassMode(ast.Funcs[imId], instRecvT, in ast, in types, bctx.IdDispose);
-                    bool useTwoPhase = recvMode == PassMode.ThisMut && (argCount > 0 || isTwoPhase);
-                    int recvPl = LowerPlaceOrTemp(callee.A, instRecvT, recvMode == PassMode.ThisMut, useTwoPhase, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
-                    if (argCount > 0)
-                    {
-                        recvPl = ReserveReceiverPlace(recvPl, instRecvT, recvMode == PassMode.ThisMut, useTwoPhase, tokIdx, ref fctx, ref mir);
-                    }
-                    return EmitResolvedRefUserCall(imId, instRecvT, recvPl, callee.C, callee.D, callNode.B, argCount, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, useTwoPhase, out targetTypeId);
-                }
-                if (imId >= 0 || imAmb) return -1;
-            }
-
-            var extCands = new Vec<int>();
-            CollectExtensionCandidates(callee.B, ref fctx, in ast, in bctx, ref extCands);
-            EnterReceiverScope(callee.A, instRecvDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-            int extId = ResolveBestOverload(extCands.AsReadOnlySpan(), -1, instRecvT, callee.C, callee.D, callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out _, out _);
-            fctx.LeaveSpeculativeInfer();
-            if (extId >= 0 && (ast.Funcs[extId].Flags & DeclFlags.ReturnsByRef) != 0)
-            {
-                return EmitResolvedRefExtensionCall(extId, callee.A, instRecvT, callee.C, callee.D, callNode.B, argCount, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, isTwoPhase, out targetTypeId);
+                if (isExtension)
+                    return EmitResolvedRefExtensionCall(methodId, callee.A, instRecvT, callee.C, callee.D, callNode.B, argCount, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, isTwoPhase, out targetTypeId);
+                PassMode recvMode = DeclBinder.GetReceiverPassMode(ast.Funcs[methodId], instRecvT, in ast, in types, bctx.IdDispose);
+                bool useTwoPhase = recvMode == PassMode.ThisMut && (argCount > 0 || isTwoPhase);
+                int recvPl = LowerPlaceOrTemp(callee.A, instRecvT, recvMode == PassMode.ThisMut, useTwoPhase, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
+                if (argCount > 0)
+                    recvPl = ReserveReceiverPlace(recvPl, instRecvT, recvMode == PassMode.ThisMut, useTwoPhase, tokIdx, ref fctx, ref mir);
+                return EmitResolvedRefUserCall(methodId, instRecvT, recvPl, callee.C, callee.D, callNode.B, argCount, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, useTwoPhase, out targetTypeId);
             }
         }
         return -1;
@@ -12371,53 +12399,32 @@ public static class FuncLowerer
                 return spanIntrOp;
             }
 
-            // User instance method call (with two-phase borrow reservation before evaluating arguments)
-            if (rti.Kind == TypeKinds.Class || rti.Kind == TypeKinds.Struct)
+            int methodId = ResolveMemberMethodCall(in callee, tokIdx, recvType, callNode.B, argCount, false, recvDeclares,
+                ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out bool isExtension, out bool methodAmb, out _);
+            if (methodAmb)
             {
-                var imCands = new Vec<int>();
-                CollectTypeMethodCandidates(rti.A, callee.B, allowInstance: true, allowStatic: false, isCtor: false, ref fctx, in ast, in bctx, ref imCands);
-                EnterReceiverScope(callee.A, recvDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-                int imId = ResolveBestOverload(imCands.AsReadOnlySpan(), recvType, -1, callee.C, callee.D, callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out bool imAmb, out _);
-                fctx.LeaveSpeculativeInfer();
-                if (imAmb)
+                if (isExtension) diags.ReportTok(VibCodes.Unsupported, tok, "Ambiguous extension method invocation in Vibranium."u8);
+                else diags.ReportTok(VibCodes.Unsupported, tok, "Ambiguous instance method invocation in Vibranium."u8);
+                return mir.AddOperand(new MirOperand(MirOpKinds.ZeroDefault, -1, 0, expectedTypeId >= 0 ? expectedTypeId : TypeIds.Void, tokIdx));
+            }
+            if (methodId >= 0)
+            {
+                int callOp;
+                if (isExtension)
                 {
-                    diags.ReportTok(VibCodes.Unsupported, tok, "Ambiguous instance method invocation in Vibranium."u8);
-                    return mir.AddOperand(new MirOperand(MirOpKinds.ZeroDefault, -1, 0, expectedTypeId >= 0 ? expectedTypeId : TypeIds.Void, tokIdx));
+                    callOp = EmitResolvedExtensionCall(methodId, callee.A, recvType, callee.C, callee.D, callNode.B, argCount, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
                 }
-                if (imId >= 0)
+                else
                 {
-                    PassMode recvMode = DeclBinder.GetReceiverPassMode(ast.Funcs[imId], recvType, in ast, in types, bctx.IdDispose);
+                    PassMode recvMode = DeclBinder.GetReceiverPassMode(ast.Funcs[methodId], recvType, in ast, in types, bctx.IdDispose);
                     bool useTwoPhase = recvMode == PassMode.ThisMut && argCount > 0;
                     int recvPl = LowerPlaceOrTemp(callee.A, recvType, recvMode == PassMode.ThisMut, useTwoPhase, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
                     if (argCount > 0)
-                    {
                         recvPl = ReserveReceiverPlace(recvPl, recvType, recvMode == PassMode.ThisMut, useTwoPhase, tokIdx, ref fctx, ref mir);
-                    }
-                    int imCallOp = EmitResolvedUserCall(imId, recvType, recvPl, callee.C, callee.D, callNode.B, argCount, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, useTwoPhase);
-                    CheckViewReturnAllowedContext(mir.Operands[imCallOp].TypeId, expectedTypeId, tok, ref diags);
-                    return imCallOp;
+                    callOp = EmitResolvedUserCall(methodId, recvType, recvPl, callee.C, callee.D, callNode.B, argCount, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags, useTwoPhase);
                 }
-            }
-
-            // Static extension method fallback when no intrinsic or applicable instance method matched
-            var extCands = new Vec<int>();
-            CollectExtensionCandidates(callee.B, ref fctx, in ast, in bctx, ref extCands);
-            if (extCands.Count > 0)
-            {
-                EnterReceiverScope(callee.A, recvDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-                int extId = ResolveBestOverload(extCands.AsReadOnlySpan(), -1, recvType, callee.C, callee.D, callNode.B, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out bool extAmb, out _);
-                fctx.LeaveSpeculativeInfer();
-                if (extAmb)
-                {
-                    diags.ReportTok(VibCodes.Unsupported, tok, "Ambiguous extension method invocation in Vibranium."u8);
-                    return mir.AddOperand(new MirOperand(MirOpKinds.ZeroDefault, -1, 0, expectedTypeId >= 0 ? expectedTypeId : TypeIds.Void, tokIdx));
-                }
-                if (extId >= 0)
-                {
-                    int extCallOp = EmitResolvedExtensionCall(extId, callee.A, recvType, callee.C, callee.D, callNode.B, argCount, tokIdx, ref fctx, in ast, in ta, ref names, ref bctx, ref types, ref mir, ref diags);
-                    CheckViewReturnAllowedContext(mir.Operands[extCallOp].TypeId, expectedTypeId, tok, ref diags);
-                    return extCallOp;
-                }
+                CheckViewReturnAllowedContext(mir.Operands[callOp].TypeId, expectedTypeId, tok, ref diags);
+                return callOp;
             }
         }
 
@@ -12909,26 +12916,28 @@ public static class FuncLowerer
             for (int a = 0; a < callArgCount; a++) argToParam.Push(a);
         }
 
+        var actualArgTypes = new Vec<int>(callArgCount);
+        fctx.InferDepth += 1;
+        for (int a = 0; a < callArgCount; a++)
+        {
+            AstNode argNode = ast.Nodes[ast.Extra[callArgExtraStart + a]];
+            if (CallArgBits.Mode(in argNode) == PassMode.Out && argNode.C < -1 && argNode.C != -2 &&
+                DeclaredOutArgumentTypeNode(in argNode) < 0)
+            {
+                actualArgTypes.Push(TypeIds.Error);
+                continue;
+            }
+            int actualT = InferCallArgActualType(in argNode, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+            actualArgTypes.Push(actualT);
+            if (argNode.C >= 0 && CallArgBits.Mode(in argNode) == PassMode.Out) PushSpeculativeOutArg(in argNode, actualT, ref fctx);
+        }
+        fctx.LeaveSpeculativeInfer();
+
         for (int tp = 0; tp < fd.TypeParamCount; tp++)
         {
             int tpName = ast.Extra[fd.TypeParamStart + tp];
-            int inferred = -1;
-            if (extensionRecvTypeId >= 0 && fd.ParamCount > 0)
-            {
-                inferred = TryInferTypeParamFromNode(ast.Params[fd.ParamStart].TypeNode, extensionRecvTypeId, tpName, in ast, in bctx, in types);
-            }
-            fctx.InferDepth += 1;
-            for (int a = 0; inferred < 0 && a < callArgCount; a++)
-            {
-                int mappedP = argToParam[a];
-                if ((mappedP + extOffset) >= fd.ParamCount) continue;
-                AstNode argNode = ast.Nodes[ast.Extra[callArgExtraStart + a]];
-                if (CallArgBits.Mode(in argNode) == PassMode.Out && argNode.C < -1 && argNode.C != -2) continue;
-                int actualT = InferCallArgActualType(in argNode, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-                if (fctx.ElementRetypeDepth == 0 && argNode.C >= 0 && CallArgBits.Mode(in argNode) == PassMode.Out) PushSpeculativeOutArg(in argNode, actualT, ref fctx);
-                inferred = TryInferTypeParamFromNode(ast.Params[fd.ParamStart + extOffset + mappedP].TypeNode, actualT, tpName, in ast, in bctx, in types);
-            }
-            fctx.LeaveSpeculativeInfer();
+            int inferred = InferMethodTypeParamFromArgs(in fd, extensionRecvTypeId, extOffset, argToParam.AsReadOnlySpan(),
+                callArgExtraStart, callArgCount, actualArgTypes.AsReadOnlySpan(), tpName, in fctx, in ast, in ta, in bctx, in types);
             if (inferred < 0) inferred = TypeIds.I32;
             if (types.IsLinear(inferred, in ast))
             {
@@ -13678,6 +13687,125 @@ public static class FuncLowerer
         }
     }
 
+    private static int ResolveMemberMethodCall(in AstNode callee, int tokIdx, int recvType, int argStart, int argCount,
+        bool naturalInference, bool recvDeclares, ref FuncLowerCtx fctx, in AstArena ast, in TokenArena ta, in Interner names,
+        ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags, out bool isExtension, out bool isAmbiguous, out int resolvedRetType)
+    {
+        isExtension = false;
+        isAmbiguous = false;
+        resolvedRetType = TypeIds.Void;
+        var instances = new Vec<int>();
+        var extensions = new Vec<int>();
+        TypeInfo recv = types.Items[recvType];
+        if (recv.Kind == TypeKinds.Class || recv.Kind == TypeKinds.Struct)
+            CollectTypeMethodCandidates(recv.A, callee.B, allowInstance: true, allowStatic: false, isCtor: false, ref fctx, in ast, in bctx, ref instances);
+        if (instances.Count == 0)
+        {
+            CollectExtensionCandidates(callee.B, ref fctx, in ast, in bctx, ref extensions);
+            if (extensions.Count == 0) return -1;
+        }
+
+        bool openedReceiverScope = !naturalInference;
+        if (openedReceiverScope) EnterReceiverScope(callee.A, recvDeclares, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
+        fctx.InferDepth += 1;
+        InferCallArgFacts(argStart, argCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags,
+            out Vec<int> exprs, out Vec<int> argTypes, out Vec<int> modes);
+        var owners = new Vec<int>();
+        var inferredOutTypes = new Vec<int>();
+        int best = -1;
+        if (instances.Count > 0)
+        {
+            best = ResolveBestOverloadWithPrecomputedArgs(instances.AsReadOnlySpan(), owners.AsReadOnlySpan(), recvType, -1, callee.C, callee.D,
+                argStart, exprs.AsReadOnlySpan(), argTypes.AsReadOnlySpan(), modes.AsReadOnlySpan(), ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags,
+                out isAmbiguous, out resolvedRetType, out _, out _, out inferredOutTypes, false, -1);
+            if (best >= 0 && fctx.TpNames.Count > 0 && HasConflictingGenericBodyExtension(in callee, tokIdx, recvType, argStart,
+                exprs.AsReadOnlySpan(), argTypes.AsReadOnlySpan(), modes.AsReadOnlySpan(), ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags))
+            {
+                isAmbiguous = true;
+                best = -1;
+                naturalInference = false; // Keep the conflict on the instance tier, not on the fallback.
+            }
+        }
+        if (best < 0 && (!isAmbiguous || naturalInference))
+        {
+            isExtension = true;
+            isAmbiguous = false;
+            // The pre-existing extension fallback retains its candidate set.
+            if (instances.Count > 0) CollectExtensionCandidates(callee.B, ref fctx, in ast, in bctx, ref extensions);
+            if (extensions.Count > 0)
+            {
+                best = ResolveBestOverloadWithPrecomputedArgs(extensions.AsReadOnlySpan(), owners.AsReadOnlySpan(), -1, recvType, callee.C, callee.D,
+                    argStart, exprs.AsReadOnlySpan(), argTypes.AsReadOnlySpan(), modes.AsReadOnlySpan(), ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags,
+                    out isAmbiguous, out resolvedRetType, out _, out _, out inferredOutTypes, false, -1);
+            }
+        }
+        fctx.LeaveSpeculativeInfer();
+        if (best >= 0) BindInferredOutArgs(argStart, argCount, inferredOutTypes.AsReadOnlySpan(), ref fctx, in ast);
+        if (openedReceiverScope) fctx.LeaveSpeculativeInfer();
+        return best;
+    }
+
+    private static bool HasConflictingGenericBodyExtension(in AstNode callee, int tokIdx, int recvType, int argStart,
+        ReadOnlySpan<int> exprs, ReadOnlySpan<int> argTypes, ReadOnlySpan<int> modes, ref FuncLowerCtx fctx, in AstArena ast,
+        in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
+    {
+        var extensions = new Vec<int>();
+        CollectExtensionCandidates(callee.B, ref fctx, in ast, in bctx, ref extensions);
+        if (extensions.Count == 0) return false;
+
+        GetActiveUsingSlice(-1, tokIdx, in fctx, in ast, in ta, out _, out int curNs, out _, out int uStart, out int uCount);
+        var owners = new Vec<int>();
+        int step = 0;
+        while (DeclBinder.TryStepEnclosingNamespace(curNs, ref step, in ast, in names, out int nsCursor))
+        {
+            // In an enclosing namespace, direct extensions take precedence over imported extensions.
+            for (int tier = 0; tier < 2; tier++)
+            {
+                var tierCands = new Vec<int>();
+                for (int i = 0; i < extensions.Count; i++)
+                {
+                    int id = extensions[i];
+                    if (id < 0) continue;
+                    int ownerId = ast.Funcs[id].OwnerDeclId;
+                    if (ownerId < 0) continue;
+                    int ownerNs = ast.Types[ownerId].NsId;
+                    bool visible = tier == 0 ? ownerNs == nsCursor :
+                        IsExtensionImportedAtTier(ownerId, ownerNs, nsCursor, uStart, uCount, in ast, in bctx);
+                    if (!visible) continue;
+                    tierCands.Push(id);
+                    extensions[i] = -1; // A repeated import cannot change this candidate's applicability.
+                }
+                if (tierCands.Count == 0) continue;
+                int varMark = fctx.Vars.Count;
+                int diagMark = diags.Items.Count;
+                int best = ResolveBestOverloadWithPrecomputedArgs(tierCands.AsReadOnlySpan(), owners.AsReadOnlySpan(), -1, recvType, callee.C, callee.D,
+                    argStart, exprs, argTypes, modes, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags,
+                    out bool amb, out _, out _, out bool hasTypeParam, out _, false, -1);
+                fctx.Vars.Truncate(varMark);
+                diags.Items.Truncate(diagMark);
+                if ((amb || best >= 0) && hasTypeParam) return true;
+            }
+        }
+        return false;
+    }
+
+    private static bool IsExtensionImportedAtTier(int ownerId, int ownerNs, int nsCursor, int uStart, int uCount, in AstArena ast, in BinderCtx bctx)
+    {
+        if (nsCursor < 0 && (ownerNs == bctx.IdSystem || ownerNs == bctx.IdVibranium || (bctx.HasStdUnit && ownerNs == bctx.IdVibraniumStd))) return true;
+        for (int i = 0; i < uCount; i++)
+        {
+            int uIdx = ast.Extra[uStart + i];
+            if (uIdx < 0 || uIdx >= bctx.UsingBoundKind.Count) continue;
+            UsingEntry ue = ast.Usings[uIdx];
+            if (ue.EnclosingNsId != nsCursor) continue;
+            int kind = bctx.UsingBoundKind[uIdx];
+            int target = bctx.UsingBoundId[uIdx];
+            if ((ue.Kind == UsingKinds.Namespace && kind == 1 && target == ownerNs) ||
+                (ue.Kind == UsingKinds.Static && kind == 2 && target == ownerId)) return true;
+        }
+        return false;
+    }
+
     private static bool IsMemoryExtensionsCallAllowed(
         int methodNameId,
         int explicitTaStart,
@@ -13755,7 +13883,8 @@ public static class FuncLowerer
         ref Vec<int> appRetTypes,
         ref Vec<int> appUsesDefaults,
         ref Vec<int> appParamTypes,
-        ref Vec<int> appParamModes)
+        ref Vec<int> appParamModes,
+        ref Vec<int> appParamTypeNodes)
     {
         if (calleeNameId == bctx.IdWriteLine && explicitMethodTaCount == 0 && callArgCount == 0)
         {
@@ -13764,6 +13893,7 @@ public static class FuncLowerer
             appUsesDefaults.Push(0);
             appParamTypes.Push(-1);
             appParamModes.Push((int)PassMode.ByValue);
+            appParamTypeNodes.Push(-1);
             return;
         }
 
@@ -13775,7 +13905,7 @@ public static class FuncLowerer
             int roSpanU8 = types.MakeSpan(TypeIds.U8, isReadOnly: true);
             int bestPrelParamT = -1;
             if (CheckSingleNamedArg(in a0, "utf8"u8, in names) &&
-                ClassifyByValueConversionWithCtx(a0.B, argT, roSpanU8, in fctx, in names, in bctx, in ast, in ta, in types) >= 0 &&
+                ClassifyImplicitExpressionConversion(a0.B, argT, roSpanU8, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) >= 0 &&
                 (CallArgBits.NameId(in a0) >= 0 || argT == roSpanU8 || types.Items[argT].Kind == TypeKinds.Span || ast.Nodes[a0.B].Kind == AstKind.ExprCollLit || ast.Nodes[a0.B].Kind == AstKind.ExprUtf8Lit))
             {
                 bestPrelParamT = roSpanU8;
@@ -13800,6 +13930,8 @@ public static class FuncLowerer
                 appParamTypes.Push(bestPrelParamT);
                 appParamModes.Push((int)PassMode.ByValue);
                 appParamModes.Push((int)PassMode.ByValue);
+                appParamTypeNodes.Push(-1);
+                appParamTypeNodes.Push(-1);
             }
             return;
         }
@@ -13811,6 +13943,7 @@ public static class FuncLowerer
             appUsesDefaults.Push(0);
             appParamTypes.Push(-1);
             appParamModes.Push((int)PassMode.ByValue);
+            appParamTypeNodes.Push(-1);
             return;
         }
 
@@ -13847,6 +13980,8 @@ public static class FuncLowerer
             appParamTypes.Push(tArg);
             appParamModes.Push((int)PassMode.ByValue);
             appParamModes.Push((int)PassMode.ByValue);
+            appParamTypeNodes.Push(-1);
+            appParamTypeNodes.Push(-1);
         }
     }
 
@@ -13976,9 +14111,25 @@ public static class FuncLowerer
         if (candIds.Length == 0 && !includePreludeCompetitors) return -1;
 
         fctx.InferDepth += 1;
-        var actualArgTypes = new Vec<int>(callArgCount);
-        var actualArgModes = new Vec<int>(callArgCount);
-        var actualArgExprs = new Vec<int>(callArgCount);
+        InferCallArgFacts(callArgExtraStart, callArgCount, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags,
+            out Vec<int> actualArgExprs, out Vec<int> actualArgTypes, out Vec<int> actualArgModes);
+        int best = ResolveBestOverloadWithPrecomputedArgs(candIds, perCandOwnerTypeIds, defaultOwnerTypeId, extensionRecvTypeId,
+            explicitMethodTaStart, explicitMethodTaCount, callArgExtraStart, actualArgExprs.AsReadOnlySpan(), actualArgTypes.AsReadOnlySpan(), actualArgModes.AsReadOnlySpan(),
+            ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, out isAmbiguous, out resolvedReturnTypeId,
+            out resolvedOwnerTypeId, out _, out Vec<int> inferredOutTypes, includePreludeCompetitors, preludeCalleeNameId);
+        fctx.LeaveSpeculativeInfer();
+        BindInferredOutArgs(callArgExtraStart, callArgCount, inferredOutTypes.AsReadOnlySpan(), ref fctx, in ast);
+        return best;
+    }
+
+    // Let all tiers share these facts and their left-to-right speculative argument scope.
+    private static void InferCallArgFacts(int callArgExtraStart, int callArgCount, ref FuncLowerCtx fctx, in AstArena ast,
+        in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags,
+        out Vec<int> actualArgExprs, out Vec<int> actualArgTypes, out Vec<int> actualArgModes)
+    {
+        actualArgTypes = new Vec<int>(callArgCount);
+        actualArgModes = new Vec<int>(callArgCount);
+        actualArgExprs = new Vec<int>(callArgCount);
         for (int a = 0; a < callArgCount; a++)
         {
             AstNode cArg = ast.Nodes[ast.Extra[callArgExtraStart + a]];
@@ -13987,9 +14138,33 @@ public static class FuncLowerer
             int actualT = InferCallArgActualType(in cArg, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
             actualArgTypes.Push(actualT);
             // `out T name` declares its variable for the arguments after it.
-            if (fctx.ElementRetypeDepth == 0 && cArg.C >= 0 && CallArgBits.Mode(in cArg) == PassMode.Out) PushSpeculativeOutArg(in cArg, actualT, ref fctx);
+            if (cArg.C >= 0 && CallArgBits.Mode(in cArg) == PassMode.Out) PushSpeculativeOutArg(in cArg, actualT, ref fctx);
         }
+    }
 
+    private static void BindInferredOutArgs(int callArgStart, int callArgCount, ReadOnlySpan<int> inferredOutTypes, ref FuncLowerCtx fctx, in AstArena ast)
+    {
+        if (inferredOutTypes.Length == 0 || fctx.InferDepth == 0) return;
+        int arg = 0;
+        for (int i = 0; i < callArgCount; i++)
+        {
+            AstNode cArg = ast.Nodes[ast.Extra[callArgStart + i]];
+            if (CallArgBits.Mode(in cArg) == PassMode.Out && cArg.C == -1) PushSpeculativeOutArg(in cArg, inferredOutTypes[arg++], ref fctx);
+        }
+    }
+
+    private static int ResolveBestOverloadWithPrecomputedArgs(ReadOnlySpan<int> candIds, ReadOnlySpan<int> perCandOwnerTypeIds, int defaultOwnerTypeId, int extensionRecvTypeId,
+        int explicitMethodTaStart, int explicitMethodTaCount, int callArgExtraStart, ReadOnlySpan<int> actualArgExprs, ReadOnlySpan<int> actualArgTypes, ReadOnlySpan<int> actualArgModes,
+        ref FuncLowerCtx fctx, in AstArena ast, in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags,
+        out bool isAmbiguous, out int resolvedReturnTypeId, out int resolvedOwnerTypeId, out bool anyApplicableHasTypeParam, out Vec<int> inferredOutTypes,
+        bool includePreludeCompetitors, int preludeCalleeNameId)
+    {
+        isAmbiguous = false;
+        resolvedReturnTypeId = TypeIds.Void;
+        resolvedOwnerTypeId = defaultOwnerTypeId;
+        anyApplicableHasTypeParam = false;
+        inferredOutTypes = new Vec<int>();
+        int callArgCount = actualArgTypes.Length;
         int stride = callArgCount + 1;
         var appFuncIds = new Vec<int>(candIds.Length);
         var appOwnerTypeIds = new Vec<int>(candIds.Length);
@@ -13997,6 +14172,7 @@ public static class FuncLowerer
         var appUsesDefaults = new Vec<int>(candIds.Length);
         var appParamTypes = new Vec<int>(candIds.Length * stride);
         var appParamModes = new Vec<int>(candIds.Length * stride);
+        var appParamTypeNodes = new Vec<int>(candIds.Length * stride);
 
         for (int c = 0; c < candIds.Length; c++)
         {
@@ -14004,6 +14180,7 @@ public static class FuncLowerer
             int candOwnerTid = c < perCandOwnerTypeIds.Length ? perCandOwnerTypeIds[c] : defaultOwnerTypeId;
             var candPTypes = new Vec<int>(stride);
             var candPModes = new Vec<int>(stride);
+            var candPTypeNodes = new Vec<int>(stride);
             if (TryEvaluateCandidate(
                 fId,
                 candOwnerTid,
@@ -14012,7 +14189,7 @@ public static class FuncLowerer
                 explicitMethodTaCount,
                 callArgExtraStart,
                 callArgCount,
-                actualArgTypes.AsReadOnlySpan(),
+                actualArgTypes,
                 ref fctx,
                 in ast,
                 in ta,
@@ -14022,6 +14199,7 @@ public static class FuncLowerer
                 ref diags,
                 ref candPTypes,
                 ref candPModes,
+                ref candPTypeNodes,
                 out int candRetT,
                 out bool candUsesDef))
             {
@@ -14033,6 +14211,7 @@ public static class FuncLowerer
                 {
                     appParamTypes.Push(candPTypes[k]);
                     appParamModes.Push(candPModes[k]);
+                    appParamTypeNodes.Push(candPTypeNodes[k]);
                 }
             }
         }
@@ -14046,7 +14225,7 @@ public static class FuncLowerer
                 explicitMethodTaCount,
                 callArgExtraStart,
                 callArgCount,
-                actualArgTypes.AsReadOnlySpan(),
+                actualArgTypes,
                 ref fctx,
                 in ast,
                 in ta,
@@ -14058,7 +14237,8 @@ public static class FuncLowerer
                 ref appRetTypes,
                 ref appUsesDefaults,
                 ref appParamTypes,
-                ref appParamModes);
+                ref appParamModes,
+                ref appParamTypeNodes);
         }
 
         int winIdx = -1;
@@ -14079,13 +14259,17 @@ public static class FuncLowerer
                         appUsesDefaults[i] != 0,
                         appParamTypes.AsReadOnlySpan().Slice(i * stride, stride),
                         appParamModes.AsReadOnlySpan().Slice(i * stride, stride),
+                        appParamTypeNodes.AsReadOnlySpan().Slice(i * stride, stride),
                         appFuncIds[j],
                         appUsesDefaults[j] != 0,
                         appParamTypes.AsReadOnlySpan().Slice(j * stride, stride),
                         appParamModes.AsReadOnlySpan().Slice(j * stride, stride),
+                        appParamTypeNodes.AsReadOnlySpan().Slice(j * stride, stride),
                         extensionRecvTypeId,
-                        actualArgTypes.AsReadOnlySpan(),
-                        actualArgModes.AsReadOnlySpan(),
+                        actualArgExprs,
+                        actualArgTypes,
+                        actualArgModes,
+                        in fctx,
                         in ast,
                         in types))
                     {
@@ -14102,28 +14286,30 @@ public static class FuncLowerer
             if (winIdx < 0) isAmbiguous = true;
         }
 
-        fctx.LeaveSpeculativeInfer();
-        if (winIdx < 0) return -1;
+        if (winIdx < 0)
+        {
+            for (int i = 0; i < appFuncIds.Count; i++)
+            {
+                if (FuncDeclHasTypeParam(appFuncIds[i], in ast)) { anyApplicableHasTypeParam = true; break; }
+            }
+            return -1;
+        }
 
         resolvedReturnTypeId = appRetTypes[winIdx];
         resolvedOwnerTypeId = winIdx < userAppCount ? appOwnerTypeIds[winIdx] : -1;
-        if (fctx.InferDepth > 0)
+        anyApplicableHasTypeParam = FuncDeclHasTypeParam(appFuncIds[winIdx], in ast);
+        if (fctx.InferDepth > 1)
         {
-            ReadOnlySpan<int> winPTypes = appParamTypes.AsReadOnlySpan().Slice(winIdx * stride, stride);
             for (int a = 0; a < callArgCount; a++)
             {
                 AstNode cArg = ast.Nodes[ast.Extra[callArgExtraStart + a]];
-                // An `out var` gets the winner's parameter type; `out T name` is on the stack already.
-                if (CallArgBits.Mode(in cArg) == PassMode.Out && (cArg.C == -1 || fctx.ElementRetypeDepth > 0))
-                {
-                    PushSpeculativeOutArg(in cArg, winPTypes[a + 1], ref fctx);
-                }
+                if (CallArgBits.Mode(in cArg) == PassMode.Out && cArg.C == -1) inferredOutTypes.Push(appParamTypes[winIdx * stride + a + 1]);
             }
         }
         return appFuncIds[winIdx];
     }
 
-    private static bool TryEvaluateCandidate(int funcDeclId, int ownerTypeId, int extensionRecvTypeId, int explicitMethodTaStart, int explicitMethodTaCount, int callArgExtraStart, int callArgCount, ReadOnlySpan<int> actualArgTypes, ref FuncLowerCtx fctx, in AstArena ast, in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags, ref Vec<int> outParamTypes, ref Vec<int> outParamModes, out int resolvedRetType, out bool usesDefaults) => TryEvaluateCandidate(funcDeclId, ownerTypeId, extensionRecvTypeId, explicitMethodTaStart, explicitMethodTaCount, callArgExtraStart, callArgCount, actualArgTypes, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref outParamTypes, ref outParamModes, out resolvedRetType, out usesDefaults, 0);
+    private static bool TryEvaluateCandidate(int funcDeclId, int ownerTypeId, int extensionRecvTypeId, int explicitMethodTaStart, int explicitMethodTaCount, int callArgExtraStart, int callArgCount, ReadOnlySpan<int> actualArgTypes, ref FuncLowerCtx fctx, in AstArena ast, in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags, ref Vec<int> outParamTypes, ref Vec<int> outParamModes, ref Vec<int> outParamTypeNodes, out int resolvedRetType, out bool usesDefaults) => TryEvaluateCandidate(funcDeclId, ownerTypeId, extensionRecvTypeId, explicitMethodTaStart, explicitMethodTaCount, callArgExtraStart, callArgCount, actualArgTypes, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags, ref outParamTypes, ref outParamModes, ref outParamTypeNodes, out resolvedRetType, out usesDefaults, 0);
 
     private static bool TryEvaluateCandidate(
         int funcDeclId,
@@ -14143,6 +14329,7 @@ public static class FuncLowerer
         ref DiagnosticBag diags,
         ref Vec<int> outParamTypes,
         ref Vec<int> outParamModes,
+        ref Vec<int> outParamTypeNodes,
         out int resolvedRetType,
         out bool usesDefaults,
         int excludeTrailingParams)
@@ -14194,18 +14381,8 @@ public static class FuncLowerer
                 for (int tp = 0; tp < fd.TypeParamCount; tp++)
                 {
                     int tpName = ast.Extra[fd.TypeParamStart + tp];
-                    int inferred = -1;
-                    if (isExt)
-                    {
-                        inferred = TryInferTypeParamFromNode(ast.Params[fd.ParamStart].TypeNode, extensionRecvTypeId, tpName, in ast, in bctx, in types);
-                    }
-                    for (int a = 0; inferred < 0 && a < callArgCount; a++)
-                    {
-                        AstNode argNode = ast.Nodes[ast.Extra[callArgExtraStart + a]];
-                        if (CallArgBits.Mode(in argNode) == PassMode.Out && argNode.C < -1 && argNode.C != -2) continue;
-                        int mappedP = argToParam[a];
-                        inferred = TryInferTypeParamFromNode(ast.Params[fd.ParamStart + extOffset + mappedP].TypeNode, actualArgTypes[a], tpName, in ast, in bctx, in types);
-                    }
+                    int inferred = InferMethodTypeParamFromArgs(in fd, isExt ? extensionRecvTypeId : -1, extOffset, argToParam.AsReadOnlySpan(),
+                        callArgExtraStart, callArgCount, actualArgTypes, tpName, in fctx, in ast, in ta, in bctx, in types);
                     if (inferred < 0 || inferred == TypeIds.Error || inferred == TypeIds.Void ||
                         inferred == TypeIds.Utf8Lines || inferred == TypeIds.Utf8ArgEnum)
                     {
@@ -14257,11 +14434,13 @@ public static class FuncLowerer
             }
             outParamTypes.Push(p0Type);
             outParamModes.Push((int)p0.Mode);
+            outParamTypeNodes.Push(p0.TypeNode);
         }
         else
         {
             outParamTypes.Push(-1);
             outParamModes.Push((int)PassMode.ByValue);
+            outParamTypeNodes.Push(-1);
         }
 
         for (int a = 0; a < callArgCount; a++)
@@ -14298,11 +14477,14 @@ public static class FuncLowerer
             else // PassMode.Out
             {
                 if (argMode != PassMode.Out) return false;
-                if (!IsOutArgCompatibleWithType(in cArg, pType, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags)) return false;
+                if (actualArgTypes[a] != pType &&
+                    !(actualArgTypes[a] < 0 && DeclaredOutArgumentTypeNode(in cArg) < 0 &&
+                      (cArg.C == -1 || IsDiscardOutArgument(in cArg, in fctx, in ast, in names)))) return false;
             }
 
             outParamTypes.Push(pType);
             outParamModes.Push((int)pd.Mode);
+            outParamTypeNodes.Push(pd.TypeNode);
         }
 
         if ((fd.Flags & DeclFlags.IsCtor) != 0)
@@ -14328,70 +14510,277 @@ public static class FuncLowerer
         bool usesDef1,
         ReadOnlySpan<int> pTypes1,
         ReadOnlySpan<int> pModes1,
+        ReadOnlySpan<int> pTypeNodes1,
         int fId2,
         bool usesDef2,
         ReadOnlySpan<int> pTypes2,
         ReadOnlySpan<int> pModes2,
+        ReadOnlySpan<int> pTypeNodes2,
         int extensionRecvTypeId,
+        ReadOnlySpan<int> actualArgExprs,
         ReadOnlySpan<int> actualArgTypes,
         ReadOnlySpan<int> actualArgModes,
+        in FuncLowerCtx fctx,
         in AstArena ast,
         in TypeTable types)
     {
+        int tpc1 = fId1 == -11 ? 1 : (fId1 < 0 ? 0 : ast.Funcs[fId1].TypeParamCount);
+        int tpc2 = fId2 == -11 ? 1 : (fId2 < 0 ? 0 : ast.Funcs[fId2].TypeParamCount);
+        // N119: closed instantiations lose the arguments' open type information.
+        // Decline a winner before conversion votes or tie-breakers can use that substitution.
+        if (fctx.TpNames.Count > 0)
+        {
+            if (tpc1 != 0 || tpc2 != 0) return false;
+            if (extensionRecvTypeId >= 0 && HasGenericBodyN119ParamMismatch(pTypeNodes1[0], fId1, pTypeNodes2[0], fId2, in ast)) return false;
+            for (int p = 0; p < actualArgTypes.Length; p++)
+            {
+                if (HasGenericBodyN119ParamMismatch(pTypeNodes1[p + 1], fId1, pTypeNodes2[p + 1], fId2, in ast)) return false;
+            }
+        }
+
         int betterCount = 0;
         int worseCount = 0;
 
         if (extensionRecvTypeId >= 0)
         {
-            int cmp0 = CompareSingleConversion(extensionRecvTypeId, (PassMode)PassMode.ByValue, pTypes1[0], (PassMode)pModes1[0], pTypes2[0], (PassMode)pModes2[0], in types);
+            int cmp0 = CompareSingleConversion(-1, extensionRecvTypeId, PassMode.ByValue, pTypes1[0], pTypes2[0], in fctx, in ast, in types);
             if (cmp0 > 0) betterCount += 1;
             else if (cmp0 < 0) worseCount += 1;
         }
 
         for (int p = 0; p < actualArgTypes.Length; p++)
         {
-            int cmp = CompareSingleConversion(actualArgTypes[p], (PassMode)actualArgModes[p], pTypes1[p + 1], (PassMode)pModes1[p + 1], pTypes2[p + 1], (PassMode)pModes2[p + 1], in types);
+            int cmp = CompareSingleConversion(actualArgExprs[p], actualArgTypes[p], (PassMode)actualArgModes[p], pTypes1[p + 1], pTypes2[p + 1], in fctx, in ast, in types);
             if (cmp > 0) betterCount += 1;
             else if (cmp < 0) worseCount += 1;
         }
 
-        if (worseCount > 0) return false;
-        if (betterCount > 0) return true;
+        if (betterCount > 0 && worseCount == 0) return true;
+        if (worseCount > 0 && betterCount == 0) return false;
 
-        // Tie-breaker 1: non-generic beats generic
-        int tpc1 = fId1 == -11 ? 1 : (fId1 < 0 ? 0 : ast.Funcs[fId1].TypeParamCount);
-        int tpc2 = fId2 == -11 ? 1 : (fId2 < 0 ? 0 : ast.Funcs[fId2].TypeParamCount);
-        if (tpc1 == 0 && tpc2 > 0) return true;
-        if (tpc1 > 0 && tpc2 == 0) return false;
+        // C# §12.6.4.3 / Roslyn OverloadResolution.cs:2289-2408: non-generic and
+        // MoreSpecificType tie-breakers apply only to identical substituted parameter
+        // type sequences. Optional parameters are cut C12 in v0.2 (Parser.cs:3169,3230),
+        // so usesDefaults is unreachable today; if C12 is ever lifted, this gate must
+        // also compare declared parameter counts per Roslyn OverloadResolution.cs:2352,2748.
+        bool sameParams = extensionRecvTypeId < 0 || pTypes1[0] == pTypes2[0];
+        for (int p = 0; sameParams && p < actualArgTypes.Length; p++) sameParams = pTypes1[p + 1] == pTypes2[p + 1];
+        if (sameParams && usesDef1 == usesDef2)
+        {
+            // Tie-breaker 1 (Roslyn OverloadResolution.cs:2398-2408): non-generic beats generic
+            if (tpc1 == 0 && tpc2 > 0) return true;
+            if (tpc1 > 0 && tpc2 == 0) return false;
 
-        // Tie-breaker 2: no default-arg substitution beats default-arg substitution (if BOTH use defaults -> ambiguous!)
+            // Tie-breaker 1b (Roslyn OverloadResolution.cs:2463-2499,2752-2867):
+            // MoreSpecificType on uninstantiated declared parameter types (method + owner type params,
+            // plus synthetic prelude candidates -10 concrete and -11 bare T).
+            int specBetter = 0;
+            int specWorse = 0;
+            if (extensionRecvTypeId >= 0 && fId1 >= 0 && fId2 >= 0)
+            {
+                int sc0 = CompareMoreSpecificTypeNode(pTypeNodes1[0], fId1, pTypeNodes2[0], fId2, in ast);
+                if (sc0 > 0) specBetter += 1;
+                else if (sc0 < 0) specWorse += 1;
+            }
+            for (int p = 0; p < actualArgTypes.Length; p++)
+            {
+                int sc = CompareMoreSpecificTypeNode(pTypeNodes1[p + 1], fId1, pTypeNodes2[p + 1], fId2, in ast);
+                if (sc > 0) specBetter += 1;
+                else if (sc < 0) specWorse += 1;
+            }
+            if (specBetter > 0 && specWorse == 0) return true;
+            if (specWorse > 0 && specBetter == 0) return false;
+        }
+
+        // Tie-breaker 2 (Roslyn OverloadResolution.cs:2384-2391 [!allSame] and :2447-2461 [allSame hasAll]):
+        // no default-arg substitution beats default-arg substitution (Roslyn runs hasAll before
+        // MoreSpecificType, equivalent here while optional parameters are cut C12).
         if (!usesDef1 && usesDef2) return true;
+        if (usesDef1 && !usesDef2) return false;
+
+        // Tie-breaker 3 (C# 7.2 / Roslyn OverloadResolution.cs:2394,2532-2538,2616-2672 preferValOverIn):
+        // ByValue parameter beats `in` parameter when neither candidate is worse in another position.
+        int valBetter = 0;
+        int valWorse = 0;
+        if (extensionRecvTypeId >= 0)
+        {
+            PassMode m1 = (PassMode)pModes1[0];
+            PassMode m2 = (PassMode)pModes2[0];
+            if (m1 == PassMode.ByValue && m2 == PassMode.In) valBetter += 1;
+            else if (m2 == PassMode.ByValue && m1 == PassMode.In) valWorse += 1;
+        }
+        for (int p = 0; p < actualArgTypes.Length; p++)
+        {
+            PassMode m1 = (PassMode)pModes1[p + 1];
+            PassMode m2 = (PassMode)pModes2[p + 1];
+            if (m1 == PassMode.ByValue && m2 == PassMode.In) valBetter += 1;
+            else if (m2 == PassMode.ByValue && m1 == PassMode.In) valWorse += 1;
+        }
+        return valBetter > 0 && valWorse == 0;
+    }
+
+    private static bool IsTypeParamNode(int nodeId, int fId, in AstArena ast)
+    {
+        if (nodeId < 0 || fId < 0) return false;
+        AstNode n = ast.Nodes[nodeId];
+        if (n.Kind != AstKind.TypeNamed || n.C != 0) return false;
+        if (n.D >= 0 && n.D < ast.TypeRefs.Count && ast.TypeRefs[n.D].PrefixNsId >= 0) return false;
+        FuncDecl fd = ast.Funcs[fId];
+        for (int k = 0; k < fd.TypeParamCount; k++)
+        {
+            if (ast.Extra[fd.TypeParamStart + k] == n.A) return true;
+        }
+        int ownerDecl = fd.OwnerDeclId >= 0 ? fd.OwnerDeclId : fd.LifetimeLexicalOwner;
+        for (int od = ownerDecl; od >= 0; od = ast.Types[od].OwnerDeclId)
+        {
+            TypeDecl td = ast.Types[od];
+            for (int k = 0; k < td.TypeParamCount; k++)
+            {
+                if (ast.Extra[td.TypeParamStart + k] == n.A) return true;
+            }
+        }
         return false;
     }
 
+    private static bool ContainsTypeParamNode(int nodeId, int fId, in AstArena ast)
+    {
+        if (nodeId < 0 || fId < 0) return false;
+        if (IsTypeParamNode(nodeId, fId, in ast)) return true;
+        AstNode n = ast.Nodes[nodeId];
+        if (n.Kind == AstKind.TypeNamed)
+        {
+            for (int k = 0; k < n.C; k++)
+            {
+                if (ContainsTypeParamNode(ast.Extra[n.B + k], fId, in ast)) return true;
+            }
+        }
+        else if (n.Kind == AstKind.TypeNullable || n.Kind == AstKind.TypeArray)
+        {
+            return ContainsTypeParamNode(n.A, fId, in ast);
+        }
+        return false;
+    }
+
+    private static bool FuncDeclHasTypeParam(int fId, in AstArena ast)
+    {
+        if (fId < 0) return fId == -11; // Generic Prelude intrinsic.
+        FuncDecl fd = ast.Funcs[fId];
+        if (fd.TypeParamCount > 0) return true;
+        for (int p = 0; p < fd.ParamCount; p++)
+        {
+            if (ContainsTypeParamNode(ast.Params[fd.ParamStart + p].TypeNode, fId, in ast)) return true;
+        }
+        return false;
+    }
+
+    private static bool ParamContainsTypeParam(int node, int fId, in AstArena ast) =>
+        fId == -11 || (fId >= 0 && ContainsTypeParamNode(node, fId, in ast));
+
+    private static bool HasGenericBodyN119ParamMismatch(int node1, int fId1, int node2, int fId2, in AstArena ast) =>
+        ParamContainsTypeParam(node1, fId1, in ast) || ParamContainsTypeParam(node2, fId2, in ast);
+
+    // C# §12.6.4.3 / Roslyn OverloadResolution.cs:2784-2867:
+    // Compares uninstantiated declared parameter type AST nodes. In the C#
+    // tie-breaker this runs only when the instantiated types match (`sameParams`).
+    private static int CompareMoreSpecificTypeNode(int node1, int fId1, int node2, int fId2, in AstArena ast)
+    {
+        if (fId1 < 0 || fId2 < 0)
+        {
+            // Synthetic prelude candidates (`AppendApplicablePreludeCandidate`):
+            // -11 (`Move<T>`, `Some<T>`, `Ok<T>`, `Err<E>`) declares bare type parameter `T`;
+            // -10 (`Write`, `WriteLine`, 0-arg `Ok`) declares a concrete parameter type.
+            if (fId1 < 0 && fId2 < 0) return 0;
+            if (fId1 < 0)
+            {
+                if (node2 < 0) return 0;
+                if (fId1 == -11) return IsTypeParamNode(node2, fId2, in ast) ? 0 : -1;
+                if (fId1 == -10) return ContainsTypeParamNode(node2, fId2, in ast) ? 1 : 0;
+                return 0;
+            }
+            if (node1 < 0) return 0;
+            if (fId2 == -11) return IsTypeParamNode(node1, fId1, in ast) ? 0 : 1;
+            if (fId2 == -10) return ContainsTypeParamNode(node1, fId1, in ast) ? -1 : 0;
+            return 0;
+        }
+        if (node1 < 0 || node2 < 0) return 0;
+        bool tp1 = IsTypeParamNode(node1, fId1, in ast);
+        bool tp2 = IsTypeParamNode(node2, fId2, in ast);
+        if (!tp1 && tp2) return 1;
+        if (tp1 && !tp2) return -1;
+        if (tp1 && tp2) return 0;
+
+        AstNode n1 = ast.Nodes[node1];
+        AstNode n2 = ast.Nodes[node2];
+        if (n1.Kind == AstKind.TypeNamed && n2.Kind == AstKind.TypeNamed && n1.C == n2.C && n1.C > 0)
+        {
+            int better = 0;
+            int worse = 0;
+            for (int k = 0; k < n1.C; k++)
+            {
+                int cmp = CompareMoreSpecificTypeNode(ast.Extra[n1.B + k], fId1, ast.Extra[n2.B + k], fId2, in ast);
+                if (cmp > 0) better += 1;
+                else if (cmp < 0) worse += 1;
+            }
+            if (better > 0 && worse == 0) return 1;
+            if (worse > 0 && better == 0) return -1;
+            return 0;
+        }
+        if ((n1.Kind == AstKind.TypeNullable && n2.Kind == AstKind.TypeNullable) ||
+            (n1.Kind == AstKind.TypeArray && n2.Kind == AstKind.TypeArray))
+        {
+            return CompareMoreSpecificTypeNode(n1.A, fId1, n2.A, fId2, in ast);
+        }
+
+        // Closed `using` aliases (e.g. `using IntSpan = Span<int>;`, n.C == 0) compared
+        // against `Span<U>` share identical instantiated types under `sameParams`.
+        bool hasTp1 = ContainsTypeParamNode(node1, fId1, in ast);
+        bool hasTp2 = ContainsTypeParamNode(node2, fId2, in ast);
+        if (!hasTp1 && hasTp2) return 1;
+        if (hasTp1 && !hasTp2) return -1;
+        return 0;
+    }
+
     private static int CompareSingleConversion(
+        int argExprId,
         int argType,
         PassMode argMode,
         int t1,
-        PassMode m1,
         int t2,
-        PassMode m2,
+        in FuncLowerCtx fctx,
+        in AstArena ast,
         in TypeTable types)
     {
-        if (t1 == t2)
+        if (t1 == t2) return 0;
+
+        // C# / Roslyn OverloadResolution.cs:2942-2962: `out var`, `out var _`
+        // and untyped `out _` have no argument type and cast no vote.
+        if (argMode == PassMode.Out && argType < 0) return 0;
+
+        if (argExprId >= 0 && ast.Nodes[argExprId].Kind == AstKind.ExprCollLit)
         {
-            if (argMode == PassMode.ByValue)
-            {
-                if (m1 == PassMode.ByValue && m2 == PassMode.In) return 1;
-                if (m2 == PassMode.ByValue && m1 == PassMode.In) return -1;
-            }
-            return 0;
+            return CompareCollectionExpressionConversion(argExprId, t1, t2, in fctx, in ast, in types);
         }
 
-        if (argType >= 0)
+        if (argType > 0 && argType != TypeIds.Error)
         {
             if (argType == t1 && argType != t2) return 1;
             if (argType == t2 && argType != t1) return -1;
+        }
+
+        // First-class span better conversion target (C# 14+): after exact matches,
+        // ReadOnlySpan<E> beats Span<E>, not the other way around. Other span
+        // pairs are incomparable here (v0.2 has no covariant span conversion).
+        TypeInfo ti1 = types.Items[t1];
+        TypeInfo ti2 = types.Items[t2];
+        if ((ti1.Kind == TypeKinds.Span || ti1.Kind == TypeKinds.ReadOnlySpan) &&
+            (ti2.Kind == TypeKinds.Span || ti2.Kind == TypeKinds.ReadOnlySpan))
+        {
+            if (ti1.A == ti2.A)
+            {
+                if (ti1.Kind == TypeKinds.ReadOnlySpan && ti2.Kind == TypeKinds.Span) return 1;
+                if (ti1.Kind == TypeKinds.Span && ti2.Kind == TypeKinds.ReadOnlySpan) return -1;
+            }
+            return 0;
         }
 
         // Specificity: T1 implicitly converts to T2 and T2 does not implicitly convert to T1
@@ -14407,13 +14796,60 @@ public static class FuncLowerer
         return 0;
     }
 
+    // C# 13+ better collection-expression conversion (N112, Roslyn OverloadResolution.cs:3083-3189):
+    // distinct element types compare element-by-element from recorded types; equal element types
+    // prefer ReadOnlySpan<E> over Span<E> (Vec<E> vs Span<E> stays ambiguous).
+    private static int CompareCollectionExpressionConversion(
+        int exprId,
+        int t1,
+        int t2,
+        in FuncLowerCtx fctx,
+        in AstArena ast,
+        in TypeTable types)
+    {
+        TypeInfo ti1 = types.Items[t1];
+        TypeInfo ti2 = types.Items[t2];
+        bool c1 = ti1.Kind == TypeKinds.Span || ti1.Kind == TypeKinds.ReadOnlySpan || ti1.Kind == TypeKinds.Vec;
+        bool c2 = ti2.Kind == TypeKinds.Span || ti2.Kind == TypeKinds.ReadOnlySpan || ti2.Kind == TypeKinds.Vec;
+        if (!c1 || !c2) return 0;
+
+        int e1 = ti1.A;
+        int e2 = ti2.A;
+        if (e1 == e2)
+        {
+            if (ti1.Kind == TypeKinds.ReadOnlySpan && ti2.Kind == TypeKinds.Span) return 1;
+            if (ti1.Kind == TypeKinds.Span && ti2.Kind == TypeKinds.ReadOnlySpan) return -1;
+            return 0;
+        }
+
+        AstNode expr = ast.Nodes[exprId];
+        if (expr.B <= 0) return 0;
+        int entry = fctx.BranchFactSlots.Find(exprId);
+        if (entry < 0) return 0;
+        int slot = fctx.BranchFactSlots.ValueAt(entry);
+        int best = 0;
+        for (int i = 0; i < expr.B; i++)
+        {
+            int elemExpr = ast.Extra[expr.A + i];
+            int elemType = fctx.BranchArmFacts[slot + i].TypeId;
+            int cmp = CompareSingleConversion(elemExpr, elemType, PassMode.ByValue, e1, e2, in fctx, in ast, in types);
+            if (cmp == 0) continue;
+            if (best == 0) best = cmp;
+            else if (best != cmp) return 0;
+        }
+        return best;
+    }
+
     private static bool CanSpecificityConvert(int srcT, int dstT, in TypeTable types)
     {
         if (srcT == dstT) return true;
         if (CanImplicitNumericWiden(srcT, dstT)) return true;
         TypeInfo sti = types.Items[srcT];
         TypeInfo dti = types.Items[dstT];
-        if (sti.Kind == TypeKinds.Span && dti.Kind == TypeKinds.ReadOnlySpan && sti.A == dti.A) return true;
+        if (srcT == TypeIds.NoneUnit && dti.Kind == TypeKinds.Option) return true;
+        if (sti.Kind == TypeKinds.SomeWrap && dti.Kind == TypeKinds.Option && sti.A == dti.A) return true;
+        if (sti.Kind == TypeKinds.OkWrap && dti.Kind == TypeKinds.Result && sti.A == dti.A) return true;
+        if (sti.Kind == TypeKinds.ErrWrap && dti.Kind == TypeKinds.Result && sti.A == dti.B) return true;
         return false;
     }
 
@@ -14434,7 +14870,7 @@ public static class FuncLowerer
         in AstArena ast, in TokenArena ta, in Interner names, ref BinderCtx bctx, ref TypeTable types, ref DiagnosticBag diags)
     {
         AstKind kind = ast.Nodes[arg.B].Kind;
-        if (kind != AstKind.ExprCond && kind != AstKind.ExprSwitch) return -1;
+        if (kind != AstKind.ExprCond && kind != AstKind.ExprSwitch && kind != AstKind.ExprCollLit) return -1;
         var candidates = new Vec<int>();
         if (CheckSingleNamedArg(in arg, "value"u8, in names))
         {
@@ -14456,8 +14892,8 @@ public static class FuncLowerer
             for (int j = 0; j < applicable.Count; j++)
             {
                 if (j == i) continue;
-                if (CompareSingleConversion(TypeIds.Error, PassMode.ByValue, applicable[i], PassMode.ByValue,
-                    applicable[j], PassMode.ByValue, in types) <= 0) { best = false; break; }
+                if (CompareSingleConversion(arg.B, TypeIds.Error, PassMode.ByValue, applicable[i],
+                    applicable[j], in fctx, in ast, in types) <= 0) { best = false; break; }
             }
             if (best) return applicable[i];
         }
@@ -14488,16 +14924,7 @@ public static class FuncLowerer
         if (expression.Kind == AstKind.ExprCollLit)
         {
             if (!collectionTarget) return -1;
-            for (int i = 0; i < expression.B; i++)
-            {
-                int element = ast.Extra[expression.A + i];
-                fctx.ElementRetypeDepth += 1;
-                int elementType = InferExprType(element, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
-                fctx.ElementRetypeDepth -= 1;
-                if (ClassifyImplicitExpressionConversionCore(element, elementType, target.A,
-                    ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags) < 0) return -1;
-            }
-            return 1;
+            return ClassifyBranchArmConversions(expressionId, in expression, target.A, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
         }
         if (expression.Kind == AstKind.ExprCond || expression.Kind == AstKind.ExprSwitch)
         {
@@ -14557,24 +14984,6 @@ public static class FuncLowerer
                 {
                     return 1;
                 }
-            }
-            if (an.Kind == AstKind.ExprCollLit)
-            {
-                if (pti.Kind == TypeKinds.Vec || pti.Kind == TypeKinds.Span || pti.Kind == TypeKinds.ReadOnlySpan)
-                {
-                    if (an.B == 0) return 1;
-                    for (int i = 0; i < an.B; i++)
-                    {
-                        int elemExpr = ast.Extra[an.A + i];
-                        AstNode en = ast.Nodes[elemExpr];
-                        if (en.Kind == AstKind.ExprIntLit && !FitsConstantIntSimple(elemExpr, TypeIds.I32, pti.A, in ast, in ta, in types) && !CanImplicitNumericWiden(TypeIds.I32, pti.A) && pti.A != TypeIds.I32)
-                        {
-                            return -1;
-                        }
-                    }
-                    return 1;
-                }
-                return -1;
             }
             if (FitsConstantIntSimple(argExprId, argTypeId, paramTypeId, in ast, in ta, in types))
             {
@@ -14758,11 +15167,12 @@ public static class FuncLowerer
     {
         if (CallArgBits.Mode(in cArg) == PassMode.Out)
         {
-            if (IsDiscardOutArgument(in cArg, in fctx, in ast, in names) || cArg.C == -1) return -1;
-            if (cArg.C >= 0)
+            int declaredNode = DeclaredOutArgumentTypeNode(in cArg);
+            if (declaredNode >= 0)
             {
-                return DeclBinder.ResolveTypeNode(cArg.C, fctx.TpNames.AsReadOnlySpan(), fctx.TpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false);
+                return DeclBinder.ResolveTypeNode(declaredNode, fctx.TpNames.AsReadOnlySpan(), fctx.TpVals.AsReadOnlySpan(), in ast, in ta, in names, ref bctx, ref types, ref diags, reportLinearErrors: false);
             }
+            if (IsDiscardOutArgument(in cArg, in fctx, in ast, in names) || cArg.C == -1) return -1;
         }
         return InferExprType(cArg.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
     }
@@ -14787,6 +15197,99 @@ public static class FuncLowerer
         }
         int exprTid = InferExprType(cArg.B, ref fctx, in ast, in ta, in names, ref bctx, ref types, ref diags);
         return exprTid == paramTypeId;
+    }
+
+    // C# lower-bound type inference across call arguments, including collection
+    // expressions matched against Span<P>, ReadOnlySpan<P>, or Vec<P>.
+    private static int InferMethodTypeParamFromArgs(
+        in FuncDecl fd,
+        int extensionRecvTypeId,
+        int extOffset,
+        ReadOnlySpan<int> argToParam,
+        int callArgExtraStart,
+        int callArgCount,
+        ReadOnlySpan<int> actualArgTypes,
+        int tpName,
+        in FuncLowerCtx fctx,
+        in AstArena ast,
+        in TokenArena ta,
+        in BinderCtx bctx,
+        in TypeTable types)
+    {
+        var bounds = new Vec<int>();
+        if (extensionRecvTypeId >= 0 && fd.ParamCount > 0)
+        {
+            int r = TryInferTypeParamFromNode(ast.Params[fd.ParamStart].TypeNode, extensionRecvTypeId, tpName, in ast, in bctx, in types);
+            if (r >= 0) bounds.Push(r);
+        }
+        for (int a = 0; a < callArgCount; a++)
+        {
+            int mappedP = argToParam[a];
+            if ((mappedP + extOffset) >= fd.ParamCount) continue;
+            AstNode argNode = ast.Nodes[ast.Extra[callArgExtraStart + a]];
+            if (CallArgBits.Mode(in argNode) == PassMode.Out && argNode.C < -1 && argNode.C != -2 &&
+                DeclaredOutArgumentTypeNode(in argNode) < 0) continue;
+            int paramTypeNode = ast.Params[fd.ParamStart + extOffset + mappedP].TypeNode;
+            if (argNode.B >= 0 && ast.Nodes[argNode.B].Kind == AstKind.ExprCollLit)
+            {
+                CollectCollectionTypeParamBounds(paramTypeNode, argNode.B, tpName, in fctx, in ast, in bctx, in types, ref bounds);
+            }
+            else
+            {
+                int r = TryInferTypeParamFromNode(paramTypeNode, actualArgTypes[a], tpName, in ast, in bctx, in types);
+                if (r >= 0) bounds.Push(r);
+            }
+        }
+        if (bounds.Count == 0) return -1;
+        int best = -1;
+        for (int i = 0; i < bounds.Count; i++)
+        {
+            int cand = bounds[i];
+            bool dup = false;
+            for (int k = 0; k < i; k++) if (bounds[k] == cand) { dup = true; break; }
+            if (dup) continue;
+            bool allConvert = true;
+            for (int j = 0; j < bounds.Count; j++)
+            {
+                if (bounds[j] != cand && ClassifyByValueConversion(-1, bounds[j], cand, in ast, in ta, in types) < 0)
+                {
+                    allConvert = false;
+                    break;
+                }
+            }
+            if (!allConvert) continue;
+            if (best < 0) best = cand;
+            else return -1;
+        }
+        return best;
+    }
+
+    private static void CollectCollectionTypeParamBounds(
+        int paramTypeNode,
+        int collExprId,
+        int tpNameId,
+        in FuncLowerCtx fctx,
+        in AstArena ast,
+        in BinderCtx bctx,
+        in TypeTable types,
+        ref Vec<int> bounds)
+    {
+        if (paramTypeNode < 0) return;
+        AstNode pn = ast.Nodes[paramTypeNode];
+        if (pn.Kind != AstKind.TypeNamed || pn.C != 1) return;
+        if (pn.A != bctx.IdSpan && pn.A != bctx.IdReadOnlySpan && pn.A != bctx.IdVec) return;
+        int elemParamNode = ast.Extra[pn.B];
+        AstNode coll = ast.Nodes[collExprId];
+        if (coll.B <= 0) return;
+        int entry = fctx.BranchFactSlots.Find(collExprId);
+        if (entry < 0) return;
+        int slot = fctx.BranchFactSlots.ValueAt(entry);
+        for (int i = 0; i < coll.B; i++)
+        {
+            int elemType = fctx.BranchArmFacts[slot + i].TypeId;
+            int r = TryInferTypeParamFromNode(elemParamNode, elemType, tpNameId, in ast, in bctx, in types);
+            if (r >= 0) bounds.Push(r);
+        }
     }
 
     private static int TryInferTypeParamFromNode(
@@ -17133,6 +17636,18 @@ public static class FuncLowerer
             return rhsOp;
         }
 
+        // CS8310 is an operand-form check, before intrinsic, user and built-in operator dispatch.
+        // Grouping parentheses are already removed; ??= keeps its parser diagnostic.
+        if (op != TokKind.Eq && op != TokKind.QuestionQuestionEq)
+        {
+            AstNode rhs = ast.Nodes[n.C];
+            if (rhs.A < 0 && (rhs.Kind == AstKind.ExprDefault || rhs.Kind == AstKind.ExprNew))
+            {
+                diags.ReportTok(VibCodes.Unsupported, ta.Tokens[tokIdx], "Compound assignment cannot be applied to an untyped 'default' or target-typed 'new' operand (CS8310)."u8);
+                return mir.AddOperand(new MirOperand(MirOpKinds.IntConst, -1, 0, TypeIds.Void, tokIdx));
+            }
+        }
+
         // `vec += item` -> `vec.Push(item)`, or user `void operator +=` with C# type-directed overload resolution
         if (op == TokKind.PlusEq)
         {
@@ -17208,7 +17723,19 @@ public static class FuncLowerer
                         for (int j = 0; j < appCands.Count; j++)
                         {
                             if (i == j) continue;
-                            int cmp = CompareSingleConversion(rhsT, PassMode.ByValue, appParamTypes[i], PassMode.ByValue, appParamTypes[j], PassMode.ByValue, in types);
+                            int fIdI = appCands[i];
+                            int fIdJ = appCands[j];
+                            int pNodeI = ast.Params[ast.Funcs[fIdI].ParamStart].TypeNode;
+                            int pNodeJ = ast.Params[ast.Funcs[fIdJ].ParamStart].TypeNode;
+                            int cmp = 0;
+                            if (fctx.TpNames.Count == 0 || !HasGenericBodyN119ParamMismatch(pNodeI, fIdI, pNodeJ, fIdJ, in ast))
+                            {
+                                cmp = CompareSingleConversion(n.C, rhsT, PassMode.ByValue, appParamTypes[i], appParamTypes[j], in fctx, in ast, in types);
+                                if (cmp == 0 && appParamTypes[i] == appParamTypes[j])
+                                {
+                                    cmp = CompareMoreSpecificTypeNode(pNodeI, fIdI, pNodeJ, fIdJ, in ast);
+                                }
+                            }
                             if (cmp <= 0)
                             {
                                 beatsAll = false;
