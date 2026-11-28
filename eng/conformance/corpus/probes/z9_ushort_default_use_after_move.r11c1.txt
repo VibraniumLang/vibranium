@@ -1,0 +1,22 @@
+WriteLine(F(3));
+static int F(ushort x)
+{
+    switch (x)
+    {
+        case >= (ushort)0: return 1;
+        default:
+            Vec<int> v = [1];
+            var w = v;
+            return v.Count;
+    }
+}
+
+validity: warn-only
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@8:13 Unreachable code detected
+analyzer: VIB001@10:20 Use of moved value 'v'.
+stage0 check: REJECT VIB001@10:20 Use of moved value 'v'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001 | use of moved value 'x'.
+

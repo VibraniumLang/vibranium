@@ -1,0 +1,39 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <LangVersion>15.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- Vibranium applications do not support assembly- or module-level attributes. -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <WarningsAsErrors>$(WarningsAsErrors);CS0183;CS0184;CS8509;CS8519;CS8520;CS8524;CS8778;CS8793;CS8794;CS8846;CS9191;CS9192;CS9193</WarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="System" />
+    <Using Include="Vibranium" />
+    <Using Include="Vibranium.Prelude" Static="true" />
+    <RuntimeHostConfigurationOption Include="System.IO.DisableFileLocking" Value="true" />
+    <Compile Include="$(MSBuildThisFileDirectory)src/Vibranium.Core/Bootstrap/VibraniumAppBootstrap.cs"
+             Link="obj/__VibraniumAppBootstrap.cs"
+             Visible="false"
+             Condition="'$(OutputType)' == 'Exe'" />
+  </ItemGroup>
+  <Target Name="_VibraniumInjectStdGlobalUsing" BeforeTargets="GenerateGlobalUsings;BeforeCompile;CoreCompile">
+    <ItemGroup Condition="'@(ProjectReference->AnyHaveMetadataValue(&quot;Filename&quot;, &quot;Vibranium.Std&quot;))' == 'true'">
+      <Using Include="Vibranium.Std" />
+      <Using Include="Vibranium.Std.ConsoleIo" Static="true" />
+    </ItemGroup>
+  </Target>
+  <Target Name="_VibraniumInjectAppBootstrap" BeforeTargets="BeforeCompile;CoreCompile" Condition="'$(OutputType)' == 'Exe'">
+    <ItemGroup>
+      <Compile Remove="$(MSBuildThisFileDirectory)src/Vibranium.Core/Bootstrap/VibraniumAppBootstrap.cs" />
+      <Compile Include="$(MSBuildThisFileDirectory)src/Vibranium.Core/Bootstrap/VibraniumAppBootstrap.cs"
+               Link="obj/__VibraniumAppBootstrap.cs"
+               Visible="false" />
+    </ItemGroup>
+  </Target>
+</Project>

@@ -1,0 +1,34 @@
+{
+  "signature": "accept-reject | stage0-accepts | self:VIB000 | unresolved or captured identifier in vibranium.",
+  "category": "regression:O2b",
+  "kind": "accept-reject",
+  "frontends": "stage0-accepts",
+  "ids": "self:VIB000",
+  "msg": "unresolved or captured identifier in vibranium.",
+  "minTags": [
+    "local.decl",
+    "local.underscore",
+    "method.static",
+    "pattern.union",
+    "pattern.var",
+    "switch.guard-false",
+    "switch.no-default",
+    "switch.section-local",
+    "switch.section-no-terminator",
+    "switch.sel.result",
+    "switch.stmt",
+    "type.class",
+    "union.ctor"
+  ],
+  "seed": "4545",
+  "profile": "default",
+  "index": 17201,
+  "plan": "SwitchStmt\u003EUnderscore",
+  "mutations": [
+    "drop-terminator"
+  ],
+  "reduceTests": 54,
+  "sizeBefore": 89,
+  "sizeAfter": 38,
+  "firstSeconds": 2136.6
+}

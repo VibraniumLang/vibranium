@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound expr.cast expr.conditional local.decl local.var localfunc.static pattern.relational span.from-vec span.index-from-end span.nm-parent-while-live span.read span.slice-local span.vec-after-borrow span.vec-slice-call span.write switch.expr switch.expr-no-discard switch.guard-true switch.sel.int
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@15:5 Cannot borrow 'v2' immutably while borrowed by 't3_w'. ; VIB003@15:5 Cannot mutate 'v2' while borrowed by 't3_w'.
+stage0 check: REJECT VIB003@15:5 Cannot borrow 'v2' immutably while borrowed by 't3_w'. ; VIB003@15:5 Cannot mutate 'v2' while borrowed by 't3_w'.
+self check: exit=1 out=[] err=[Program.cs(15,7): error VIB003: Borrow conflicts with an active borrow.|Program.cs(15,11): error VIB003: Cannot mutate through reference while borrowed by another live reference.|Program.cs(18,17): error VIB000: Switch expression must be exhaustive (include a '_' or 'var' catch-all arm) in Vibranium.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{} self-only:{VIB000} | 

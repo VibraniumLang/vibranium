@@ -1,0 +1,19 @@
+WriteLine(Us(1) + Us(4) * 10 + Us(8) * 100);
+static int Us(int p) { int n = 0; Option<int> o = MkI(p); n += o switch { not Some<int> => 3, Some<int>(var v) => v }; n += o.IsSome ? 1000 : 0; return n; }
+static Option<int> MkI(int a) { if (a > 2) return Some(a); return None; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+self-ir-contract: OK
+stage0-O0-needed: libc.so.6
+stage0-ir-contract: OK
+managed run: exit=0 out=[110843|] err=[]
+self-O0 run: exit=0 out=[110843|] err=[]
+stage0-O0 run: exit=0 out=[110843|] err=[]
+

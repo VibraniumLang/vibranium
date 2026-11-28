@@ -1,0 +1,1 @@
+WriteLine(F(new Box(3)));static int F(Box x){switch(x){case Box b:return b.Value;default:Vec<int> v=[1];var w=v;}}public sealed class Box(int value){public int Value=value;}

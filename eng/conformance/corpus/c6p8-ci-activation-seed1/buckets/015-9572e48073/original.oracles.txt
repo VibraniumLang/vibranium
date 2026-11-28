@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int class.primary-ctor func.expr-body local.decl local.var localfunc.static method.instance pattern.combinator pattern.const pattern.is stmt.if stmt.nested-block type.field type.resource using.var view.loop-reassign-move
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@18:167 Cannot move 's' while borrowed by 't'.
+stage0 check: REJECT VIB003@18:167 Cannot move 's' while borrowed by 't'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB003 | cannot move 'x' while borrowed by 'x'.

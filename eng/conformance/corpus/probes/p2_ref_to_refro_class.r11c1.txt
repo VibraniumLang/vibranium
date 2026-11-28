@@ -1,0 +1,24 @@
+WriteLine(C.M());
+public static class C
+{
+    public static int M()
+    {
+        int x = 1;
+        return N(ref x, 0);
+    }
+    public static int N(ref readonly int p, int k) { return p + k; }
+}
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[1|] err=[]
+self-O0 run: exit=0 out=[1|] err=[]
+stage0-O0 run: exit=0 out=[1|] err=[]
+

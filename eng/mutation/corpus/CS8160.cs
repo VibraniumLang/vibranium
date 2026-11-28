@@ -1,0 +1,1 @@
+static ref int F(){var b=new Box(7);return ref b.Value;}public class Box{readonly public int Value;public Box(int x){}}

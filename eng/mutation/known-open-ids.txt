@@ -1,0 +1,12 @@
+# First CS keys under which self (managed vib-self and native vib-stage2) still accepts, or crashes on, a C#-invalid
+# program (docs/MUTATION.md). Every such accept is a defect; this list only keeps CI green while a fix is assigned.
+# Safety-relevant keys are P1 (P0 with an asan memory error or clang-rejected IR), other keys P2 (Known issues).
+# `run-mutation.sh ci --known-open` reports them without failing. Remove a key when its fix lands;
+# eng/mutation/corpus/ then keeps it fixed.
+# Format: KEY  # severity class; status; corpus files self accepts.
+#
+# Empty on candidate c6 (tree6 pre14). The c6 replay (run on pre12, whose vib-self sources and native stage2 are
+# the same as pre14's) rejects, on managed and native self, all 7,658 C#-invalid programs that campaigns 3-5, their
+# repros, the frozen sets and the hand shapes contain; every top-level corpus file is rejected, and the CI gate runs
+# without --known-open. Shapes from campaign-6 that self still accepts (N1-N5) wait in corpus/pending/, which is not
+# gated, until their fixes land; they are not listed here, so new shapes of their keys still fail the gate.

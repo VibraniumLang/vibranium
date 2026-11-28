@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arith.int assign.compound assign.field assign.simple coll.vec cut.struct-piecewise-owned expr.cast expr.compare local.decl local.uninit localfunc.static pattern.const pattern.discard pattern.relational std.intmap struct.local struct.owned-field switch.expr switch.expr-no-discard switch.guard switch.guard-false switch.no-default switch.section-local switch.sel.int switch.sel.unsigned switch.stmt type.field type.struct
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@10:13 Unreachable code detected
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: banned-accepted | analyzer+stage0+self | cut.struct-piecewise-owned | 

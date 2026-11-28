@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arg.ref arith.int assign.compound local.decl localfunc.static param.in span.foreach-ref span.from-vec span.read span.to-rospan span.vec-after-borrow span.vec-slice-call span.write-after-shared
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS9191@16:19 The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+analyzer: VIB003@11:18 Cannot borrow 'v2' mutably while borrowed by 's1'. ; VIB003@11:31 Cannot read 'v2' while exclusively borrowed by 's1'. ; VIB003@11:35 Cannot borrow 'v2' immutably while borrowed by 's1'. ; VIB001@12:23 Use of moved value 's1'. ; VIB001@14:5 Use of moved value 's1'.
+stage0 check: REJECT VIB003@11:18 Cannot borrow 'v2' mutably while borrowed by 's1'. ; VIB003@11:31 Cannot read 'v2' while exclusively borrowed by 's1'. ; VIB003@11:35 Cannot borrow 'v2' immutably while borrowed by 's1'. ; VIB001@12:23 Use of moved value 's1'. ; VIB001@14:5 Use of moved value 's1'.
+self check: exit=1 out=[] err=[Program.cs(16,14): error VIB000: No applicable local function overload in Vibranium.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001,VIB003} self-only:{VIB000} | 

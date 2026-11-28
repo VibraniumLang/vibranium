@@ -1,0 +1,24 @@
+{
+  "signature": "spec-wrong-id | cond.temp-escapes-statement\u002Bview.param-stack-escape\u002Bview.param-stack-scope-exit | view.param-stack-scope-exit\u003Eanalyzer:VIB007 view.param-stack-scope-exit\u003Estage0:VIB007 | expected cond.temp-escapes-statement:VIB007 view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "category": "new:N16",
+  "kind": "spec-wrong-id",
+  "frontends": "cond.temp-escapes-statement\u002Bview.param-stack-escape\u002Bview.param-stack-scope-exit",
+  "ids": "view.param-stack-scope-exit\u003Eanalyzer:VIB007 view.param-stack-scope-exit\u003Estage0:VIB007",
+  "msg": "expected cond.temp-escapes-statement:VIB007 view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "minTags": [
+    "cond.temp-escapes-statement",
+    "local.decl",
+    "localfunc.static",
+    "view.param-stack-escape",
+    "view.param-stack-scope-exit"
+  ],
+  "seed": "7701",
+  "profile": "activation",
+  "index": 2464,
+  "plan": "ViewReturn\u003ECondTemp\u003EPanic",
+  "mutations": [],
+  "reduceTests": 28,
+  "sizeBefore": 76,
+  "sizeAfter": 28,
+  "firstSeconds": 272.4
+}

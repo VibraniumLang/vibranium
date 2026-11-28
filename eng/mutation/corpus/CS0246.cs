@@ -1,0 +1,1 @@
+Span<int>s=[1,2];int n=0;foreach(ref readonly varZz e in s){n+=e+s.Length;}WriteLine(n);

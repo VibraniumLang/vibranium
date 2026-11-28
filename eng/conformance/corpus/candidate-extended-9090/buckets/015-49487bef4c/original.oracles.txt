@@ -1,0 +1,8 @@
+validity: valid
+tags: arg.out arith.int assign.compound assign.simple assign.underscore bcl.tryparse expr.conditional local.decl local.underscore-read localfunc.nested localfunc.static out.var-discard param.underscore span.foreach-ref span.from-vec span.index-from-end span.read span.to-rospan span.vec-after-borrow span.vec-slice-call span.write span.write-after-shared stmt.nested-block
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@21:18 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@21:31 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@21:35 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@22:5 Use of moved value 's3'. ; VIB001@23:12 Use of moved value 's3'. ; VIB001@24:12 Use of moved value 's3'. ; VIB001@24:21 Use of moved value 's3'. ; VIB001@25:23 Use of moved value 's3'. ; VIB001@27:5 Use of moved value 's3'.
+stage0 check: REJECT VIB003@21:18 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@21:31 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@21:35 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@22:5 Use of moved value 's3'. ; VIB001@23:12 Use of moved value 's3'. ; VIB001@24:12 Use of moved value 's3'. ; VIB001@24:21 Use of moved value 's3'. ; VIB001@25:23 Use of moved value 's3'. ; VIB001@27:5 Use of moved value 's3'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001,VIB003 | cannot borrow 'x' mutably while borrowed by 'x'.

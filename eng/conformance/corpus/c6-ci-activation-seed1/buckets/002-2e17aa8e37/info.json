@@ -1,0 +1,22 @@
+{
+  "signature": "spec-wrong-id | view.param-stack-escape\u002Bview.param-stack-scope-exit | view.param-stack-scope-exit\u003Eanalyzer:VIB007 view.param-stack-scope-exit\u003Estage0:VIB007 | expected view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "category": "new:N16",
+  "kind": "spec-wrong-id",
+  "frontends": "view.param-stack-escape\u002Bview.param-stack-scope-exit",
+  "ids": "view.param-stack-scope-exit\u003Eanalyzer:VIB007 view.param-stack-scope-exit\u003Estage0:VIB007",
+  "msg": "expected view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "minTags": [
+    "type.class",
+    "view.param-stack-escape",
+    "view.param-stack-scope-exit"
+  ],
+  "seed": "1",
+  "profile": "activation",
+  "index": 38,
+  "plan": "ViewReturn\u003EStdAppend",
+  "mutations": [],
+  "reduceTests": 11,
+  "sizeBefore": 45,
+  "sizeAfter": 9,
+  "firstSeconds": 30.4
+}

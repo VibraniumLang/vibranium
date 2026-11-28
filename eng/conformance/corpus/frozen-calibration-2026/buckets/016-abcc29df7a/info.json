@@ -1,0 +1,29 @@
+{
+  "signature": "native-build-failure | stage0-O0 |  | undefined reference to fmod",
+  "category": "known:A1",
+  "kind": "native-build-failure",
+  "frontends": "stage0-O0",
+  "ids": "",
+  "msg": "undefined reference to fmod",
+  "minTags": [
+    "arith.float-to-int-cast",
+    "arith.int",
+    "arith.rem-double",
+    "assign.compound",
+    "expr.cast",
+    "local.decl",
+    "local.underscore",
+    "local.underscore-read",
+    "local.var",
+    "localfunc.static",
+    "stmt.nested-block"
+  ],
+  "seed": "2026",
+  "index": 62,
+  "plan": "PatternVar\u003EArith\u003EUnderscore",
+  "mutations": [],
+  "reduceTests": 67,
+  "sizeBefore": 106,
+  "sizeAfter": 38,
+  "firstSeconds": 93.8
+}

@@ -1,0 +1,8 @@
+validity: warn-only
+tags: func.expr-body local.decl local.uninit localfunc.static span.foreach-ref span.from-vec span.to-rospan span.vec-range switch.default switch.section-local switch.sel.option switch.stmt union.ctor
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@16:5 Unreachable code detected
+analyzer: VIB003@11:26 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@11:39 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@11:43 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@12:31 Use of moved value 's3'.
+stage0 check: REJECT VIB003@11:26 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@11:39 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@11:43 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@12:31 Use of moved value 's3'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001,VIB003 | cannot borrow 'x' mutably while borrowed by 'x'.

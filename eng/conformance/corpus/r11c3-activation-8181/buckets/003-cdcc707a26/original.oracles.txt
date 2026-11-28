@@ -1,0 +1,13 @@
+validity: valid
+tags: arith.int assign.compound cut.preprocessor expr.cast expr.compare expr.conditional expr.conditional-arg expr.logical func.expr-body local.decl localfunc.nested localfunc.static
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[1|False|-2|1|False|34|] err=[]
+self-O0 run: exit=0 out=[1|False|-2|1|False|34|] err=[]
+stage0-O0 run: exit=0 out=[1|False|-2|1|False|34|] err=[]
+DISAGREEMENT: banned-accepted | analyzer+stage0+self | cut.preprocessor | 

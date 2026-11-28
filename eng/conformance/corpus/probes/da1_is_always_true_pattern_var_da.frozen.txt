@@ -1,0 +1,7 @@
+validity: warn-only
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS8793@4:9 The given expression always matches the provided pattern.
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(5,12): error VIB001: C# requires this variable or struct field to be definitely assigned before it is read (CS0165/CS0170).|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB001 | c# requires this variable or struct field to be definitely assigned before it is read (csn

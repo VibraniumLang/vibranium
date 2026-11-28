@@ -1,0 +1,28 @@
+WriteLine(F(3));
+static int F(int x)
+{
+    switch (x)
+    {
+        case < 0: return 1;
+        case >= 0: return 2;
+        default:
+            Option<Cell> o = Some(new Cell(2));
+            return Two(o.AsMut(), o.AsMut());
+    }
+}
+static int Two(OptionMut<Cell> a, OptionMut<Cell> b) => a.IsSome ? 1 : 0;
+public sealed class Cell(int v) { public int V = v; }
+
+validity: warn-only
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@9:13 Unreachable code detected
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[2|] err=[]
+self-O0 run: exit=0 out=[2|] err=[]
+stage0-O0 run: exit=0 out=[2|] err=[]
+

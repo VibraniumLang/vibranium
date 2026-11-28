@@ -1,0 +1,9 @@
+validity: valid
+tags: arith.float-nint-const-oob arith.int arith.nint-bounds arith.rem-int arith.rem-unsigned arith.unsigned expr.cast gen.auto-generated-header local.decl method.static type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT VIB000@10:19 Property 'MinValue' is not supported in Vibranium.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: analyzer-vs-stage0 | analyzer+stage0 | analyzer:{} stage0:{VIB000} | 
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB000 | property 'x' is not supported in vibranium.

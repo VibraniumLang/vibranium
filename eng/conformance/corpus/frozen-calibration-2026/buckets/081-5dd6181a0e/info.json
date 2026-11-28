@@ -1,0 +1,27 @@
+{
+  "signature": "accept-reject | stage0-accepts | self:VIB000 | unresolved or captured identifier in vibranium.",
+  "category": "known:O3",
+  "kind": "accept-reject",
+  "frontends": "stage0-accepts",
+  "ids": "self:VIB000",
+  "msg": "unresolved or captured identifier in vibranium.",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "const.class",
+    "func.expr-body",
+    "local.decl",
+    "localfunc.in-class-method",
+    "localfunc.static",
+    "method.static",
+    "type.class"
+  ],
+  "seed": "2026",
+  "index": 609,
+  "plan": "LocalFunc\u003EConst",
+  "mutations": [],
+  "reduceTests": 39,
+  "sizeBefore": 72,
+  "sizeAfter": 39,
+  "firstSeconds": 378.1
+}

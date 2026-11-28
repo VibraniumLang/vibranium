@@ -1,0 +1,14 @@
+H h = new H();
+Span<int> sp = h.V.AsSpan();
+h.V = [7];
+WriteLine(sp[0]);
+sealed class H { public Vec<int> V = [1, 2]; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@3:1 Cannot borrow 'h' immutably while borrowed by 'sp'.
+stage0 check: REJECT VIB003@3:1 Cannot borrow 'h' immutably while borrowed by 'sp'.
+self check: exit=1 out=[] err=[Program.cs(3,5): error VIB003: Borrow conflicts with an active borrow.|]
+

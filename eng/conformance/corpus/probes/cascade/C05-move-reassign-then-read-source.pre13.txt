@@ -1,0 +1,24 @@
+Vec<int> a = [1, 2];
+Vec<int> b = [3, 4, 5];
+Span<int> s = b.AsSpan();
+Span<int> t = s;
+WriteLine(t.Length);
+s = a.AsSpan();
+WriteLine(b[0]);
+WriteLine(s.Length);
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+self-ir-contract: OK
+stage0-O0-needed: libc.so.6
+stage0-ir-contract: OK
+managed run: exit=0 out=[3|3|2|] err=[]
+self-O0 run: exit=0 out=[3|3|2|] err=[]
+stage0-O0 run: exit=0 out=[3|3|2|] err=[]
+

@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound expr.cast expr.conditional local.decl localfunc.static stmt.if-else view.loop-assign-value-receiver view.loop-reassign-call
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@20:171 Cannot read 'b' while exclusively borrowed by 't'. ; VIB003@21:143 Cannot move 's' while it is borrowed by an earlier argument or receiver of the same call.
+stage0 check: REJECT VIB003@20:171 Cannot read 'b' while exclusively borrowed by 't'. ; VIB003@21:143 Cannot move 's' while it is borrowed by an earlier argument or receiver of the same call.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB003 | cannot read 'x' while exclusively borrowed by 'x'.

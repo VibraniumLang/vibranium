@@ -1,0 +1,31 @@
+{
+  "signature": "output-mismatch | self | exit\u002Bstdout\u002Bstderr | self-O0",
+  "category": "new:N19",
+  "kind": "output-mismatch",
+  "frontends": "self",
+  "ids": "exit\u002Bstdout\u002Bstderr",
+  "msg": "self-O0",
+  "minTags": [
+    "local.decl",
+    "localfunc.static",
+    "uswitch.case-guard",
+    "uswitch.exhaustive",
+    "uswitch.nonunion-label",
+    "uswitch.not-case",
+    "uswitch.payload-owner",
+    "uswitch.place",
+    "uswitch.result",
+    "uswitch.stmt",
+    "uswitch.stmt-nonunion-label",
+    "view.move-reassign-source"
+  ],
+  "seed": "1",
+  "profile": "activation",
+  "index": 19,
+  "plan": "UnionSwitch\u003EViewMove\u003EUsing",
+  "mutations": [],
+  "reduceTests": 48,
+  "sizeBefore": 59,
+  "sizeAfter": 26,
+  "firstSeconds": 49.1
+}

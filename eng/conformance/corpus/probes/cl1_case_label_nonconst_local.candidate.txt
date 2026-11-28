@@ -1,0 +1,7 @@
+validity: invalid
+sdk-roslyn errors: CS9135@7:14 A constant value of type 'int' is expected
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS9135@7:14 A constant value of type 'int' is expected
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS9135 | 

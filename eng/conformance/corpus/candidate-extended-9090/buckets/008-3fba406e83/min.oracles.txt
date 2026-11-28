@@ -1,0 +1,8 @@
+validity: valid
+tags: local.decl method.static span.foreach-ref span.from-coll span.to-rospan type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@9:27 Use of moved value 's1'.
+stage0 check: REJECT VIB001@9:27 Use of moved value 's1'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001 | use of moved value 'x'.

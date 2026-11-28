@@ -1,0 +1,13 @@
+WriteLine(Us(1) + Us(4) * 10 + Us(8) * 100);
+static int Us(int p) { int n = 0; Option<Vec<int>> o = MkV(p); switch (o) { case not Some<Vec<int>>: n += 3; break; default: n += 9; break; } n += o.IsSome ? 1000 : 0; return n; }
+static Option<Vec<int>> MkV(int a) { if (a > 2) { Vec<int> v = [a, a + 1]; return Some(v); } return None; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(2,149): error VIB001: Use of moved value.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB001 | use of moved value.
+

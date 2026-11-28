@@ -1,0 +1,33 @@
+{
+  "signature": "accept-reject | stage0-accepts | self:VIB001 | use of uninitialized value.",
+  "category": "known:O7",
+  "kind": "accept-reject",
+  "frontends": "stage0-accepts",
+  "ids": "self:VIB001",
+  "msg": "use of uninitialized value.",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "assign.field",
+    "assign.simple",
+    "local.decl",
+    "local.underscore",
+    "local.underscore-read",
+    "local.uninit",
+    "local.var",
+    "method.static",
+    "struct.fieldwise-init",
+    "struct.local",
+    "type.class",
+    "type.field",
+    "type.struct"
+  ],
+  "seed": "2026",
+  "index": 12,
+  "plan": "StructInit\u003EUnderscore",
+  "mutations": [],
+  "reduceTests": 45,
+  "sizeBefore": 85,
+  "sizeAfter": 35,
+  "firstSeconds": 42.7
+}

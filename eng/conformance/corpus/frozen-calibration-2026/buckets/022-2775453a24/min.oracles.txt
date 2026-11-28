@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound coll.conditional coll.conditional-unparenthesized coll.elem-char coll.empty coll.local-init coll.rospan expr.conditional func.expr-body local.decl localfunc.in-class-method localfunc.static method.static stmt.nested-block type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(8,43): error VIB008: Null-conditional '?.' / '?[]' operator is banned in Vibranium.|Program.cs(8,44): error VIB000: Indexer access requires at least one argument.|Program.cs(8,46): error VIB000: Expected ';' after variable declaration.|Program.cs(8,47): error VIB000: Indexer access requires at least one argument.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000,VIB008 | null-conditional 'x' / 'x' operator is banned in vibranium.

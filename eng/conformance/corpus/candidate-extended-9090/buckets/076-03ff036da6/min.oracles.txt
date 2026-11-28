@@ -1,0 +1,13 @@
+validity: valid
+tags: arg.out arith.int assign.compound assign.simple class.primary-ctor expr.conditional func.expr-body local.decl local.uninit method.static optref.switch optslot.local out.existing-local param.in param.out struct.fieldwise-init struct.local type.class type.struct
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[6|] err=[]
+self-O0 run: exit=0 out=[6|] err=[]
+stage0-O0 run: exit=0 out=[0|] err=[]
+DISAGREEMENT: output-mismatch | stage0 | stdout | stage0-O0

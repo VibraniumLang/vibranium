@@ -1,0 +1,13 @@
+Candidate 6 pre5 (with the Roslyn-side N16 fix), release-7 tool, run --exec:
+ReadOnlySpan<int> x = [5, 6, 7];
+WriteLine(G(x, 2)[1]);
+static ReadOnlySpan<int> G(ReadOnlySpan<int> p, int k) { ReadOnlySpan<int> q = [1, 2]; p = k > 1 ? q : p; return p; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@3:114 Stack-allocated buffer 'q' exits scope while borrowed by 'p'. ; VIB007@3:114 Cannot return a reference or view backed by stack-allocated storage.
+stage0 check: REJECT VIB003@3:114 Stack-allocated buffer 'q' exits scope while borrowed by 'p'. ; VIB007@3:114 Cannot return a reference or view backed by stack-allocated storage.
+self check: exit=1 out=[] err=[Program.cs(3,107): error VIB003: Stack-allocated buffer exits scope while borrowed by a live reference or view.|Program.cs(3,107): error VIB007: Cannot return a reference or view backed by stack-allocated storage.|]
+

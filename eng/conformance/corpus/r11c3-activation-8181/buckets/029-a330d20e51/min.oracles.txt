@@ -1,0 +1,8 @@
+validity: valid
+tags: expr.cast func.expr-body local.decl local.var localfunc.static pattern.discard switch.expr switch.sel.result union.ctor view.reborrow-parent-after
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@10:100 Cannot borrow 'v' immutably while borrowed by 's'. ; VIB003@10:100 Cannot mutate 'v' while borrowed by 's'.
+stage0 check: REJECT VIB003@10:100 Cannot borrow 'v' immutably while borrowed by 's'. ; VIB003@10:100 Cannot mutate 'v' while borrowed by 's'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB003 | cannot borrow 'x' immutably while borrowed by 'x'.

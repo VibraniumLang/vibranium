@@ -1,0 +1,32 @@
+{
+  "signature": "invalid-accepted | self | CS9135 | ",
+  "category": "known:N10",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS9135",
+  "msg": "",
+  "minTags": [
+    "class.primary-ctor",
+    "local.decl",
+    "localfunc.static",
+    "mut.local",
+    "mut.ref-param",
+    "pattern.named-const",
+    "switch.default",
+    "switch.section-no-terminator",
+    "switch.sel.int",
+    "switch.stmt",
+    "type.class"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 29966,
+  "plan": "MutReceiver\u003EConst",
+  "mutations": [
+    "const-to-var"
+  ],
+  "reduceTests": 91,
+  "sizeBefore": 76,
+  "sizeAfter": 43,
+  "firstSeconds": 4192.3
+}

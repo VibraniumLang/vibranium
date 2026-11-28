@@ -1,0 +1,8 @@
+validity: valid
+tags: ca.borrow-then-move ca.form-local ca.loan-in ca.move-bare ca.owner-vec ca.rel-same local.decl localfunc.static
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: spec-accepted | analyzer+stage0+self | ca.borrow-then-move | expected ca.borrow-then-move:VIB003

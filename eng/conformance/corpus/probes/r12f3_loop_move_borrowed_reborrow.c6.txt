@@ -1,0 +1,14 @@
+Candidate 6 (c6-pre1), release-7 tool, run --exec:
+WriteLine(Snd3(2));
+static ReadOnlySpan<int> Head1(ReadOnlySpan<int> x) => x[..1];
+static int Sink2(Vec<int> x) => x.Count;
+static int Snd3(int p) { int acc = 0; Vec<int> v = [p, 2, 3]; ReadOnlySpan<int> s = Head1(v.AsReadOnlySpan()); for (int i = 0; i < 2; i++) { acc += s[0]; if (i == 0) { acc += Sink2(v); } } return acc; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@4:182 Cannot move 'v' while borrowed by 's'.
+stage0 check: REJECT VIB003@4:182 Cannot move 'v' while borrowed by 's'.
+self check: exit=1 out=[] err=[Program.cs(4,182): error VIB003: Cannot move value while borrowed.|]
+

@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound assign.simple class.primary-ctor func.expr-body local.decl local.uninit localfunc.static method.instance pattern.relational switch.no-default switch.sel.int switch.stmt type.field type.resource
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@12:12 Use of uninitialized value 'r2'. ; VIB006@14:12 Linear IDisposable resource 'md' must be bound with 'using var' or moved/disposed on all paths.
+stage0 check: REJECT VIB001@12:12 Use of uninitialized value 'r2'. ; VIB006@14:12 Linear IDisposable resource 'md' must be bound with 'using var' or moved/disposed on all paths.
+self check: exit=1 out=[] err=[Program.cs(14,5): error VIB006: Linear IDisposable resource must be bound with 'using var' or moved/disposed on all paths.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{} | 

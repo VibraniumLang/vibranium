@@ -1,0 +1,16 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Option<Node> o = Some(new Node(1));
+OptionMut<Node> m = o.AsMut();
+OptionMut<Node> m2 = m;
+WriteLine(o.IsSome);
+WriteLine(m2.IsSome);
+sealed class Node(int v) { public int V = v; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@4:11 Cannot read 'o' while exclusively borrowed by 'm2'.
+stage0 check: REJECT VIB003@4:11 Cannot read 'o' while exclusively borrowed by 'm2'.
+self check: exit=1 out=[] err=[Program.cs(4,12): error VIB003: Borrow conflicts with an active borrow.|]
+

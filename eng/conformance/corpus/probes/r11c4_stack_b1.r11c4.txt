@@ -1,0 +1,44 @@
+Round-11 candidate 4, release-5 tool: default campaign seed 7171, index 15120 (Const>Loop), bucket 001, minimized.
+L4 recurses to depth 131,070 (acc = 2 * 65535 after the loop).
+
+run --exec (default 8 MB stack):
+validity: valid
+tags: arith.int assign.compound coll.local-init coll.vec const.local expr.cast expr.compare expr.conditional func.expr-body local.decl localfunc.nested localfunc.static loop.foreach-ref loop.foreach-vec
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[0|] err=[]
+self-O0 run: exit=139 out=[] err=[]
+stage0-O0 run: exit=0 out=[0|] err=[]
+DISAGREEMENT: output-mismatch | self | exit+stdout | self-O0
+
+stack probe (the same three runs under ulimit -s):
+== default stack: 8192
+managed run: exit=0 out=[0|] err=[]
+self-O0 run: exit=139 out=[] err=[]
+stage0-O0 run: exit=0 out=[0|] err=[]
+DISAGREEMENT: output-mismatch | self | exit+stdout | self-O0
+== unlimited stack
+managed run: exit=0 out=[0|] err=[]
+self-O0 run: exit=0 out=[0|] err=[]
+stage0-O0 run: exit=0 out=[0|] err=[]
+== 16 MB stack
+managed run: exit=0 out=[0|] err=[]
+self-O0 run: exit=0 out=[0|] err=[]
+stage0-O0 run: exit=0 out=[0|] err=[]
+
+Call-stack exhaustion is outside the parity guarantee: from release-6 the engine re-runs such a leg with an unlimited
+stack and excuses it when it then matches (CONFORMANCE.md §1, §6.12, §7.16).
+
+release-6 tool, run --exec on the same tree (no disagreement):
+self check: exit=0 out=[] err=[]
+self-O0: STACK EXHAUSTION at the 8 MiB default stack; with an unlimited stack the leg matches the managed run
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[0|] err=[]
+self-O0 run: exit=139 out=[] err=[]
+stage0-O0 run: exit=0 out=[0|] err=[]

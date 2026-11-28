@@ -1,0 +1,26 @@
+{
+  "signature": "invalid-accepted | self | CS0119 | ",
+  "category": "known:N4",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS0119",
+  "msg": "",
+  "minTags": [
+    "arith.div-int",
+    "expr.cast",
+    "local.decl",
+    "localfunc.static",
+    "mut.struct-local",
+    "mut.struct-readonly-method",
+    "type.struct"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 39510,
+  "plan": "MutReceiver\u003EArith",
+  "mutations": [],
+  "reduceTests": 96,
+  "sizeBefore": 76,
+  "sizeAfter": 38,
+  "firstSeconds": 5378.3
+}

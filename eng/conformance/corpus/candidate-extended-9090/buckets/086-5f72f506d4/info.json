@@ -1,0 +1,26 @@
+{
+  "signature": "accept-reject | self-accepts | stage0:VIB001,VIB003 | use of moved value \u0027x\u0027.",
+  "category": "known:N8",
+  "kind": "accept-reject",
+  "frontends": "self-accepts",
+  "ids": "stage0:VIB001,VIB003",
+  "msg": "use of moved value \u0027x\u0027.",
+  "minTags": [
+    "local.decl",
+    "localfunc.static",
+    "span.foreach-ref",
+    "span.from-coll",
+    "span.from-vec",
+    "span.read",
+    "span.vec-range"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 25881,
+  "plan": "SpanSlice\u003ESpanSlice\u003EPanic",
+  "mutations": [],
+  "reduceTests": 48,
+  "sizeBefore": 62,
+  "sizeAfter": 31,
+  "firstSeconds": 3663.5
+}

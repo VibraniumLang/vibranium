@@ -1,0 +1,13 @@
+validity: valid
+tags: arg.ref arith.int assign.compound expr.cast expr.compare expr.conditional local.decl local.var localfunc.static param.ref pattern.is pattern.relational std.intmap std.intmap-rehash stmt.if-else
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[1|34|False|-2|-2|1|34|False|25|25|] err=[]
+self-O0 run: exit=0 out=[1|34|False|-2|-2|1|34|False|25|25|] err=[]
+stage0-O0 run: exit=0 out=[1|34|False|-1|-1|1|34|False|26|26|] err=[]
+DISAGREEMENT: output-mismatch | stage0 | stdout | stage0-O0

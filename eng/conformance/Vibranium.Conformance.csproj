@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Differential conformance fuzzer for Vibranium v0.2 (Roslyn SDK oracle + Vibranium.Analyzer,
+    Stage-0 `vib`, self-hosted `vib-self`, managed vs native execution). See docs/CONFORMANCE.md.
+    The tool's own types are internal so they never become visible to the user compilations that
+    Stage-0 builds from TRUSTED_PLATFORM_ASSEMBLIES.
+  -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net11.0</TargetFramework>
+    <LangVersion>15.0</LangVersion>
+    <AssemblyName>vib-conformance</AssemblyName>
+    <RootNamespace>Vibranium.Conformance</RootNamespace>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IsPackable>false</IsPackable>
+    <ConcurrentGarbageCollection>false</ConcurrentGarbageCollection>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- corpus/ holds minimized Vibranium programs (evidence), not tool sources -->
+    <Compile Remove="corpus/**" />
+    <None Remove="corpus/**" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.12.0" />
+    <ProjectReference Include="..\..\src\vib\vib.csproj" />
+    <ProjectReference Include="..\..\src\Vibranium.Analyzer\Vibranium.Analyzer.csproj" />
+  </ItemGroup>
+</Project>

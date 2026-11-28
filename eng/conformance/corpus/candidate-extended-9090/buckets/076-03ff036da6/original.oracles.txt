@@ -1,0 +1,13 @@
+validity: valid
+tags: arg.out arith.bitwise arith.int arith.rem-int assign.compound assign.field assign.simple class.primary-ctor expr.conditional func.expr-body local.decl method.static optmut.pattern-write optref.asref-pattern optref.switch optslot.local out.existing-local param.in param.out struct.local struct.new-default type.class type.field type.struct
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[4|18|9|18|6|25|11|25|] err=[]
+self-O0 run: exit=0 out=[4|18|9|18|6|25|11|25|] err=[]
+stage0-O0 run: exit=0 out=[4|10|9|10|6|13|11|13|] err=[]
+DISAGREEMENT: output-mismatch | stage0 | stdout | stage0-O0

@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.nint-bounds local.decl method.static type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@7:19 Property 'MinValue' is not supported in Vibranium.
+stage0 check: REJECT VIB000@7:19 Property 'MinValue' is not supported in Vibranium.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB000 | property 'x' is not supported in vibranium.

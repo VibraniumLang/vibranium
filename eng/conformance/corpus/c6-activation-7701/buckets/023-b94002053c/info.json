@@ -1,0 +1,29 @@
+{
+  "signature": "spec-wrong-id | cond.temp-escapes-statement\u002Bview.param-stack-escape\u002Bview.param-stack-scope-exit | view.param-stack-scope-exit\u003Eanalyzer:VIB004,VIB007 view.param-stack-scope-exit\u003Estage0:VIB004,VIB007 | expected cond.temp-escapes-statement:VIB007 view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "category": "new:N16",
+  "kind": "spec-wrong-id",
+  "frontends": "cond.temp-escapes-statement\u002Bview.param-stack-escape\u002Bview.param-stack-scope-exit",
+  "ids": "view.param-stack-scope-exit\u003Eanalyzer:VIB004,VIB007 view.param-stack-scope-exit\u003Estage0:VIB004,VIB007",
+  "msg": "expected cond.temp-escapes-statement:VIB007 view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "minTags": [
+    "arg.out",
+    "bcl.tryparse",
+    "class.primary-ctor",
+    "cond.temp-escapes-statement",
+    "method.instance",
+    "out.existing-local",
+    "type.class",
+    "type.field",
+    "view.param-stack-escape",
+    "view.param-stack-scope-exit"
+  ],
+  "seed": "7701",
+  "profile": "activation",
+  "index": 20315,
+  "plan": "CondTemp\u003EViewReturn\u003EClassInstance",
+  "mutations": [],
+  "reduceTests": 26,
+  "sizeBefore": 63,
+  "sizeAfter": 26,
+  "firstSeconds": 1884.2
+}

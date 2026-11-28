@@ -1,0 +1,8 @@
+validity: valid
+tags: class.primary-ctor local.decl localfunc.static method.instance pattern.relational span.arg-rospan span.foreach-ref span.from-vec span.vec-slice-call switch.expr switch.expr-no-discard switch.guard-true switch.sel.int type.class type.field
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@14:22 Cannot borrow 'v3' mutably while borrowed by 's2'. ; VIB003@14:35 Cannot read 'v3' while exclusively borrowed by 's2'. ; VIB003@14:39 Cannot borrow 'v3' immutably while borrowed by 's2'. ; VIB001@15:26 Use of moved value 's2'.
+stage0 check: REJECT VIB003@14:22 Cannot borrow 'v3' mutably while borrowed by 's2'. ; VIB003@14:35 Cannot read 'v3' while exclusively borrowed by 's2'. ; VIB003@14:39 Cannot borrow 'v3' immutably while borrowed by 's2'. ; VIB001@15:26 Use of moved value 's2'.
+self check: exit=1 out=[] err=[Program.cs(16,21): error VIB000: Switch expression must be exhaustive (include a '_' or 'var' catch-all arm) in Vibranium.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001,VIB003} self-only:{VIB000} | 

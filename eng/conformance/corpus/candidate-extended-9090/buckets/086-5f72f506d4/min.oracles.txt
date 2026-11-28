@@ -1,0 +1,8 @@
+validity: valid
+tags: local.decl localfunc.static span.foreach-ref span.from-coll span.from-vec span.read span.vec-range
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@7:31 Use of moved value 's1'. ; VIB003@10:18 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@10:31 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@10:35 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@11:12 Use of moved value 's3'.
+stage0 check: REJECT VIB001@7:31 Use of moved value 's1'. ; VIB003@10:18 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@10:31 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@10:35 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@11:12 Use of moved value 's3'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001,VIB003 | use of moved value 'x'.

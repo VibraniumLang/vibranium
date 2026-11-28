@@ -1,0 +1,23 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB000} self-only:{} | ",
+  "category": "new-low",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{VIB000} self-only:{}",
+  "msg": "",
+  "minTags": [
+    "banned.null",
+    "banned.nullable",
+    "local.decl",
+    "method.static",
+    "type.class"
+  ],
+  "seed": "2026",
+  "index": 344,
+  "plan": "Banned\u003EClassInstance\u003EConst",
+  "mutations": [],
+  "reduceTests": 38,
+  "sizeBefore": 85,
+  "sizeAfter": 19,
+  "firstSeconds": 236.5
+}

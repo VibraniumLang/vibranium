@@ -1,0 +1,22 @@
+{
+  "signature": "accept-reject | self-accepts | stage0:VIB007 | returned reference or view escapes local or scoped\u003Cpath\u003E owner \u0027x\u0027.",
+  "category": "known:O11-3",
+  "kind": "accept-reject",
+  "frontends": "self-accepts",
+  "ids": "stage0:VIB007",
+  "msg": "returned reference or view escapes local or scoped\u003Cpath\u003E owner \u0027x\u0027.",
+  "minTags": [
+    "local.decl",
+    "localfunc.static",
+    "view.elision-ambiguous"
+  ],
+  "seed": "8181",
+  "profile": "activation",
+  "index": 28,
+  "plan": "ViewReturn\u003EFloatNint",
+  "mutations": [],
+  "reduceTests": 20,
+  "sizeBefore": 39,
+  "sizeAfter": 24,
+  "firstSeconds": 37.2
+}

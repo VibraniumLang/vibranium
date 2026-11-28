@@ -1,0 +1,13 @@
+WriteLine(Us(1) + Us(4) * 10 + Us(8) * 100);
+static int Us(int p) { int n = 0; Option<R> o = MkL(p); n += o switch { not NoneType => 5, NoneType => 7 }; return n; }
+static Option<R> MkL(int a) { if (a > 2) return Some(new R(a)); return None; }
+public sealed class R(int id) : IDisposable { public int Id = id; public void Dispose() { WriteLine(Id); } }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB006@2:73 Cannot borrow-match or logically combine patterns on linear union resource; consume it via '.IsNone'/'.IsErr', '.Unwrap()', or exhaustive 'Move(...)' match. ; VIB006@2:92 Cannot borrow-match linear Option<T> in place; consume it via '.IsNone(out ...)', '.Unwrap()', or 'Move(...)'. ; VIB006@2:116 Linear IDisposable resource 'o' must be bound with 'using var' or moved/disposed on all paths.
+stage0 check: REJECT VIB006@2:73 Cannot borrow-match or logically combine patterns on linear union resource; consume it via '.IsNone'/'.IsErr', '.Unwrap()', or exhaustive 'Move(...)' match. ; VIB006@2:92 Cannot borrow-match linear Option<T> in place; consume it via '.IsNone(out ...)', '.Unwrap()', or 'Move(...)'. ; VIB006@2:116 Linear IDisposable resource 'o' must be bound with 'using var' or moved/disposed on all paths.
+self check: exit=1 out=[] err=[Program.cs(2,64): error VIB006: Cannot borrow-match linear Option<T>/Result<T, E> in place; consume it via Move(...), .Unwrap(), or .IsNone/.IsErr.|Program.cs(2,77): error VIB006: Pattern matching on a linear union place without moving it is banned in Vibranium.|Program.cs(2,109): error VIB006: Linear IDisposable resource must be bound with 'using var' or moved/disposed on all p...]
+

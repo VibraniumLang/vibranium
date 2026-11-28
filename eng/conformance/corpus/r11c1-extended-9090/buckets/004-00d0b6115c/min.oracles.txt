@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound assign.simple local.decl local.uninit method.static pattern.const switch.default switch.section-local switch.section-no-terminator switch.sel.bool switch.stmt type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@14:16 Use of uninitialized value 'r2'.
+stage0 check: REJECT VIB001@14:16 Use of uninitialized value 'r2'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001 | use of uninitialized value 'x'.

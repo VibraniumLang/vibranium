@@ -1,0 +1,8 @@
+validity: invalid
+tags: arith.float-to-int-cast arith.long arith.rem-float arith.rem-int expr.cast expr.compare local.decl local.var method.static panic.call pattern.combinator pattern.is pattern.named-const pattern.relational std.strmap stmt.if stmt.if-else switch.default switch.sel.int switch.stmt type.class
+sdk-roslyn errors: CS9135@32:18 A constant value of type 'long' is expected
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS9135@32:18 A constant value of type 'long' is expected
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS9135 | 

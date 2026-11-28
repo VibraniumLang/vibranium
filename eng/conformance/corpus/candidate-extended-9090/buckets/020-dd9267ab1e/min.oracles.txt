@@ -1,0 +1,8 @@
+validity: valid
+tags: arg.out bcl.tryparse class.primary-ctor local.decl localfunc.static method.instance out.existing-local span.arg-span span.foreach-ref span.from-vec span.vec-range type.class type.field
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@7:18 Cannot borrow 'v2' mutably while borrowed by 's1'. ; VIB003@7:31 Cannot read 'v2' while exclusively borrowed by 's1'. ; VIB003@7:35 Cannot borrow 'v2' immutably while borrowed by 's1'. ; VIB001@8:11 Use of moved value 's1'. ; VIB004@17:28 Cannot pass shared borrow as mutable reference or receiver.
+stage0 check: REJECT VIB003@7:18 Cannot borrow 'v2' mutably while borrowed by 's1'. ; VIB003@7:31 Cannot read 'v2' while exclusively borrowed by 's1'. ; VIB003@7:35 Cannot borrow 'v2' immutably while borrowed by 's1'. ; VIB001@8:11 Use of moved value 's1'. ; VIB004@17:28 Cannot pass shared borrow as mutable reference or receiver.
+self check: exit=1 out=[] err=[Program.cs(17,28): error VIB004: Cannot pass shared borrow as mutable reference or receiver.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001,VIB003} self-only:{} | 

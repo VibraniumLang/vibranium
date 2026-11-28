@@ -1,0 +1,31 @@
+Candidate 6 (c6-pre1), release-7 tool, run --exec:
+WriteLine(G(-5, 3, -1));
+static long G(int a, int n, int d)
+{
+    long b = a * 3L;
+    byte c = (byte)n;
+    ulong w = (ulong)b;
+    long acc = a / -1 + a % -1 + b / -1L + b % d + (int.MinValue + a) / d;
+    acc += (c << n) + (long)(w >> n) + (long)(w << c);
+    int k = a;
+    k >>= n;
+    k <<= 2;
+    acc += k + (b >> 70);
+    return acc;
+}
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+self-ir-contract: OK
+stage0-O0-needed: libc.so.6
+stage0-ir-contract: OK
+managed run: exit=0 out=[2305843007066210226|] err=[]
+self-O0 run: exit=0 out=[2305843007066210226|] err=[]
+stage0-O0 run: exit=0 out=[2305843007066210226|] err=[]
+

@@ -1,0 +1,7 @@
+validity: valid
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@8:9 Use of moved value 's'.
+stage0 check: REJECT VIB001@8:9 Use of moved value 's'.
+self check: exit=1 out=[] err=[Program.cs(8,10): error VIB003: Borrow conflicts with an active borrow.|Program.cs(8,14): error VIB003: Cannot mutate through reference while borrowed by another live reference.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{VIB003} | 

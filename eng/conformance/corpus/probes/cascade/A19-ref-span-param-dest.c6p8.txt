@@ -1,0 +1,21 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Vec<int> a = [1, 2];
+Vec<int> b = [3, 4, 5];
+Span<int> s = a.AsSpan();
+Set(ref s, b.AsSpan());
+WriteLine(s.Length);
+
+static void Set(ref Span<int> d, Span<int> x)
+{
+    d = x;
+    WriteLine(x.Length);
+}
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@7:31 Parameter 'd' cannot pass borrowed view 'Span' by ref or out in Vibranium. ; VIB001@10:15 Use of moved value 'x'.
+stage0 check: REJECT VIB000@7:31 Parameter 'd' cannot pass borrowed view 'Span' by ref or out in Vibranium. ; VIB001@10:15 Use of moved value 'x'.
+self check: exit=1 out=[] err=[Program.cs(7,21): error VIB000: Parameter cannot pass borrowed view by ref or out in Vibranium.|Program.cs(10,15): error VIB001: Use of moved value.|]
+

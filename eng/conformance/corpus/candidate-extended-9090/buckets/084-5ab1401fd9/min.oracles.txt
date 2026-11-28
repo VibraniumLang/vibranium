@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arg.ref arith.int assign.compound local.decl local.uninit localfunc.static param.in span.foreach-ref span.from-coll span.index-from-end struct.fieldwise-init struct.local type.struct
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS9191@7:19 The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+analyzer: VIB001@9:12 Use of moved value 's1'. ; VIB001@9:21 Use of moved value 's1'.
+stage0 check: REJECT VIB001@9:12 Use of moved value 's1'. ; VIB001@9:21 Use of moved value 's1'.
+self check: exit=1 out=[] err=[Program.cs(7,14): error VIB000: No applicable local function overload in Vibranium.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{VIB000} | 

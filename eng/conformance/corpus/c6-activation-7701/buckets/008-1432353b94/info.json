@@ -1,0 +1,29 @@
+{
+  "signature": "spec-wrong-id | view.param-stack-escape\u002Bview.param-stack-scope-exit | view.param-stack-scope-exit\u003Eanalyzer:VIB007 view.param-stack-scope-exit\u003Estage0:VIB007 | expected view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "category": "new:N16",
+  "kind": "spec-wrong-id",
+  "frontends": "view.param-stack-escape\u002Bview.param-stack-scope-exit",
+  "ids": "view.param-stack-scope-exit\u003Eanalyzer:VIB007 view.param-stack-scope-exit\u003Estage0:VIB007",
+  "msg": "expected view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "func.expr-body",
+    "local.decl",
+    "localfunc.nested",
+    "localfunc.static",
+    "view.param-stack-escape",
+    "view.param-stack-scope-exit"
+  ],
+  "seed": "7701",
+  "profile": "activation",
+  "index": 763,
+  "plan": "ViewReturn\u003ELocalFunc",
+  "mutations": [
+    "drop-init"
+  ],
+  "reduceTests": 40,
+  "sizeBefore": 56,
+  "sizeAfter": 44,
+  "firstSeconds": 116.5
+}

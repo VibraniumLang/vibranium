@@ -1,0 +1,8 @@
+validity: valid
+tags: local.decl localfunc.static span.foreach-ref span.from-vec span.slice-call span.to-rospan span.vec-slice-call utf8.buf-lines utf8.foreach utf8.line-ops utf8.nm-mutate-owner utf8.stringbuf
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@7:18 Cannot borrow 'v2' mutably while borrowed by 's1'. ; VIB003@7:31 Cannot read 'v2' while exclusively borrowed by 's1'. ; VIB003@7:35 Cannot borrow 'v2' immutably while borrowed by 's1'. ; VIB001@8:31 Use of moved value 's1'. ; VIB003@11:5 Cannot borrow 'sb5' mutably while borrowed by '__utf8_src_2'.
+stage0 check: REJECT VIB003@7:18 Cannot borrow 'v2' mutably while borrowed by 's1'. ; VIB003@7:31 Cannot read 'v2' while exclusively borrowed by 's1'. ; VIB003@7:35 Cannot borrow 'v2' immutably while borrowed by 's1'. ; VIB001@8:31 Use of moved value 's1'. ; VIB003@11:5 Cannot borrow 'sb5' mutably while borrowed by '__utf8_src_2'.
+self check: exit=1 out=[] err=[Program.cs(11,15): error VIB003: Borrow conflicts with an active borrow.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{} | 

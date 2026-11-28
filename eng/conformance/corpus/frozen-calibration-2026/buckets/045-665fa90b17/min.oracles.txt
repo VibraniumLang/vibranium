@@ -1,0 +1,8 @@
+validity: valid
+tags: arg.out assign.simple banned.null banned.nullable local.decl local.underscore-read localfunc.static out.underscore param.out
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB008@5:5 Nullable type 'int?' is banned in Vibranium; use Option<T>. ; VIB000@5:25 Conversion from 'int' to 'int?' is not supported in Vibranium. ; VIB000@5:31 Expression 'Literal' is not supported in Vibranium. ; VIB008@5:31 Null literals are banned in Vibranium; use Option<T> (Some/None).
+stage0 check: REJECT VIB008@5:5 Nullable type 'int?' is banned in Vibranium; use Option<T>. ; VIB000@5:25 Conversion from 'int' to 'int?' is not supported in Vibranium. ; VIB000@5:31 Expression 'Literal' is not supported in Vibranium. ; VIB008@5:31 Null literals are banned in Vibranium; use Option<T> (Some/None).
+self check: exit=1 out=[] err=[Program.cs(5,8): error VIB008: Nullable '?' type is banned in Vibranium; use Option<T>.|Program.cs(5,31): error VIB008: Null literals are banned in Vibranium; use Option<T> (Some/None).|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB000} self-only:{} | 

@@ -1,0 +1,8 @@
+validity: invalid
+tags: arith.int expr.cast local.decl local.var localfunc.static span.arg-span span.from-coll stmt.nested-block
+sdk-roslyn errors: CS0119@9:21 'nint' is a type, which is not valid in the given context ; CS0119@9:21 'nint' is a type, which is not valid in the given context
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS0119@9:21 'nint' is a type, which is not valid in the given context ; CS0119@9:21 'nint' is a type, which is not valid in the given context
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS0119 | 

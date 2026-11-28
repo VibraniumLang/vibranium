@@ -1,0 +1,1 @@
+int calls=0;int a=0;WriteLine(Make(ref calls).X+=Set(out a)>0?3:2);WriteLine(calls);static Box Make(ref int calls){calls++;return new Box(12);}static int Set(out int a){a=90;return 1;}public struct Box{public int X;public Box(int x){X=x;}}

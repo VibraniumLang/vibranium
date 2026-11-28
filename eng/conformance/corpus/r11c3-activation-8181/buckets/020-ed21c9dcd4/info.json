@@ -1,0 +1,23 @@
+{
+  "signature": "banned-accepted | analyzer\u002Bstage0 | cut.file-type | ",
+  "category": "known:O11-8a",
+  "kind": "banned-accepted",
+  "frontends": "analyzer\u002Bstage0",
+  "ids": "cut.file-type",
+  "msg": "",
+  "minTags": [
+    "cond.temp-both-arms",
+    "cut.file-type",
+    "local.decl",
+    "localfunc.static"
+  ],
+  "seed": "8181",
+  "profile": "activation",
+  "index": 53,
+  "plan": "DeclCuts\u003ECondTemp",
+  "mutations": [],
+  "reduceTests": 24,
+  "sizeBefore": 49,
+  "sizeAfter": 29,
+  "firstSeconds": 83.9
+}

@@ -1,0 +1,24 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB001} self-only:{} | ",
+  "category": "known:N8",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{VIB001} self-only:{}",
+  "msg": "",
+  "minTags": [
+    "local.decl",
+    "localfunc.static",
+    "span.foreach-ref",
+    "span.from-coll",
+    "span.two-slices-one-call"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 175,
+  "plan": "SpanSlice\u003EUsing",
+  "mutations": [],
+  "reduceTests": 35,
+  "sizeBefore": 59,
+  "sizeAfter": 25,
+  "firstSeconds": 66.3
+}

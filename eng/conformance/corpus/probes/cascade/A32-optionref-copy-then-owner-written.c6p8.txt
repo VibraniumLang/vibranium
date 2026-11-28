@@ -1,0 +1,17 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Option<Node> o = Some(new Node(1));
+OptionRef<Node> r = o.AsRef();
+OptionRef<Node> r2 = r;
+o = Some(new Node(3));
+WriteLine(r2.IsSome);
+WriteLine(r.IsSome);
+sealed class Node(int v) { public int V = v; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@4:1 Cannot mutate 'o' while borrowed by 'r'.
+stage0 check: REJECT VIB003@4:1 Cannot mutate 'o' while borrowed by 'r'.
+self check: exit=1 out=[] err=[Program.cs(4,3): error VIB003: Cannot mutate value while borrowed.|]
+

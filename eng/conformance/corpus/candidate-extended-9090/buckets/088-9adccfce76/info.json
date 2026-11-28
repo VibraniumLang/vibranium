@@ -1,0 +1,25 @@
+{
+  "signature": "invalid-accepted | self | CS0075 | ",
+  "category": "new",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS0075",
+  "msg": "",
+  "minTags": [
+    "arith.rem-int",
+    "assign.compound",
+    "expr.cast",
+    "local.decl",
+    "method.static",
+    "type.class"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 27279,
+  "plan": "Arith\u003ESpanSlice",
+  "mutations": [],
+  "reduceTests": 48,
+  "sizeBefore": 59,
+  "sizeAfter": 23,
+  "firstSeconds": 3823.4
+}

@@ -1,0 +1,16 @@
+WriteLine(F(1, 1L));
+static int F(int k, long a)
+{
+    int s = Try(k) switch { _ => a switch { < 0L => 0, >= 0L when false => 1 } };
+    return s;
+}
+static Result<int, int> Try(int k) => Ok(k);
+
+validity: invalid
+tags: 
+sdk-roslyn errors: CS8846@4:36 The switch expression does not handle all possible values of its input type (it is not exhaustive). For example, the pattern '0L' is not covered. However, a pattern with a 'when' clause might successfully match this value.
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS8846@4:36 The switch expression does not handle all possible values of its input type (it is not exhaustive). For example, the pattern '0L' is not covered. However, a pattern with a 'when' clause might successfully match this value.
+self check: exit=1 out=[] err=[Program.cs(4,36): error VIB000: Switch expression must be exhaustive (include a '_' or 'var' catch-all arm) in Vibranium.|]
+

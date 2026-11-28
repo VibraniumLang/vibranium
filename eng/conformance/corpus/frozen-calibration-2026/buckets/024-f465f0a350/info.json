@@ -1,0 +1,29 @@
+{
+  "signature": "accept-reject | stage0-accepts | self:VIB000 | no applicable local function overload in vibranium.",
+  "category": "known:O8",
+  "kind": "accept-reject",
+  "frontends": "stage0-accepts",
+  "ids": "self:VIB000",
+  "msg": "no applicable local function overload in vibranium.",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "coll.conditional",
+    "coll.conditional-unparenthesized",
+    "coll.empty",
+    "coll.rospan",
+    "expr.conditional",
+    "expr.conditional-arg",
+    "func.expr-body",
+    "local.decl",
+    "localfunc.static"
+  ],
+  "seed": "2026",
+  "index": 165,
+  "plan": "PatternVar\u003ECollection",
+  "mutations": [],
+  "reduceTests": 50,
+  "sizeBefore": 77,
+  "sizeAfter": 35,
+  "firstSeconds": 136.6
+}

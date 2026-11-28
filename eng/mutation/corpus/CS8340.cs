@@ -1,0 +1,1 @@
+Pair p;p=new Pair();p.X=3;WriteLine(p.X+p.Y);readonly public struct Pair{public int X;public int Y;}

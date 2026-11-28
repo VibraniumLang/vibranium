@@ -1,0 +1,22 @@
+WriteLine(F(3));
+WriteLine(F(-3));
+static int F(int x)
+{
+    int r = 0;
+    switch (x)
+    {
+        case >= 0: r = 1; break;
+        case < 0: r = 2; break;
+        case 5: WriteLine(9);
+    }
+    return r;
+}
+
+validity: invalid
+tags: 
+sdk-roslyn errors: CS8120@10:14 The switch case is unreachable. It has already been handled by a previous case or it is impossible to match. ; CS8070@10:9 Control cannot fall out of switch from final case label ('case 5:')
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS8120@10:14 The switch case is unreachable. It has already been handled by a previous case or it is impossible to match. ; CS8070@10:9 Control cannot fall out of switch from final case label ('case 5:')
+self check: exit=1 out=[] err=[Program.cs(10,9): error VIB000: C# switch section endpoints must not be reachable; Panic is an ordinary invocation for source reachability (CS0163/CS8070).|Program.cs(10,14): error VIB000: C# switch case is impossible or already covered by previous unguarded cases (CS8120).|]
+

@@ -1,0 +1,20 @@
+WriteLine(Us(1) + Us(4) * 10 + Us(8) * 100);
+static int Us(int p) { int n = 0; switch (MkRI(p)) { case Ok<int> or Err<int> when p > 5: n += 100; break; case Ok<int>(var v): n += v; break; default: n += 7; break; } return n; }
+static Result<int, int> MkRI(int a) { if (a > 2) return Ok(a); return Err(a + 20); }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+self-ir-contract: OK
+stage0-O0-needed: libc.so.6
+stage0-ir-contract: OK
+managed run: exit=0 out=[10047|] err=[]
+self-O0 run: exit=0 out=[847|] err=[]
+stage0-O0 run: exit=0 out=[10047|] err=[]
+DISAGREEMENT: output-mismatch | self | stdout | self-O0
+

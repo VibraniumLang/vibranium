@@ -1,0 +1,8 @@
+validity: valid
+tags: coll.empty coll.local-init coll.vec cond.temp-escapes-statement decl.this-call-after-init local.decl localfunc.static loop.foreach-ref loop.foreach-vec
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB007@11:77 Borrowed reference or view 's' cannot outlive temporary rvalue. ; VIB001@12:109 Use of uninitialized value '__this_5'. ; VIB008@12:109 Cannot access, capture, or call members on 'this' before constructor finishes initializing all fields.
+stage0 check: REJECT VIB007@11:77 Borrowed reference or view 's' cannot outlive temporary rvalue. ; VIB001@12:109 Use of uninitialized value '__this_5'. ; VIB008@12:109 Cannot access, capture, or call members on 'this' before constructor finishes initializing all fields.
+self check: exit=1 out=[] err=[Program.cs(11,77): error VIB007: Borrowed reference or view cannot outlive temporary rvalue.|Program.cs(11,83): error VIB003: Local goes out of scope while borrowed by an outer reference or view.|Program.cs(12,113): error VIB008: Cannot access, capture, or call members on 'this' before constructor finishes initializing all fields.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{VIB003} | 

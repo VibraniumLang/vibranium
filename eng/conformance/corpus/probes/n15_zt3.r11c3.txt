@@ -1,0 +1,12 @@
+WriteLine(new Zc(3).N);
+public sealed class Zc { public Vec<int> Items; public Zc(int k) { Items = [k]; int t = Peek(); WriteLine(t); } public int N => Items.Count; int Peek() => Items.Count; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@2:89 Use of uninitialized value '__this_2'. ; VIB008@2:89 Cannot access, capture, or call members on 'this' before constructor finishes initializing all fields.
+stage0 check: REJECT VIB001@2:89 Use of uninitialized value '__this_2'. ; VIB008@2:89 Cannot access, capture, or call members on 'this' before constructor finishes initializing all fields.
+self check: exit=1 out=[] err=[Program.cs(2,93): error VIB008: Cannot access, capture, or call members on 'this' before constructor finishes initializing all fields.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{} | 
+

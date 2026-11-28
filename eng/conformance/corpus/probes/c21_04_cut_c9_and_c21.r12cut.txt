@@ -1,0 +1,22 @@
+Combined cut source 9ba44361 (before C21), release-7 tool, run (frontend checks only):
+var c = new C(2);
+WriteLine(c.A + c.B);
+public sealed class C
+{
+    public int A;
+    public int B;
+    public C(int a) : this(a, a * 10) { }
+    public C(int a, int b) : base() { A = a; B = b; }
+}
+
+validity: valid
+tags: cut.base-ctor-call
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@7:23 Constructor chaining (: this(...)) is not supported in Vibranium v0.2; initialize every field in each constructor or use a static factory method.
+stage0 check: REJECT VIB000@7:23 Constructor chaining (: this(...)) is not supported in Vibranium v0.2; initialize every field in each constructor or use a static factory method.
+self check: exit=1 out=[] err=[Program.cs(7,23): error VIB000: Constructor chaining (: this(...)) is not supported in Vibranium v0.2; initialize every field in each constructor or use a static factory method.|Program.cs(8,30): error VIB000: Constructor chaining (': base(...)' / ': this(...)') is banned in Vibranium.|]
+cuts (C10–C21 scan, first occurrence): C21 cut.base-ctor-call (8,30)
+cut anchors: cut.base-ctor-call>analyzer: no VIB000 with the exact message, want (8,30) ; cut.base-ctor-call>stage0: no VIB000 with the exact message, want (8,30) ; cut.base-ctor-call>self: no VIB000 with the exact message, want (8,30)
+DISAGREEMENT: cut-anchor | cut.base-ctor-call | cut.base-ctor-call>analyzer:missing cut.base-ctor-call>stage0:missing cut.base-ctor-call>self:missing | 
+

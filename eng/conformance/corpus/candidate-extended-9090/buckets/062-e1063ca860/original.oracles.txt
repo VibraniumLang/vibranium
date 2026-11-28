@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.bitwise arith.int assign.compound class.primary-ctor expr.compare local.decl local.var localfunc.static method.instance panic.call pattern.relational span.arg-rospan span.foreach-ref span.from-vec span.read span.to-rospan span.vec-after-borrow span.vec-slice-call span.write span.write-after-shared stmt.if switch.expr switch.expr-no-discard switch.guard-true switch.sel.int type.class type.field
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@20:22 Cannot borrow 'v3' mutably while borrowed by 's2'. ; VIB003@20:35 Cannot read 'v3' while exclusively borrowed by 's2'. ; VIB003@20:39 Cannot borrow 'v3' immutably while borrowed by 's2'. ; VIB001@21:9 Use of moved value 's2'. ; VIB001@21:18 Use of moved value 's2'. ; VIB001@22:19 Use of moved value 's2'. ; VIB001@23:26 Use of moved value 's2'.
+stage0 check: REJECT VIB003@20:22 Cannot borrow 'v3' mutably while borrowed by 's2'. ; VIB003@20:35 Cannot read 'v3' while exclusively borrowed by 's2'. ; VIB003@20:39 Cannot borrow 'v3' immutably while borrowed by 's2'. ; VIB001@21:9 Use of moved value 's2'. ; VIB001@21:18 Use of moved value 's2'. ; VIB001@22:19 Use of moved value 's2'. ; VIB001@23:26 Use of moved value 's2'.
+self check: exit=1 out=[] err=[Program.cs(24,21): error VIB000: Switch expression must be exhaustive (include a '_' or 'var' catch-all arm) in Vibranium.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001,VIB003} self-only:{VIB000} | 

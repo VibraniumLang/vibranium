@@ -1,0 +1,8 @@
+validity: invalid
+tags: arg.in arg.rvalue-to-ref-param arith.int assign.compound func.expr-body local.decl localfunc.static param.ref-readonly
+sdk-roslyn errors: CS8156@5:18 An expression cannot be used in this context because it may not be passed or returned by reference
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS8156@5:18 An expression cannot be used in this context because it may not be passed or returned by reference
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS8156 | 

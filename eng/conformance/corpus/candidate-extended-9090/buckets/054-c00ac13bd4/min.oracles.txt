@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arith.int assign.compound cut.struct-piecewise-owned local.decl local.uninit localfunc.static pattern.relational struct.local struct.owned-field switch.guard-false switch.no-default switch.section-local switch.section-no-terminator switch.sel.unsigned switch.stmt type.field type.struct
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@8:38 Unreachable code detected
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: banned-accepted | analyzer+stage0+self | cut.struct-piecewise-owned | 

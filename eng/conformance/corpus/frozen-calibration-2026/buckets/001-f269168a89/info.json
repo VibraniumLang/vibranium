@@ -1,0 +1,26 @@
+{
+  "signature": "invalid-accepted | self | CS1023 | ",
+  "category": "known:O4",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS1023",
+  "msg": "",
+  "minTags": [
+    "local.decl",
+    "localfunc.static",
+    "mut.embedded-decl",
+    "pattern.is",
+    "pattern.relational",
+    "stmt.if"
+  ],
+  "seed": "2026",
+  "index": 3,
+  "plan": "PatternVar\u003EClassInstance\u003ELocalFunc",
+  "mutations": [
+    "embed-decl"
+  ],
+  "reduceTests": 31,
+  "sizeBefore": 82,
+  "sizeAfter": 26,
+  "firstSeconds": 19.4
+}

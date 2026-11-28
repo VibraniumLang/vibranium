@@ -1,0 +1,16 @@
+validity: valid
+tags: arith.div-int arith.int arith.rem-int assign.compound expr.cast expr.compare local.decl localfunc.static loop.while pattern.is pattern.var
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+self-ir-contract: OK
+stage0-O0-needed: libc.so.6
+stage0-ir-contract: OK
+managed run: exit=101 out=[] err=[panic: attempt to divide by zero|]
+self-O0 run: TIMEOUT
+stage0-O0 run: TIMEOUT
+DISAGREEMENT: run-timeout | stage0-O0 |  | 
+DISAGREEMENT: run-timeout | self-O0 |  | 

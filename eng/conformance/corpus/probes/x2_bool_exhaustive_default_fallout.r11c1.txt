@@ -1,0 +1,27 @@
+WriteLine(F(true));
+WriteLine(F(false));
+static int F(bool b)
+{
+    int r = 0;
+    switch (b)
+    {
+        case true: r = 1; break;
+        case false: r = 2; break;
+        default: WriteLine(9);
+    }
+    return r;
+}
+
+validity: warn-only
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@10:18 Unreachable code detected
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[1|2|] err=[]
+self-O0 run: exit=0 out=[1|2|] err=[]
+stage0-O0 run: exit=0 out=[1|2|] err=[]
+

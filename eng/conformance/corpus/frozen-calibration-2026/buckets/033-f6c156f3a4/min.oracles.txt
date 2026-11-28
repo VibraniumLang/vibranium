@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound banned.nonstatic-localfunc class.primary-ctor func.expr-body local.decl local.var localfunc.static method.instance pattern.type pattern.union pattern.var switch.expr switch.expr-no-discard switch.sel.result type.field type.resource union.ctor using.var
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@2:5 Non-static (capturing) local functions are banned in Vibranium; declare local functions 'static'. ; VIB001@13:12 Use of moved value 'x'.
+stage0 check: REJECT VIB000@2:5 Non-static (capturing) local functions are banned in Vibranium; declare local functions 'static'. ; VIB001@13:12 Use of moved value 'x'.
+self check: exit=1 out=[] err=[Program.cs(2,5): error VIB000: Non-static (capturing) local functions are banned in Vibranium; declare local functions 'static'.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{} | 

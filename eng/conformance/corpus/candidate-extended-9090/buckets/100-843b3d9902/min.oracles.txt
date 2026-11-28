@@ -1,0 +1,8 @@
+validity: invalid
+tags: arith.div-int expr.cast local.decl localfunc.static mut.struct-local mut.struct-readonly-method type.struct
+sdk-roslyn errors: CS0119@8:21 'nint' is a type, which is not valid in the given context ; CS0119@8:21 'nint' is a type, which is not valid in the given context
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS0119@8:21 'nint' is a type, which is not valid in the given context ; CS0119@8:21 'nint' is a type, which is not valid in the given context
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS0119 | 

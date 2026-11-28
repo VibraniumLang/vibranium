@@ -1,0 +1,9 @@
+validity: valid
+tags: arith.int assign.compound cut.localfunc-in-switch-section func.expr-body local.decl localfunc.in-class-method localfunc.static method.static switch.default switch.sel.bool switch.stmt type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(10,17): error VIB000: Unexpected token in expression.|Program.cs(10,24): error VIB000: Expected ';' after expression statement.|Program.cs(10,30): error VIB000: Expected ';' after variable declaration.|Program.cs(13,17): error VIB000: Unexpected token in expression.|Program.cs(13,24): error VIB000: Expected ';' after expression statement.|Program.cs(13,30): error V...]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | unexpected token in expression.
+DISAGREEMENT: banned-accepted | analyzer+stage0 | cut.localfunc-in-switch-section | 

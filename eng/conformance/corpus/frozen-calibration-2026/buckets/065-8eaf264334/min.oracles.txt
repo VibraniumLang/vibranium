@@ -1,0 +1,8 @@
+validity: valid
+tags: arg.ref arith.int assign.compound coll.empty coll.local-init coll.vec expr.index local.decl localfunc.static param.ref-readonly
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(6,14): error VIB000: No applicable local function overload in Vibranium.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | no applicable local function overload in vibranium.

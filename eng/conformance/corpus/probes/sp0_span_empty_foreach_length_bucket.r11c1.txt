@@ -1,0 +1,27 @@
+WriteLine(F(0, false));
+static int F(int p0, bool p1)
+{
+    int acc = 0;
+    Span<int> v2 = [];
+    foreach (var e1 in v2)
+    {
+        var b4 = 0 > v2.Length;
+    }
+    var s5 = 0;
+    acc += s5;
+    return 0;
+}
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[0|] err=[]
+self-O0 run: exit=0 out=[0|] err=[]
+stage0-O0 run: exit=0 out=[0|] err=[]
+

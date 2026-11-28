@@ -1,0 +1,32 @@
+{
+  "signature": "invalid-accepted | self | CS8518 | ",
+  "category": "known:N6",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS8518",
+  "msg": "",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "local.decl",
+    "localfunc.in-class-method",
+    "localfunc.static",
+    "method.static",
+    "panic.call",
+    "param.underscore",
+    "pattern.combinator",
+    "pattern.is",
+    "pattern.relational",
+    "stmt.if",
+    "type.class"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 21829,
+  "plan": "Underscore\u003ESpanSlice\u003EPanic",
+  "mutations": [],
+  "reduceTests": 77,
+  "sizeBefore": 85,
+  "sizeAfter": 41,
+  "firstSeconds": 3085.7
+}

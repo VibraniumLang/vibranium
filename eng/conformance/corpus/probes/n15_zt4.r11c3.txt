@@ -1,0 +1,12 @@
+WriteLine(new Zc(3).K);
+public sealed class Zc { public int K; public Zc(int k) { K = k; K += Peek(); } int Peek() => K * 2; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@2:71 Use of uninitialized value '__this_3'. ; VIB008@2:71 Cannot access, capture, or call members on 'this' before constructor finishes initializing all fields.
+stage0 check: REJECT VIB001@2:71 Use of uninitialized value '__this_3'. ; VIB008@2:71 Cannot access, capture, or call members on 'this' before constructor finishes initializing all fields.
+self check: exit=1 out=[] err=[Program.cs(2,75): error VIB008: Cannot access, capture, or call members on 'this' before constructor finishes initializing all fields.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{} | 
+

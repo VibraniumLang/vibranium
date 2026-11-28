@@ -1,0 +1,18 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Vec<int> b = [1, 2, 3];
+Span<int> t = [];
+for (int i = 0; i < 2; i++)
+{
+    Span<int> s = b.AsSpan();
+    t = s;
+    WriteLine(t.Length);
+}
+
+validity: invalid
+tags: 
+sdk-roslyn errors: CS8352@6:9 Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@6:9 Cannot move 's' while borrowed by 't'.
+stage0 check: REJECT CS8352@6:9 Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
+self check: exit=1 out=[] err=[Program.cs(6,7): error VIB007: C# assignment cannot copy a borrowed value into a wider declared safe-context (CS8352/CS8353).|]
+

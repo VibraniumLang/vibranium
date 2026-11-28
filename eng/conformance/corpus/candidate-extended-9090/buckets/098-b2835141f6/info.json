@@ -1,0 +1,33 @@
+{
+  "signature": "invalid-accepted | self | CS8518 | ",
+  "category": "known:N6",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS8518",
+  "msg": "",
+  "minTags": [
+    "arg.out",
+    "assign.simple",
+    "local.decl",
+    "local.var",
+    "localfunc.static",
+    "mut.struct-local",
+    "mut.struct-readonly-method",
+    "out.var",
+    "param.out",
+    "pattern.combinator",
+    "pattern.is",
+    "pattern.relational",
+    "stmt.nested-block",
+    "type.struct"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 34324,
+  "plan": "OutArg\u003EMutReceiver",
+  "mutations": [],
+  "reduceTests": 95,
+  "sizeBefore": 102,
+  "sizeAfter": 55,
+  "firstSeconds": 4766.7
+}

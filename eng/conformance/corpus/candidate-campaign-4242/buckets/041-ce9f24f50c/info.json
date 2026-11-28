@@ -1,0 +1,29 @@
+{
+  "signature": "managed-crash | managed | timeout | ",
+  "category": "new",
+  "kind": "managed-crash",
+  "frontends": "managed",
+  "ids": "timeout",
+  "msg": "",
+  "minTags": [
+    "arith.div-int",
+    "arith.int",
+    "assign.compound",
+    "const.local",
+    "expr.compare",
+    "local.decl",
+    "localfunc.in-class-method",
+    "localfunc.static",
+    "loop.for",
+    "method.static",
+    "type.class"
+  ],
+  "seed": "4242",
+  "index": 3001,
+  "plan": "Const\u003ELoop",
+  "mutations": [],
+  "reduceTests": 53,
+  "sizeBefore": 82,
+  "sizeAfter": 50,
+  "firstSeconds": 1756.7
+}

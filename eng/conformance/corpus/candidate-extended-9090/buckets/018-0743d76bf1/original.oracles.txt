@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound coll.arg coll.rospan expr.cast expr.compare expr.conditional expr.index func.expr-body local.decl local.var method.static param.scoped span.arg-rospan span.foreach-ref span.from-vec span.length span.range span.read span.slice-local span.vec-after-borrow span.vec-slice-call span.write type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@10:22 Cannot borrow 'v2' mutably while borrowed by 's1'. ; VIB003@10:35 Cannot read 'v2' while exclusively borrowed by 's1'. ; VIB003@10:39 Cannot borrow 'v2' immutably while borrowed by 's1'. ; VIB001@11:19 Use of moved value 's1'. ; VIB001@15:9 Use of moved value 's1'. ; VIB001@16:16 Use of moved value 's1'. ; VIB001@17:23 Use of moved value 's1'.
+stage0 check: REJECT VIB003@10:22 Cannot borrow 'v2' mutably while borrowed by 's1'. ; VIB003@10:35 Cannot read 'v2' while exclusively borrowed by 's1'. ; VIB003@10:39 Cannot borrow 'v2' immutably while borrowed by 's1'. ; VIB001@11:19 Use of moved value 's1'. ; VIB001@15:9 Use of moved value 's1'. ; VIB001@16:16 Use of moved value 's1'. ; VIB001@17:23 Use of moved value 's1'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001,VIB003 | cannot borrow 'x' mutably while borrowed by 'x'.

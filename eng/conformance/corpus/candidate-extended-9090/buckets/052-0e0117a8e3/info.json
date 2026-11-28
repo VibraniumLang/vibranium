@@ -1,0 +1,25 @@
+{
+  "signature": "invalid-accepted | self | CS8518 | ",
+  "category": "known:N6",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS8518",
+  "msg": "",
+  "minTags": [
+    "local.decl",
+    "localfunc.static",
+    "pattern.combinator",
+    "pattern.is",
+    "pattern.relational",
+    "stmt.nested-block"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 7314,
+  "plan": "PatternVar\u003EOptionSlot",
+  "mutations": [],
+  "reduceTests": 63,
+  "sizeBefore": 63,
+  "sizeAfter": 30,
+  "firstSeconds": 1232.4
+}

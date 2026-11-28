@@ -1,0 +1,14 @@
+validity: valid
+tags: arith.bitwise arith.int arith.shift assign.compound class.primary-ctor expr.cast expr.compare expr.conditional func.expr-body local.decl local.var localfunc.nested localfunc.static optref.asref-pattern optref.param optslot.issome optslot.local pattern.is pattern.union pattern.var stmt.if stmt.if-else type.class union.ctor
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=134 out=[True|] err=[Stack overflow.|Repeated 174535 times:|--------------------------------|   at Program.<<Main>$>g__L11|0_4(Int32)|--------------------------------|   at Program.<<Main>$>g__F|0_0(Int32, Boolean, Int64)|   at Program.<Main>$(System.String[])|]
+self-O0 run: exit=139 out=[True|] err=[]
+stage0-O0 run: exit=139 out=[True|] err=[]
+DISAGREEMENT: managed-crash | managed | exit134 | stack overflow.
+DISAGREEMENT: output-mismatch | stage0+self | exit+stderr | stage0-O0,self-O0

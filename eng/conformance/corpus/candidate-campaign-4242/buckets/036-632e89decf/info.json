@@ -1,0 +1,28 @@
+{
+  "signature": "invalid-accepted | self | CS0266,CS1503,CS8422 | ",
+  "category": "new",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS0266,CS1503,CS8422",
+  "msg": "",
+  "minTags": [
+    "arith.int",
+    "arith.rem-double",
+    "assign.compound",
+    "func.expr-body",
+    "local.decl",
+    "local.var",
+    "localfunc.static",
+    "pattern.discard",
+    "switch.expr",
+    "switch.sel.float"
+  ],
+  "seed": "4242",
+  "index": 7614,
+  "plan": "CondArg\u003ESwitchExpr",
+  "mutations": [],
+  "reduceTests": 55,
+  "sizeBefore": 87,
+  "sizeAfter": 48,
+  "firstSeconds": 1528.3
+}

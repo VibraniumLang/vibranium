@@ -1,0 +1,42 @@
+name: Setup Vibranium toolchain
+description: Install the pinned .NET SDK and optionally LLVM 18.
+inputs:
+  install-llvm:
+    description: Install clang-18, LLVM 18 and the ASan/LSan runtime.
+    default: "true"
+
+runs:
+  using: composite
+  steps:
+    - name: Install LLVM 18 and Clang 18 (with ASan/LSan runtime)
+      if: "${{ inputs.install-llvm == 'true' }}"
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends clang-18 llvm-18 libclang-rt-18-dev
+        clang-18 --version
+        opt-18 --version
+
+    - name: Install .NET 11.0.100 SDK
+      shell: bash
+      run: |
+        installer=$(mktemp)
+        trap 'rm -f "$installer"' EXIT
+        curl --retry 3 --retry-delay 2 -fsSL https://dot.net/v1/dotnet-install.sh -o "$installer"
+        bash "$installer" --version 11.0.100 --install-dir "$HOME/.dotnet"
+        echo "$HOME/.dotnet" >> "$GITHUB_PATH"
+        {
+          echo "DOTNET_ROOT=$HOME/.dotnet"
+          echo "DOTNET_CLI_TELEMETRY_OPTOUT=1"
+          echo "DOTNET_NOLOGO=1"
+        } >> "$GITHUB_ENV"
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v5
+      with:
+        path: ~/.nuget/packages
+        key: "nuget-${{ runner.os }}-${{ inputs.install-llvm }}-${{ hashFiles('**/*.csproj', 'Directory.Build.props', 'Vibranium.App.props', 'global.json') }}"
+
+    - name: Verify .NET SDK version
+      shell: bash
+      run: dotnet --info

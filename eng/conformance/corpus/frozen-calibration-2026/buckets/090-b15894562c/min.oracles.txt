@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound assign.field assign.simple banned.nonstatic-localfunc const.local func.expr-body local.decl local.uninit localfunc.nested localfunc.static struct.fieldwise-init struct.local type.field type.struct
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@6:5 Use of uninitialized value 'n2'. ; VIB000@8:9 Non-static (capturing) local functions are banned in Vibranium; declare local functions 'static'.
+stage0 check: REJECT VIB001@6:5 Use of uninitialized value 'n2'. ; VIB000@8:9 Non-static (capturing) local functions are banned in Vibranium; declare local functions 'static'.
+self check: exit=1 out=[] err=[Program.cs(8,9): error VIB000: Non-static (capturing) local functions are banned in Vibranium; declare local functions 'static'.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{} | 

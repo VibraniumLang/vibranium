@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arg.ref arith.int assign.compound expr.cast expr.compare expr.conditional local.decl localfunc.static param.in span.foreach span.foreach-ref span.from-coll span.index-from-end span.range span.read span.slice-local span.to-rospan span.write-after-shared stmt.if-else struct.local struct.new-default type.field type.struct
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS9191@20:19 The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead. ; CS0162@17:9 Unreachable code detected
+analyzer: VIB001@23:12 Use of moved value 's1'. ; VIB001@23:21 Use of moved value 's1'.
+stage0 check: REJECT VIB001@23:12 Use of moved value 's1'. ; VIB001@23:21 Use of moved value 's1'.
+self check: exit=1 out=[] err=[Program.cs(20,14): error VIB000: No applicable local function overload in Vibranium.|Program.cs(20,26): error VIB000: Incompatible operand types for binary operator in Vibranium.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{VIB000} | 

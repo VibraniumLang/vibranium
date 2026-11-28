@@ -1,0 +1,7 @@
+validity: valid
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(4,15): error VIB000: Switch expression must be exhaustive (include a '_' or 'var' catch-all arm) in Vibranium.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | switch expression must be exhaustive (include a 'x' or 'x' catch-all arm) in vibranium.

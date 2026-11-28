@@ -1,0 +1,43 @@
+WriteLine(F(1));
+static int F(int p0)
+{
+    int acc = p0;
+    switch (p0)
+    {
+        case < 4 when false:
+            SNO n4;
+            n4.In.A = 1;
+            n4.In.B = -3;
+            n4.In.V = [5];
+            n4.C = p0;
+            acc += n4.In.A + n4.C;
+            break;
+        default: break;
+    }
+    return acc;
+}
+public struct SO(int a, int b, Vec<int> n)
+{
+    public int A = a;
+    public int B = b;
+    public Vec<int> V = n;
+}
+public struct SNO
+{
+    public SO In;
+    public int C;
+}
+
+validity: warn-only
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@8:13 Unreachable code detected
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[1|] err=[]
+self-O0 run: exit=0 out=[1|] err=[]
+stage0-O0 run: exit=0 out=[1|] err=[]
+

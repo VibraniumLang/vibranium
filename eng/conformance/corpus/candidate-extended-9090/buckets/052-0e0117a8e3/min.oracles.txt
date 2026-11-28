@@ -1,0 +1,8 @@
+validity: invalid
+tags: local.decl localfunc.static pattern.combinator pattern.is pattern.relational stmt.nested-block
+sdk-roslyn errors: CS8518@6:19 An expression of type 'int' can never match the provided pattern.
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS8518@6:19 An expression of type 'int' can never match the provided pattern.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS8518 | 

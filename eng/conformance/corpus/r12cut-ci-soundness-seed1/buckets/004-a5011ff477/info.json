@@ -1,0 +1,26 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB001} | ",
+  "category": "new:R12-F3",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{} self-only:{VIB001}",
+  "msg": "",
+  "minTags": [
+    "snd.inval-move",
+    "snd.place-after-loop",
+    "snd.producer-recv-view",
+    "snd.use-read",
+    "type.class"
+  ],
+  "seed": "1",
+  "profile": "soundness",
+  "index": 139,
+  "plan": "SndRecv\u003ESwitchStmt",
+  "mutations": [
+    "reverse-cases"
+  ],
+  "reduceTests": 8,
+  "sizeBefore": 66,
+  "sizeAfter": 10,
+  "firstSeconds": 64.7
+}

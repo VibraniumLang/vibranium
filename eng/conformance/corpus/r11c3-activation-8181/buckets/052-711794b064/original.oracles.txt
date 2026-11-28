@@ -1,0 +1,9 @@
+validity: valid
+tags: arith.div-int arith.int assign.compound ca.borrow-then-move ca.form-ctor ca.form-instance ca.loan-ref-readonly ca.loan-view ca.move-bare ca.move-explicit ca.owner-holder ca.owner-vec ca.rel-prefix ca.rel-same expr.compare expr.conditional local.decl method.static type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@14:118 Cannot move 'x' while borrowed by '__ref_6'. ; VIB005@14:118 Cannot move non-Copy value out of a field, indexed element, or borrowed place.
+stage0 check: REJECT VIB003@14:118 Cannot move 'x' while borrowed by '__ref_6'. ; VIB005@14:118 Cannot move non-Copy value out of a field, indexed element, or borrowed place.
+self check: exit=1 out=[] err=[Program.cs(14,119): error VIB005: Cannot move non-Copy value out of a field, indexed element, or borrowed place.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB003} self-only:{} | 
+DISAGREEMENT: spec-wrong-id | ca.borrow-then-move | ca.borrow-then-move>self:VIB005 | expected ca.borrow-then-move:VIB003

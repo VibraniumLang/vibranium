@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arith.int arith.rem-long arith.shift assign.compound assign.simple class.primary-ctor expr.cast local.decl local.uninit localfunc.static optmut.local optmut.nm-overlap optmut.take optref.asref-pattern optslot.local optslot.replace pattern.relational switch.default switch.section-local switch.section-no-terminator switch.sel.unsigned switch.stmt type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@13:13 Unreachable code detected
+analyzer: VIB002@19:38 Overlapping borrows in a single call where at least one borrow is exclusive. ; VIB003@19:38 Cannot borrow 'o4' mutably while borrowed by '__tmp_17'.
+stage0 check: REJECT VIB002@19:38 Overlapping borrows in a single call where at least one borrow is exclusive. ; VIB003@19:38 Cannot borrow 'o4' mutably while borrowed by '__tmp_17'.
+self check: exit=1 out=[] err=[Program.cs(12,9): error VIB000: C# switch section endpoints must not be reachable; Panic is an ordinary invocation for source reachability (CS0163/CS8070).|Program.cs(19,38): error VIB002: Overlapping borrows in a single call where at least one borrow is exclusive.|Program.cs(19,46): error VIB003: Borrow conflicts with an active borrow.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{} self-only:{VIB000} | 

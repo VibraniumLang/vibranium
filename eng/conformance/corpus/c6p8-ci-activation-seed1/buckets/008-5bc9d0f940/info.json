@@ -1,0 +1,21 @@
+{
+  "signature": "accept-reject | self-accepts | stage0:VIB003 | cannot move \u0027x\u0027 while borrowed by \u0027x\u0027.",
+  "category": "new:N17",
+  "kind": "accept-reject",
+  "frontends": "self-accepts",
+  "ids": "stage0:VIB003",
+  "msg": "cannot move \u0027x\u0027 while borrowed by \u0027x\u0027.",
+  "minTags": [
+    "type.class",
+    "view.loop-reassign-move"
+  ],
+  "seed": "1",
+  "profile": "activation",
+  "index": 108,
+  "plan": "ViewMove\u003ECaReceiver\u003ELocalFunc",
+  "mutations": [],
+  "reduceTests": 11,
+  "sizeBefore": 51,
+  "sizeAfter": 9,
+  "firstSeconds": 64.3
+}

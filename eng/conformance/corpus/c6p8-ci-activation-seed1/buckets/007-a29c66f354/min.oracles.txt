@@ -1,0 +1,8 @@
+validity: valid
+tags: local.decl localfunc.static view.assign-value-then-use
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@11:109 Cannot read 'b' while exclusively borrowed by 's'. ; VIB001@11:131 Use of moved value 's'.
+stage0 check: REJECT VIB003@11:109 Cannot read 'b' while exclusively borrowed by 's'. ; VIB001@11:131 Use of moved value 's'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001,VIB003 | cannot read 'x' while exclusively borrowed by 'x'.

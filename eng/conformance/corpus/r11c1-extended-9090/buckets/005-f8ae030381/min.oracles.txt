@@ -1,0 +1,8 @@
+validity: warn-only
+tags: local.decl local.uninit localfunc.static pattern.relational span.arg-span span.from-coll span.nm-moved switch.default switch.section-local switch.sel.unsigned switch.stmt
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@10:13 Unreachable code detected
+analyzer: VIB001@14:20 Use of moved value 's2'. ; VIB001@15:20 Use of uninitialized value 'x5'.
+stage0 check: REJECT VIB001@14:20 Use of moved value 's2'. ; VIB001@15:20 Use of uninitialized value 'x5'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001 | use of moved value 'x'.

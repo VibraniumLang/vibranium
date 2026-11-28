@@ -1,0 +1,19 @@
+WriteLine(F(1));
+static int F(int x)
+{
+    int k = 1;
+    switch (x)
+    {
+        case k: return 1;
+        default: return 2;
+    }
+}
+
+validity: invalid
+tags: 
+sdk-roslyn errors: CS9135@7:14 A constant value of type 'int' is expected
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS9135@7:14 A constant value of type 'int' is expected
+self check: exit=1 out=[] err=[Program.cs(7,14): error VIB000: A constant value is expected in a pattern (CS9135).|]
+

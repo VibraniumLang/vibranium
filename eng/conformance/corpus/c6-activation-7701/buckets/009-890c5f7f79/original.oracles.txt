@@ -1,0 +1,9 @@
+validity: valid
+tags: arith.int assign.compound expr.cast expr.compare expr.logical local.decl local.var localfunc.nested localfunc.static pattern.const stmt.if stmt.nested-block switch.expr switch.expr-no-discard switch.sel.bool view.param-stack-escape view.param-stack-scope-exit
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB007@24:91 Cannot return a reference or view backed by stack-allocated storage.
+stage0 check: REJECT VIB007@24:91 Cannot return a reference or view backed by stack-allocated storage.
+self check: exit=1 out=[] err=[Program.cs(24,84): error VIB003: Stack-allocated buffer exits scope while borrowed by a live reference or view.|Program.cs(24,84): error VIB007: Cannot return a reference or view backed by stack-allocated storage.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{} self-only:{VIB003} | 
+DISAGREEMENT: spec-wrong-id | view.param-stack-escape+view.param-stack-scope-exit | view.param-stack-scope-exit>analyzer:VIB007 view.param-stack-scope-exit>stage0:VIB007 | expected view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003

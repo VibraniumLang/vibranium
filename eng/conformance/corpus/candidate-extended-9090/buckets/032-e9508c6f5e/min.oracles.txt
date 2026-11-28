@@ -1,0 +1,8 @@
+validity: valid
+tags: assign.simple class.primary-ctor local.decl localfunc.static method.instance pattern.relational switch.expr switch.expr-no-discard switch.guard-true switch.sel.int type.class type.field utf8.slice-escapes-loop
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB004@14:9 Cannot take a mutable reference through a shared borrow.
+stage0 check: REJECT VIB004@14:9 Cannot take a mutable reference through a shared borrow.
+self check: exit=1 out=[] err=[Program.cs(14,11): error VIB004: Cannot take a mutable reference through a shared borrow.|Program.cs(14,15): error VIB000: Switch expression must be exhaustive (include a '_' or 'var' catch-all arm) in Vibranium.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{} self-only:{VIB000} | 

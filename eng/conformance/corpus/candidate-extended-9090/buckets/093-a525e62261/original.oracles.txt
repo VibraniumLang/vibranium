@@ -1,0 +1,8 @@
+validity: invalid
+tags: arith.int assign.compound class.primary-ctor local.decl localfunc.static mut.calls-mut mut.drain mut.local mut.nested-field mut.ref-param pattern.named-const switch.default switch.sel.int switch.stmt type.class
+sdk-roslyn errors: CS9135@13:14 A constant value of type 'int' is expected
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS9135@13:14 A constant value of type 'int' is expected
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS9135 | 

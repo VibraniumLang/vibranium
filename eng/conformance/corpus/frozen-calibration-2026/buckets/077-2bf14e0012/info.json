@@ -1,0 +1,36 @@
+{
+  "signature": "banned-wrong-id | banned.linear-field | self:VIB000 | expected VIB006",
+  "category": "new-low",
+  "kind": "banned-wrong-id",
+  "frontends": "banned.linear-field",
+  "ids": "self:VIB000",
+  "msg": "expected VIB006",
+  "minTags": [
+    "arg.out",
+    "assign.simple",
+    "banned.linear-field",
+    "banned.nonstatic-localfunc",
+    "class.primary-ctor",
+    "expr.cast",
+    "func.expr-body",
+    "local.decl",
+    "local.underscore-read",
+    "local.var",
+    "localfunc.static",
+    "method.instance",
+    "out.underscore",
+    "param.out",
+    "type.field",
+    "type.resource"
+  ],
+  "seed": "2026",
+  "index": 522,
+  "plan": "Banned\u003EOutArg",
+  "mutations": [
+    "nonstatic-localfunc"
+  ],
+  "reduceTests": 66,
+  "sizeBefore": 77,
+  "sizeAfter": 51,
+  "firstSeconds": 360.7
+}

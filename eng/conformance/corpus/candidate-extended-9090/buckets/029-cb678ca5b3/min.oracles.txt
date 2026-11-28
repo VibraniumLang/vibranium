@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound func.expr-body local.decl localfunc.nested localfunc.static span.arg-rospan span.arg-span span.foreach-ref span.from-coll
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@8:11 Use of moved value 's2'.
+stage0 check: REJECT VIB001@8:11 Use of moved value 's2'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001 | use of moved value 'x'.

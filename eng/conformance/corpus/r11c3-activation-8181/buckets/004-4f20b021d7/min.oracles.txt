@@ -1,0 +1,8 @@
+validity: valid
+tags: gen.auto-generated-header type.class view.elision-single view.use-after-mutate
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT VIB003@6:92 Cannot mutate 'a' while borrowed by 's'.
+self check: exit=1 out=[] err=[Program.cs(6,97): error VIB003: Borrow conflicts with an active borrow.|]
+DISAGREEMENT: analyzer-vs-stage0 | analyzer+stage0 | analyzer:{} stage0:{VIB003} | 

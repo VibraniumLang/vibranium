@@ -1,0 +1,21 @@
+WriteLine(F(3));
+static int F(ushort x)
+{
+    int r = 0;
+    switch (x)
+    {
+        case >= (ushort)0: r = 1; break;
+        default: WriteLine(2);
+    }
+    return r;
+}
+
+validity: warn-only
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@8:18 Unreachable code detected
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(8,9): error VIB000: C# switch section endpoints must not be reachable; Panic is an ordinary invocation for source reachability (CS0163/CS8070).|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | c# switch section endpoints must not be reachable; panic is an ordinary invocation for sou
+

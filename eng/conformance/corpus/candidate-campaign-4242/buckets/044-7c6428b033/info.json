@@ -1,0 +1,25 @@
+{
+  "signature": "output-mismatch | stage0\u002Bself | stdout | stage0-O0,self-O0",
+  "category": "new",
+  "kind": "output-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stdout",
+  "msg": "stage0-O0,self-O0",
+  "minTags": [
+    "expr.compare",
+    "local.decl",
+    "local.underscore",
+    "local.underscore-read",
+    "loop.do",
+    "method.static",
+    "type.class"
+  ],
+  "seed": "4242",
+  "index": 6019,
+  "plan": "Loop\u003EUnderscore",
+  "mutations": [],
+  "reduceTests": 51,
+  "sizeBefore": 70,
+  "sizeAfter": 32,
+  "firstSeconds": 2143.3
+}

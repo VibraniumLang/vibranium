@@ -1,0 +1,60 @@
+probe	validity	expectation	analyzer	stage0	self	verdict
+n20-b-opt-mv-expr-discard-guard	valid	accept	accept	accept	accept	OK
+n20-b-opt-mv-expr-not-none	valid	VIB006	VIB001 VIB006	VIB001 VIB006	VIB006	pending:N20
+n20-b-opt-mv-expr-some-guard-repeat	valid	VIB006	VIB001 VIB006	VIB001 VIB006	accept	pending:N20
+n20-b-opt-mv-expr-var	valid	accept	accept	accept	accept	OK
+n20-b-opt-mv-stmt-none-guard-default	valid	VIB006	VIB001 VIB006	VIB001 VIB006	accept	pending:N20
+n20-b-opt-mv-stmt-none-guard-repeat	valid	VIB006	VIB001 VIB006	VIB001 VIB006	accept	pending:N20
+n20-b-opt-mv-stmt-not-none	valid	VIB006	VIB001 VIB006	VIB001 VIB006	VIB006	pending:N20
+n20-b-opt-mv-stmt-not-some	valid	VIB006	VIB001 VIB006	VIB001 VIB006	VIB006	pending:N20
+n20-b-opt-mv-stmt-or	valid	VIB006	VIB006	VIB006	VIB006	OK
+n20-b-opt-mv-stmt-some-guard-repeat	valid	VIB006	VIB001 VIB006	VIB001 VIB006	accept	pending:N20
+n20-b-opt-mv-stmt-var	valid	accept	accept	accept	accept	OK
+n20-b-opt-pl-expr-discard-guard	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-b-opt-pl-expr-not-none	valid	equal	VIB006	VIB006	VIB006	OK
+n20-b-opt-pl-expr-some-guard-repeat	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-b-opt-pl-expr-var	valid	accept	accept	accept	accept	OK
+n20-b-opt-pl-stmt-none-guard-default	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-b-opt-pl-stmt-none-guard-repeat	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-b-opt-pl-stmt-not-none	valid	equal	VIB006	VIB006	VIB006	OK
+n20-b-opt-pl-stmt-not-some	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-b-opt-pl-stmt-or	valid	equal	VIB006	VIB006	VIB006	OK
+n20-b-opt-pl-stmt-some-guard-repeat	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-b-opt-pl-stmt-var	valid	accept	accept	accept	accept	OK
+n20-b-opt-rv-expr-discard-guard	valid	accept	accept	accept	accept	OK
+n20-b-opt-rv-expr-not-none	valid	VIB006	VIB001 VIB006	VIB001 VIB006	VIB006	pending:N20
+n20-b-opt-rv-expr-some-guard-repeat	valid	VIB006	VIB001 VIB006	VIB001 VIB006	accept	pending:N20
+n20-b-opt-rv-expr-var	valid	accept	accept	accept	accept	OK
+n20-b-opt-rv-stmt-none-guard-default	valid	VIB006	VIB001 VIB006	VIB001 VIB006	accept	pending:N20
+n20-b-opt-rv-stmt-none-guard-repeat	valid	VIB006	VIB001 VIB006	VIB001 VIB006	accept	pending:N20
+n20-b-opt-rv-stmt-not-none	valid	VIB006	VIB001 VIB006	VIB001 VIB006	VIB006	pending:N20
+n20-b-opt-rv-stmt-not-some	valid	VIB006	VIB001 VIB006	VIB001 VIB006	VIB006	pending:N20
+n20-b-opt-rv-stmt-or	valid	VIB006	VIB006	VIB006	VIB006	OK
+n20-b-opt-rv-stmt-some-guard-repeat	valid	VIB006	VIB001 VIB006	VIB001 VIB006	accept	pending:N20
+n20-b-opt-rv-stmt-var	valid	accept	accept	accept	accept	OK
+n20-b-res-pl-expr-err-guard	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-b-res-pl-stmt-err-guard-default	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-b-res-pl-stmt-not-ok	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-b-res-pl-stmt-ok-guard-repeat	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-b-res-pl-stmt-var	valid	accept	accept	accept	accept	OK
+n20-b-res-rv-expr-err-guard	valid	VIB006	VIB001 VIB006	VIB001 VIB006	accept	pending:N20
+n20-b-res-rv-stmt-err-guard-default	valid	VIB006	VIB001 VIB006	VIB001 VIB006	accept	pending:N20
+n20-b-res-rv-stmt-not-ok	valid	VIB006	VIB001 VIB006	VIB001 VIB006	VIB006	pending:N20
+n20-b-res-rv-stmt-ok-guard-repeat	valid	VIB006	VIB001 VIB006	VIB001 VIB006	accept	pending:N20
+n20-b-res-rv-stmt-var	valid	accept	accept	accept	accept	OK
+n20-c-opt-mv-expr-plain-discard	valid	accept	accept	accept	accept	OK
+n20-c-opt-mv-stmt-none-first-default	valid	accept	accept	accept	accept	OK
+n20-c-opt-mv-stmt-plain	valid	accept	accept	accept	accept	OK
+n20-c-opt-pl-expr-plain-discard	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-c-opt-pl-stmt-none-first-default	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-c-opt-pl-stmt-plain	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-c-opt-rv-expr-plain-discard	valid	accept	accept	accept	accept	OK
+n20-c-opt-rv-stmt-none-first-default	valid	accept	accept	accept	accept	OK
+n20-c-opt-rv-stmt-plain	valid	accept	accept	accept	accept	OK
+n20-c-res-pl-expr-plain-default	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-c-res-pl-stmt-plain	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-c-res-rv-expr-plain-default	valid	accept	accept	accept	accept	OK
+n20-c-res-rv-stmt-plain	valid	accept	accept	accept	accept	OK
+n20-q-opt-mv-stmt-type-variant	valid	equal	VIB006	VIB006	VIB006	OK
+n20-q-opt-pl-stmt-type-variant	valid	equal	VIB005 VIB006	VIB005 VIB006	VIB005 VIB006	OK
+n20-q-opt-rv-stmt-type-variant	valid	equal	VIB006	VIB006	VIB006	OK

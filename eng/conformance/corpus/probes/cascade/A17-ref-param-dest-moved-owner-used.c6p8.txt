@@ -1,0 +1,19 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Vec<int> a = [1, 2];
+Set(ref a, [3, 4, 5]);
+WriteLine(a.Count);
+
+static void Set(ref Vec<int> d, Vec<int> x)
+{
+    d = x;
+    WriteLine(x.Count);
+}
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@8:15 Use of moved value 'x'.
+stage0 check: REJECT VIB001@8:15 Use of moved value 'x'.
+self check: exit=1 out=[] err=[Program.cs(8,16): error VIB001: Use of moved value.|]
+

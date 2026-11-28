@@ -1,0 +1,8 @@
+validity: valid
+tags: type.class view.loop-reassign-move
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@4:178 Cannot move 's' while borrowed by 't'.
+stage0 check: REJECT VIB003@4:178 Cannot move 's' while borrowed by 't'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB003 | cannot move 'x' while borrowed by 'x'.

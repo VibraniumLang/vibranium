@@ -1,0 +1,29 @@
+{
+  "signature": "accept-reject | stage0-accepts | self:VIB000 | unsupported, unresolved, or inaccessible member access in vibranium.",
+  "category": "new:N19",
+  "kind": "accept-reject",
+  "frontends": "stage0-accepts",
+  "ids": "self:VIB000",
+  "msg": "unsupported, unresolved, or inaccessible member access in vibranium.",
+  "minTags": [
+    "local.decl",
+    "localfunc.static",
+    "uswitch.exhaustive",
+    "uswitch.nonunion-label",
+    "uswitch.payload-copy",
+    "uswitch.place",
+    "uswitch.result",
+    "uswitch.stmt",
+    "uswitch.stmt-nonunion-label",
+    "uswitch.var-final"
+  ],
+  "seed": "1",
+  "profile": "activation",
+  "index": 190,
+  "plan": "UnionSwitch\u003EFloatNint",
+  "mutations": [],
+  "reduceTests": 22,
+  "sizeBefore": 38,
+  "sizeAfter": 24,
+  "firstSeconds": 90.2
+}

@@ -1,0 +1,8 @@
+validity: invalid
+tags: arg.ref arith.float-to-int-cast arith.int assign.compound assign.simple expr.compare expr.logical local.decl local.ref localfunc.static param.ref-readonly pattern.decl pattern.is pattern.type pattern.union pattern.var std.intmap stmt.nested-block switch.cross-section-var switch.no-default switch.section-local switch.sel.result switch.stmt union.ctor
+sdk-roslyn errors: CS1510@14:27 A ref or out value must be an assignable variable
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS1510@14:27 A ref or out value must be an assignable variable
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS1510 | 

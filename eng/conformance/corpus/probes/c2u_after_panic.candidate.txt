@@ -1,0 +1,39 @@
+WriteLine(F(1));
+static int F(int p0)
+{
+    if (p0 > 100)
+    {
+        VibraniumRuntime.Panic("big");
+        SO s;
+        s.A = 1;
+        s.B = 2;
+        s.V = [1];
+        return s.A;
+    }
+    return p0;
+}
+public struct SO(int a, int b, Vec<int> n)
+{
+    public int A = a;
+    public int B = b;
+    public Vec<int> V = n;
+}
+public struct SNO
+{
+    public SO In;
+    public int C;
+}
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[1|] err=[]
+self-O0 run: exit=0 out=[1|] err=[]
+stage0-O0 run: exit=0 out=[1|] err=[]
+

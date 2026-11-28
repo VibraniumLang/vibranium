@@ -1,0 +1,10 @@
+name = "VibraniumFormal"
+version = "0.1.0"
+defaultTargets = ["VibraniumFormal", "vibranium-formal-verify"]
+
+[[lean_lib]]
+name = "VibraniumFormal"
+
+[[lean_exe]]
+name = "vibranium-formal-verify"
+root = "Main"

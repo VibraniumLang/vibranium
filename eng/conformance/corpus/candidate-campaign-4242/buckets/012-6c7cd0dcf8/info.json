@@ -1,0 +1,28 @@
+{
+  "signature": "output-mismatch | stage0 | stdout | stage0-O0",
+  "category": "new:N3",
+  "kind": "output-mismatch",
+  "frontends": "stage0",
+  "ids": "stdout",
+  "msg": "stage0-O0",
+  "minTags": [
+    "arg.out",
+    "arith.int",
+    "assign.compound",
+    "assign.simple",
+    "expr.conditional",
+    "local.decl",
+    "method.static",
+    "out.existing-local",
+    "param.out",
+    "type.class"
+  ],
+  "seed": "4242",
+  "index": 1501,
+  "plan": "RefParams\u003EPatternVar",
+  "mutations": [],
+  "reduceTests": 55,
+  "sizeBefore": 77,
+  "sizeAfter": 47,
+  "firstSeconds": 273.8
+}

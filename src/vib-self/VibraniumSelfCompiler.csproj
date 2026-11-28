@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\..\Vibranium.App.props" />
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>vib-self</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Vibranium.Core\Vibranium.Core.csproj" />
+    <ProjectReference Include="..\Vibranium.Std\Vibranium.Std.csproj" />
+    <ProjectReference Include="..\Vibranium.Analyzer\Vibranium.Analyzer.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,31 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB000} | ",
+  "category": "known:N2",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{} self-only:{VIB000}",
+  "msg": "",
+  "minTags": [
+    "local.decl",
+    "local.var",
+    "localfunc.static",
+    "pattern.relational",
+    "span.arg-span",
+    "span.from-vec",
+    "span.nm-overlap",
+    "span.vec-slice-call",
+    "switch.expr",
+    "switch.expr-no-discard",
+    "switch.guard-true",
+    "switch.sel.int"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 5263,
+  "plan": "SpanSlice\u003ESwitchExpr\u003EOptionSlot",
+  "mutations": [],
+  "reduceTests": 106,
+  "sizeBefore": 80,
+  "sizeAfter": 42,
+  "firstSeconds": 956.9
+}

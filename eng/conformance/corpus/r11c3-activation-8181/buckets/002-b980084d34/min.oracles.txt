@@ -1,0 +1,8 @@
+validity: valid
+tags: ca.borrow-then-move ca.form-operator ca.loan-mut-recv ca.move-bare ca.owner-class ca.rel-same type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@4:61 Cannot move 'x' while borrowed by '__ref_1'.
+stage0 check: REJECT VIB003@4:61 Cannot move 'x' while borrowed by '__ref_1'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB003 | cannot move 'x' while borrowed by 'x'.

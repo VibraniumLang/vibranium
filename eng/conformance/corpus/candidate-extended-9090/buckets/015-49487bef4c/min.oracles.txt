@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound local.decl localfunc.nested localfunc.static param.underscore span.foreach-ref span.from-vec span.to-rospan span.vec-slice-call
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@9:18 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@9:31 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@9:35 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@10:23 Use of moved value 's3'.
+stage0 check: REJECT VIB003@9:18 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@9:31 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@9:35 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@10:23 Use of moved value 's3'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001,VIB003 | cannot borrow 'x' mutably while borrowed by 'x'.

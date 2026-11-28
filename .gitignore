@@ -1,0 +1,39 @@
+# Build & Package Outputs
+[Bb]in/
+[Oo]bj/
+artifacts/
+formal/.lake/
+**/target/
+
+# Generated Native & LLVM Intermediates
+*.ll
+!src/**/Native/**/*.ll
+*.bc
+*.s
+*.o
+*.a
+*.so
+*.dylib
+*.out
+*.exe
+*.pdb
+*.binlog
+
+# IDE, Editor & OS State
+.vs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
+.idea/
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+.DS_Store
+Thumbs.db
+
+# Secrets, Environment & Scratch Files
+.env*
+*.pem
+*.key
+/tmp*

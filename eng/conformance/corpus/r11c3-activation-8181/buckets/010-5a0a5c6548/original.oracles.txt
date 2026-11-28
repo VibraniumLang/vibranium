@@ -1,0 +1,8 @@
+validity: valid
+tags: arg.out arith.float-to-int-cast arith.int assign.simple decl.this-call-before-init expr.compare local.decl local.var localfunc.static out.field param.out struct.local struct.new-default type.field type.struct
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@17:88 Use of uninitialized value '__this_1'. ; VIB008@17:88 Cannot access, capture, or call members on 'this' before constructor finishes initializing all fields.
+stage0 check: REJECT VIB001@17:88 Use of uninitialized value '__this_1'. ; VIB008@17:88 Cannot access, capture, or call members on 'this' before constructor finishes initializing all fields.
+self check: exit=1 out=[] err=[Program.cs(17,92): error VIB008: Cannot access, capture, or call members on 'this' before constructor finishes initializing all fields.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001} self-only:{} | 

@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound class.primary-ctor expr.cast func.expr-body local.decl local.underscore local.var method.instance method.static span.arg-rospan span.arg-span span.foreach-ref span.from-vec span.read span.vec-after-borrow span.vec-slice-call type.class type.field type.resource using.var
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@11:22 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@11:35 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@11:39 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@12:15 Use of moved value 's3'. ; VIB001@13:16 Use of moved value 's3'. ; VIB001@14:23 Use of moved value 's3'. ; VIB006@17:21 Cannot move 'using' resource variable 'r1'. ; VIB001@23:16 Use of moved value 'x'.
+stage0 check: REJECT VIB003@11:22 Cannot borrow 'v4' mutably while borrowed by 's3'. ; VIB003@11:35 Cannot read 'v4' while exclusively borrowed by 's3'. ; VIB003@11:39 Cannot borrow 'v4' immutably while borrowed by 's3'. ; VIB001@12:15 Use of moved value 's3'. ; VIB001@13:16 Use of moved value 's3'. ; VIB001@14:23 Use of moved value 's3'. ; VIB006@17:21 Cannot move 'using' resource variable 'r1'. ; VIB001@23:16 Use of moved value 'x'.
+self check: exit=1 out=[] err=[Program.cs(17,21): error VIB006: Cannot move 'using' resource variable.|Program.cs(23,17): error VIB001: Use of moved value.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB003} self-only:{} | 

@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arg.ref arith.int assign.compound local.decl localfunc.static param.in std.bytes std.bytes-indexof std.bytes-prefix std.tryparse
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS9191@11:19 The 'ref' modifier for argument 1 corresponding to 'in' parameter is equivalent to 'in'. Consider using 'in' instead.
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(11,14): error VIB000: No applicable local function overload in Vibranium.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | no applicable local function overload in vibranium.

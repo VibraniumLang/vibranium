@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound assign.field assign.simple expr.cast expr.conditional local.decl local.uninit localfunc.static struct.fieldwise-init struct.local type.field type.struct uswitch.exhaustive uswitch.nonunion-label uswitch.payload-copy uswitch.result uswitch.rvalue uswitch.stmt uswitch.stmt-nonunion-label uswitch.var-final
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(17,127): error VIB000: Unsupported, unresolved, or inaccessible member access in Vibranium.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | unsupported, unresolved, or inaccessible member access in vibranium.

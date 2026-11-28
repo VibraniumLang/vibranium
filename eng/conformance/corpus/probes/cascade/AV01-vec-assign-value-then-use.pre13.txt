@@ -1,0 +1,15 @@
+Vec<int> v = [1];
+int n = (v = MakeVec(7)).Count;
+WriteLine(n);
+WriteLine(v.Count);
+
+static Vec<int> MakeVec(int a) { Vec<int> v = [a, a + 1, a + 2]; return v; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@4:11 Use of moved value 'v'.
+stage0 check: REJECT VIB001@4:11 Use of moved value 'v'.
+self check: exit=1 out=[] err=[Program.cs(4,12): error VIB001: Use of moved value.|]
+

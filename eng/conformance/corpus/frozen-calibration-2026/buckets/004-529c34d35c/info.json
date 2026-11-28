@@ -1,0 +1,29 @@
+{
+  "signature": "invalid-accepted | self | CS8120 | ",
+  "category": "known:O10",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS8120",
+  "msg": "",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "func.expr-body",
+    "local.decl",
+    "localfunc.static",
+    "pattern.relational",
+    "switch.default",
+    "switch.guard-false",
+    "switch.section-no-terminator",
+    "switch.sel.unsigned",
+    "switch.stmt"
+  ],
+  "seed": "2026",
+  "index": 43,
+  "plan": "SwitchStmt\u003ECondArg",
+  "mutations": [],
+  "reduceTests": 52,
+  "sizeBefore": 101,
+  "sizeAfter": 57,
+  "firstSeconds": 41
+}

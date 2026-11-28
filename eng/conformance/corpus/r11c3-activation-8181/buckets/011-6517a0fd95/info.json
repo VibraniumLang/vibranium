@@ -1,0 +1,28 @@
+{
+  "signature": "output-mismatch | self | stdout | self-O0",
+  "category": "known:O11-4",
+  "kind": "output-mismatch",
+  "frontends": "self",
+  "ids": "stdout",
+  "msg": "self-O0",
+  "minTags": [
+    "arith.float-nint-const-oob",
+    "ca.control-unrelated",
+    "ca.form-ctor",
+    "ca.loan-in",
+    "ca.move-explicit",
+    "ca.owner-linear",
+    "ca.rel-unrelated",
+    "local.decl",
+    "localfunc.static"
+  ],
+  "seed": "8181",
+  "profile": "activation",
+  "index": 39,
+  "plan": "FloatNint\u003ECaCall",
+  "mutations": [],
+  "reduceTests": 22,
+  "sizeBefore": 41,
+  "sizeAfter": 26,
+  "firstSeconds": 48.6
+}

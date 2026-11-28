@@ -1,0 +1,29 @@
+{
+  "signature": "accept-reject | self-accepts | stage0:VIB001,VIB003 | cannot borrow \u0027x\u0027 mutably while borrowed by \u0027x\u0027.",
+  "category": "known:N8",
+  "kind": "accept-reject",
+  "frontends": "self-accepts",
+  "ids": "stage0:VIB001,VIB003",
+  "msg": "cannot borrow \u0027x\u0027 mutably while borrowed by \u0027x\u0027.",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "local.decl",
+    "localfunc.nested",
+    "localfunc.static",
+    "param.underscore",
+    "span.foreach-ref",
+    "span.from-vec",
+    "span.to-rospan",
+    "span.vec-slice-call"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 509,
+  "plan": "Underscore\u003ESpanSlice",
+  "mutations": [],
+  "reduceTests": 47,
+  "sizeBefore": 86,
+  "sizeAfter": 37,
+  "firstSeconds": 184.5
+}

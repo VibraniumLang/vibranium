@@ -1,0 +1,8 @@
+validity: invalid
+tags: arith.div-int arith.double arith.int assign.compound class.primary-ctor coll.local-init coll.vec expr.cast local.decl local.var localfunc.static loop.foreach-ref loop.foreach-vec optmut.local optmut.pattern-write optmut.replace optref.asref-pattern optslot.local optslot.replace pattern.discard pattern.relational switch.expr switch.guard-false switch.sel-unparenthesized switch.sel.float type.class
+sdk-roslyn errors: CS0266@17:9 Cannot implicitly convert type 'double' to 'int'. An explicit conversion exists (are you missing a cast?)
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS0266@17:9 Cannot implicitly convert type 'double' to 'int'. An explicit conversion exists (are you missing a cast?)
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS0266 | 

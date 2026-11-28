@@ -1,0 +1,8 @@
+validity: warn-only
+tags: assign.simple class.primary-ctor cut.struct-piecewise-owned expr.qualified-member local.decl local.uninit localfunc.static method.instance pattern.named-const struct.local struct.owned-field switch.default switch.section-local switch.section-no-terminator switch.sel.enum switch.stmt type.class type.enum type.field type.struct
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@22:23 Unreachable code detected
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: banned-accepted | analyzer+stage0+self | cut.struct-piecewise-owned | 

@@ -1,0 +1,26 @@
+{
+  "signature": "banned-accepted | analyzer\u002Bstage0\u002Bself | cut.preprocessor | ",
+  "category": "known:O11-9",
+  "kind": "banned-accepted",
+  "frontends": "analyzer\u002Bstage0\u002Bself",
+  "ids": "cut.preprocessor",
+  "msg": "",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "cut.preprocessor",
+    "func.expr-body",
+    "local.decl",
+    "localfunc.nested",
+    "localfunc.static"
+  ],
+  "seed": "8181",
+  "profile": "activation",
+  "index": 4,
+  "plan": "LocalFunc\u003EDeclCuts\u003ECondArg",
+  "mutations": [],
+  "reduceTests": 53,
+  "sizeBefore": 101,
+  "sizeAfter": 57,
+  "firstSeconds": 25.9
+}

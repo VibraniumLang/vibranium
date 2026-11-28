@@ -1,0 +1,33 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{VIB003} self-only:{} | ",
+  "category": "new",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{VIB003} self-only:{}",
+  "msg": "",
+  "minTags": [
+    "class.primary-ctor",
+    "func.expr-body",
+    "local.decl",
+    "local.var",
+    "method.instance",
+    "method.static",
+    "span.foreach-ref",
+    "span.from-vec",
+    "span.to-rospan",
+    "span.vec-range",
+    "type.class",
+    "type.field",
+    "type.resource",
+    "using.var"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 15148,
+  "plan": "Using\u003ESpanSlice",
+  "mutations": [],
+  "reduceTests": 54,
+  "sizeBefore": 74,
+  "sizeAfter": 38,
+  "firstSeconds": 2087.4
+}

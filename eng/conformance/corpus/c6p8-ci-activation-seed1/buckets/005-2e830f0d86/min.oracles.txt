@@ -1,0 +1,15 @@
+validity: valid
+tags: local.decl localfunc.static uswitch.case-guard uswitch.exhaustive uswitch.nonunion-label uswitch.not-case uswitch.payload-owner uswitch.place uswitch.result uswitch.stmt uswitch.stmt-nonunion-label view.move-reassign-source
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+self-ir-contract: OK
+stage0-O0-needed: libc.so.6
+stage0-ir-contract: OK
+managed run: exit=0 out=[0|] err=[]
+self-O0 run: exit=101 out=[] err=[panic: index out of bounds|]
+stage0-O0 run: exit=0 out=[0|] err=[]
+DISAGREEMENT: output-mismatch | self | exit+stdout+stderr | self-O0

@@ -1,0 +1,32 @@
+{
+  "signature": "accept-reject | self-accepts | stage0:VIB001 | use of uninitialized value \u0027x\u0027.",
+  "category": "regression:O6",
+  "kind": "accept-reject",
+  "frontends": "self-accepts",
+  "ids": "stage0:VIB001",
+  "msg": "use of uninitialized value \u0027x\u0027.",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "assign.simple",
+    "local.decl",
+    "local.uninit",
+    "method.static",
+    "pattern.const",
+    "switch.default",
+    "switch.section-local",
+    "switch.section-no-terminator",
+    "switch.sel.bool",
+    "switch.stmt",
+    "type.class"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 22749,
+  "plan": "StdText\u003ESwitchStmt\u003EArith",
+  "mutations": [],
+  "reduceTests": 68,
+  "sizeBefore": 88,
+  "sizeAfter": 47,
+  "firstSeconds": 3000.1
+}

@@ -1,0 +1,23 @@
+{
+  "signature": "spec-wrong-id | decl.this-call-before-init\u002Bview.param-stack-escape\u002Bview.param-stack-scope-exit | view.param-stack-scope-exit\u003Eanalyzer:VIB007,VIB008 view.param-stack-scope-exit\u003Estage0:VIB007,VIB008 | expected decl.this-call-before-init:VIB008 view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "category": "new:N16",
+  "kind": "spec-wrong-id",
+  "frontends": "decl.this-call-before-init\u002Bview.param-stack-escape\u002Bview.param-stack-scope-exit",
+  "ids": "view.param-stack-scope-exit\u003Eanalyzer:VIB007,VIB008 view.param-stack-scope-exit\u003Estage0:VIB007,VIB008",
+  "msg": "expected decl.this-call-before-init:VIB008 view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "minTags": [
+    "decl.this-call-before-init",
+    "type.class",
+    "view.param-stack-escape",
+    "view.param-stack-scope-exit"
+  ],
+  "seed": "7701",
+  "profile": "activation",
+  "index": 12879,
+  "plan": "StdAppend\u003EDeclCuts\u003EViewReturn",
+  "mutations": [],
+  "reduceTests": 11,
+  "sizeBefore": 42,
+  "sizeAfter": 10,
+  "firstSeconds": 1202.3
+}

@@ -1,0 +1,21 @@
+Combined cut source 9ba44361 (before C21), release-7 tool, run (frontend checks only):
+var c = new C(2);
+WriteLine(c.A);
+public sealed class C
+{
+    public int A;
+    public C(int a) : base() { A = a; }
+}
+
+validity: valid
+tags: cut.base-ctor-call
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(6,23): error VIB000: Constructor chaining (': base(...)' / ': this(...)') is banned in Vibranium.|]
+cuts (C10–C21 scan, first occurrence): C21 cut.base-ctor-call (6,23)
+cut anchors: cut.base-ctor-call>self: no VIB000 with the exact message, want (6,23)
+DISAGREEMENT: banned-accepted | analyzer+stage0 | cut.base-ctor-call | 
+DISAGREEMENT: cut-anchor | cut.base-ctor-call | cut.base-ctor-call>self:missing | 
+

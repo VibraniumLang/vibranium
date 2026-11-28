@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound banned.nonstatic-localfunc coll.elem-byte coll.empty coll.returned coll.rospan func.expr-body func.returns-span local.decl localfunc.in-class-method localfunc.static method.static type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@7:13 Non-static (capturing) local functions are banned in Vibranium; declare local functions 'static'. ; VIB007@13:57 Cannot return a reference or view backed by stack-allocated storage.
+stage0 check: REJECT VIB000@7:13 Non-static (capturing) local functions are banned in Vibranium; declare local functions 'static'. ; VIB007@13:57 Cannot return a reference or view backed by stack-allocated storage.
+self check: exit=1 out=[] err=[Program.cs(7,13): error VIB000: Non-static (capturing) local functions are banned in Vibranium; declare local functions 'static'.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB007} self-only:{} | 

@@ -1,0 +1,29 @@
+{
+  "signature": "accept-reject | self-accepts | stage0:VIB003 | cannot borrow \u0027x\u0027 immutably while borrowed by \u0027x\u0027.",
+  "category": "known:O11-5",
+  "kind": "accept-reject",
+  "frontends": "self-accepts",
+  "ids": "stage0:VIB003",
+  "msg": "cannot borrow \u0027x\u0027 immutably while borrowed by \u0027x\u0027.",
+  "minTags": [
+    "expr.cast",
+    "func.expr-body",
+    "local.decl",
+    "local.var",
+    "localfunc.static",
+    "pattern.discard",
+    "switch.expr",
+    "switch.sel.result",
+    "union.ctor",
+    "view.reborrow-parent-after"
+  ],
+  "seed": "8181",
+  "profile": "activation",
+  "index": 71,
+  "plan": "FloatNint\u003EViewReturn\u003ESwitchExpr",
+  "mutations": [],
+  "reduceTests": 43,
+  "sizeBefore": 74,
+  "sizeAfter": 43,
+  "firstSeconds": 109.2
+}

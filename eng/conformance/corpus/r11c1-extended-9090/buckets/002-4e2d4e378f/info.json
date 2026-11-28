@@ -1,0 +1,28 @@
+{
+  "signature": "accept-reject | self-accepts | stage0:VIB001 | use of moved value \u0027x\u0027.",
+  "category": "regression:O6",
+  "kind": "accept-reject",
+  "frontends": "self-accepts",
+  "ids": "stage0:VIB001",
+  "msg": "use of moved value \u0027x\u0027.",
+  "minTags": [
+    "local.decl",
+    "localfunc.static",
+    "pattern.relational",
+    "span.from-coll",
+    "span.nm-moved",
+    "switch.default",
+    "switch.section-no-terminator",
+    "switch.sel.int",
+    "switch.stmt"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 1651,
+  "plan": "SwitchStmt\u003ESpanSlice",
+  "mutations": [],
+  "reduceTests": 84,
+  "sizeBefore": 97,
+  "sizeAfter": 39,
+  "firstSeconds": 269.5
+}

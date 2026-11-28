@@ -1,0 +1,8 @@
+validity: invalid
+tags: arith.rem-float assign.field assign.simple class.primary-ctor local.decl local.uninit local.var localfunc.static method.instance pattern.discard struct.fieldwise-init struct.local switch.expr switch.sel.float type.class type.field type.struct
+sdk-roslyn errors: CS1503@19:19 Argument 1: cannot convert from 'float' to 'sbyte'
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS1503@19:19 Argument 1: cannot convert from 'float' to 'sbyte'
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS1503 | 

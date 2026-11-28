@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound ca.control-unrelated ca.form-instance ca.loan-shared-recv ca.move-bare ca.owner-class ca.rel-unrelated expr.cast local.decl local.var localfunc.in-class-method localfunc.static method.static type.class view.loop-reassign-move
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@19:178 Cannot move 's' while borrowed by 't'.
+stage0 check: REJECT VIB003@19:178 Cannot move 's' while borrowed by 't'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB003 | cannot move 'x' while borrowed by 'x'.

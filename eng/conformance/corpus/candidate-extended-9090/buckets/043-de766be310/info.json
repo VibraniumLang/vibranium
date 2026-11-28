@@ -1,0 +1,32 @@
+{
+  "signature": "id-mismatch | stage0\u002Bself | stage0-only:{} self-only:{VIB000} | ",
+  "category": "known:N1",
+  "kind": "id-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stage0-only:{} self-only:{VIB000}",
+  "msg": "",
+  "minTags": [
+    "arg.in",
+    "arg.ref",
+    "arith.int",
+    "assign.compound",
+    "class.primary-ctor",
+    "local.decl",
+    "localfunc.static",
+    "optmut.local",
+    "optmut.nm-alias",
+    "optmut.param",
+    "optslot.local",
+    "param.in",
+    "type.class"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 3799,
+  "plan": "OptionSlot\u003ERefParams\u003ERefParams",
+  "mutations": [],
+  "reduceTests": 82,
+  "sizeBefore": 97,
+  "sizeAfter": 61,
+  "firstSeconds": 782.1
+}

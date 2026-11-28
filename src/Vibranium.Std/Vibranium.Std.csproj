@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net11.0</TargetFramework>
+    <LangVersion>15.0</LangVersion>
+    <RootNamespace>Vibranium.Std</RootNamespace>
+    <Nullable>enable</Nullable>
+    <CheckForOverflowUnderflow>false</CheckForOverflowUnderflow>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <WarningsAsErrors>$(WarningsAsErrors);CS0183;CS0184;CS8509;CS8519;CS8520;CS8524;CS8778;CS8793;CS8794;CS8846;CS9191;CS9192;CS9193</WarningsAsErrors>
+    <NoWarn>$(NoWarn);CA1416</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Using Include="System" />
+    <Using Include="Vibranium" />
+    <Using Include="Vibranium.Prelude" Static="true" />
+    <ProjectReference Include="..\Vibranium.Core\Vibranium.Core.csproj" />
+    <ProjectReference Include="..\Vibranium.Analyzer\Vibranium.Analyzer.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+    <InternalsVisibleTo Include="Vibranium.Tests" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,20 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Vec<int> a = [1, 2];
+Vec<int> b = [3, 4, 5];
+Span<int> t = a.AsSpan();
+for (int i = 0; i < 2; i++)
+{
+    Span<int> s = b.AsSpan();
+    t = s;
+    WriteLine(t.Length);
+}
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@7:9 Cannot move 's' while borrowed by 't'.
+stage0 check: REJECT VIB003@7:9 Cannot move 's' while borrowed by 't'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB003 | cannot move 'x' while borrowed by 'x'.
+

@@ -1,0 +1,25 @@
+{
+  "signature": "output-mismatch | stage0\u002Bself | stdout | stage0-O0,self-O0",
+  "category": "new",
+  "kind": "output-mismatch",
+  "frontends": "stage0\u002Bself",
+  "ids": "stdout",
+  "msg": "stage0-O0,self-O0",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "expr.compare",
+    "local.decl",
+    "localfunc.nested",
+    "localfunc.static",
+    "loop.for"
+  ],
+  "seed": "4242",
+  "index": 12369,
+  "plan": "Loop\u003EConst",
+  "mutations": [],
+  "reduceTests": 48,
+  "sizeBefore": 73,
+  "sizeAfter": 47,
+  "firstSeconds": 3924
+}

@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound const.class func.expr-body local.decl localfunc.in-class-method localfunc.static method.static type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(8,33): error VIB000: Unresolved or captured identifier in Vibranium.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | unresolved or captured identifier in vibranium.

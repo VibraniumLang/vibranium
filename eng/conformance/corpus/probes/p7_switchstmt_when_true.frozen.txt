@@ -1,0 +1,6 @@
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(2,12): error VIB000: Not all code paths return a value.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB000 | not all code paths return a value.

@@ -1,0 +1,15 @@
+Span<int> t = [0];
+{
+    Span<int> s = [1, 2, 3];
+    t = s;
+}
+WriteLine(t[0]);
+
+validity: invalid
+tags: 
+sdk-roslyn errors: CS8352@4:9 Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@1:1 Stack-allocated buffer 's' exits scope while borrowed by 't'.
+stage0 check: REJECT CS8352@4:9 Cannot use variable 's' in this context because it may expose referenced variables outside of their declaration scope
+self check: exit=1 out=[] err=[Program.cs(2,1): error VIB003: Stack-allocated buffer exits scope while borrowed by a live reference or view.|Program.cs(4,7): error VIB007: C# assignment cannot copy a borrowed value into a wider declared safe-context (CS8352/CS8353).|]
+

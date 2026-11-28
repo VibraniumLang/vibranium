@@ -1,0 +1,18 @@
+Candidate 6 (c6-pre1), release-7 tool, run --exec:
+var c = new C(2);
+WriteLine(c.A);
+public sealed class C
+{
+    public int A;
+    public C(int a) : base() { A = a; }
+}
+
+validity: valid
+tags: cut.base-ctor-call
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@6:23 Base constructor calls (: base(...)) are not supported in Vibranium v0.2; Vibranium has no inheritance.
+stage0 check: REJECT VIB000@6:23 Base constructor calls (: base(...)) are not supported in Vibranium v0.2; Vibranium has no inheritance.
+self check: exit=1 out=[] err=[Program.cs(6,23): error VIB000: Base constructor calls (: base(...)) are not supported in Vibranium v0.2; Vibranium has no inheritance.|]
+cuts (C10–C21 scan, first occurrence): C21 cut.base-ctor-call (6,23)
+

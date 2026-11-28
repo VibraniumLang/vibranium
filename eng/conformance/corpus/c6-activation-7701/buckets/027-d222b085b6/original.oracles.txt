@@ -1,0 +1,9 @@
+validity: valid
+tags: arith.long expr.conditional gen.file-name-g-cs local.decl localfunc.static view.lifetimeof-violated view.param-stack-escape view.param-stack-scope-exit view.reborrow-parent-after
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB007@13:68 Cannot return a reference or view backed by stack-allocated storage. ; VIB007@17:111 Returned reference or view escapes local or scoped/by-value owner 'y'.
+stage0 check: REJECT VIB007@13:68 Cannot return a reference or view backed by stack-allocated storage. ; VIB007@17:111 Returned reference or view escapes local or scoped/by-value owner 'y'.
+self check: exit=1 out=[] err=[Program.g.cs(13,61): error VIB003: Stack-allocated buffer exits scope while borrowed by a live reference or view.|Program.g.cs(13,61): error VIB007: Cannot return a reference or view backed by stack-allocated storage.|Program.g.cs(17,111): error VIB007: Returned reference or view escapes local or scoped/by-value owner.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{} self-only:{VIB003} | 
+DISAGREEMENT: spec-wrong-id | view.lifetimeof-violated+view.param-stack-escape+view.param-stack-scope-exit | view.param-stack-scope-exit>analyzer:VIB007 view.param-stack-scope-exit>stage0:VIB007 | expected view.lifetimeof-violated:VIB007 view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003

@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arith.div-int arith.int arith.long arith.rem-int assign.compound assign.simple expr.cast local.decl local.uninit method.static pattern.const std.stringbuf std.stringbuf-int switch.default switch.section-local switch.sel.bool switch.stmt type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@16:22 Unreachable code detected
+analyzer: VIB001@18:16 Use of uninitialized value 'r2'.
+stage0 check: REJECT VIB001@18:16 Use of uninitialized value 'r2'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001 | use of uninitialized value 'x'.

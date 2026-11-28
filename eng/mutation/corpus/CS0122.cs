@@ -1,0 +1,1 @@
+var c=new @record();WriteLine(c.X);class @record{ int X=7;}

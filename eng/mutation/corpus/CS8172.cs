@@ -1,0 +1,1 @@
+Vec<int>v=[1,2,3,4];Span<int>s=v.AsSpan();ref int r=At(s,1);r=40;s[0]=3;WriteLine(v[0]+v[1]);static ref int At(Span<int>x,int i)=>ref x[i];

@@ -1,0 +1,16 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Vec<int> a = [1, 2];
+Vec<int> b = [3, 4, 5];
+Span<int> s = a.AsSpan();
+Span<int> t = (s = b.AsSpan());
+WriteLine(b[0]);
+WriteLine(t.Length);
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@5:11 Cannot borrow 'b' immutably while borrowed by 't'.
+stage0 check: REJECT VIB003@5:11 Cannot borrow 'b' immutably while borrowed by 't'.
+self check: exit=1 out=[] err=[Program.cs(5,12): error VIB003: Borrow conflicts with an active borrow.|]
+

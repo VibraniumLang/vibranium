@@ -1,0 +1,28 @@
+{
+  "signature": "output-mismatch | stage0 | stdout | stage0-O0,stage0-O3-asan",
+  "category": "known:N3",
+  "kind": "output-mismatch",
+  "frontends": "stage0",
+  "ids": "stdout",
+  "msg": "stage0-O0,stage0-O3-asan",
+  "minTags": [
+    "arg.out",
+    "arith.int",
+    "assign.compound",
+    "assign.simple",
+    "expr.conditional",
+    "local.decl",
+    "localfunc.static",
+    "out.existing-local",
+    "param.out"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 21001,
+  "plan": "RefParams\u003EStdText",
+  "mutations": [],
+  "reduceTests": 66,
+  "sizeBefore": 72,
+  "sizeAfter": 45,
+  "firstSeconds": 2889
+}

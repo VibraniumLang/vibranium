@@ -1,0 +1,18 @@
+validity: valid
+tags: arith.bitwise arith.int assign.compound ca.borrow-then-move ca.form-instance ca.loan-ref-proj ca.loan-ref-readonly ca.move-bare ca.owner-holder ca.rel-ext expr.cast expr.compare expr.conditional gen.file-name-g-cs local.decl local.var localfunc.static pattern.relational switch.expr switch.expr-no-discard switch.guard-const switch.sel.int
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[13|35|] err=[]
+self-O0 run: exit=139 out=[] err=[]
+self-O3-asan run: exit=1 out=[] err=[=================================================================|==2196692==ERROR: AddressSanitizer: heap-use-after-free on address 0x503000000040 at pc 0x56ad72a4a57d bp 0x7ffd44380fb0 sp 0x7ffd44380fa8|READ of size 8 at 0x503000000040 thread T0|    #0 0x56ad72a4a57c in vib_fn_fn_229_local_F_6e737229 self-O3-asan.bin.tmp.ll|    #1 0x56ad72a48c9d in vib_fn_fn_239___TopLevelProgram__LT_Main_GT___279df171 (self-O3-asan.bin+0x104c9d) (BuildId: 7d21b49a4af14e003c060fd86fd499d7c0dd38a7)|    #2 0x56ad72a487bb in main (self-O3...]
+stage0-O0 run: exit=139 out=[] err=[]
+stage0-O3-asan run: exit=1 out=[] err=[=================================================================|==2196475==ERROR: AddressSanitizer: heap-use-after-free on address 0x503000000040 at pc 0x5d9f2db9b56a bp 0x7ffcca942130 sp 0x7ffcca942128|READ of size 8 at 0x503000000040 thread T0|    #0 0x5d9f2db9b569 in vib_fn_Program__LT_Main_GT___string____336_Ca4_int__220091a4 (stage0-O3-asan.bin+0x106569) (BuildId: 6be7a310df2869e50575ded20d4e4eceacf04390)|    #1 0x5d9f2db99bf8 in vib_fn_Program__LT_Main_GT___string____0de59ea2 (stage0-O3-asan.bin+0x104bf8) (BuildI...]
+DISAGREEMENT: spec-accepted | analyzer+stage0+self | ca.borrow-then-move | expected ca.borrow-then-move:VIB003
+DISAGREEMENT: sanitizer | stage0-O3-asan | heap-use-after-free on | 
+DISAGREEMENT: sanitizer | self-O3-asan | heap-use-after-free on | 
+DISAGREEMENT: output-mismatch | stage0+self | exit+stdout | stage0-O0,self-O0

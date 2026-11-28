@@ -1,0 +1,26 @@
+{
+  "signature": "spec-wrong-id | ca.borrow-then-move | ca.borrow-then-move\u003Eself:VIB005 | expected ca.borrow-then-move:VIB003",
+  "category": "known:O11-1",
+  "kind": "spec-wrong-id",
+  "frontends": "ca.borrow-then-move",
+  "ids": "ca.borrow-then-move\u003Eself:VIB005",
+  "msg": "expected ca.borrow-then-move:VIB003",
+  "minTags": [
+    "ca.borrow-then-move",
+    "ca.form-instance",
+    "ca.loan-ref-readonly",
+    "ca.move-explicit",
+    "ca.owner-holder",
+    "ca.rel-prefix",
+    "type.class"
+  ],
+  "seed": "8181",
+  "profile": "activation",
+  "index": 131,
+  "plan": "CaCall\u003ECaCall",
+  "mutations": [],
+  "reduceTests": 14,
+  "sizeBefore": 47,
+  "sizeAfter": 12,
+  "firstSeconds": 179.1
+}

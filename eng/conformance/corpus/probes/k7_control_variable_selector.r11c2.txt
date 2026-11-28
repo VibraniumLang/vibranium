@@ -1,0 +1,27 @@
+WriteLine(F(E.C));
+static int F(E e)
+{
+    int r = 0;
+    switch (e)
+    {
+        case E.A: SO s; s.A = 1; WriteLine(s.A); r = 1; break;
+        default: r = 2; break;
+    }
+    return r;
+}
+public enum E { A = 1, B = 2, C = 7 }
+public struct SO(int a, int b, Vec<int> n)
+{
+    public int A = a;
+    public int B = b;
+    public Vec<int> V = n;
+}
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@7:25 A struct with owned fields must be initialized in one assignment; initializing it field by field (including through out) is not supported in Vibranium v0.2.
+stage0 check: REJECT VIB000@7:25 A struct with owned fields must be initialized in one assignment; initializing it field by field (including through out) is not supported in Vibranium v0.2.
+self check: exit=1 out=[] err=[Program.cs(7,29): error VIB000: A struct with owned fields must be initialized in one assignment; initializing it field by field (including through out) is not supported in Vibranium v0.2.|]
+

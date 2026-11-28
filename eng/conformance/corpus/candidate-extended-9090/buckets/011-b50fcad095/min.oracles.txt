@@ -1,0 +1,8 @@
+validity: valid
+tags: coll.empty coll.local-init coll.vec local.decl localfunc.static loop.foreach loop.foreach-vec mut.struct-local mut.struct-readonly-method span.foreach-ref span.from-coll span.slice-call span.to-rospan type.struct
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB001@10:35 Use of moved value 's3'.
+stage0 check: REJECT VIB001@10:35 Use of moved value 's3'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001 | use of moved value 'x'.

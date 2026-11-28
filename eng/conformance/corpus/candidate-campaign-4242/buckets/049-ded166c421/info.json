@@ -1,0 +1,29 @@
+{
+  "signature": "managed-crash | managed | timeout | ",
+  "category": "new",
+  "kind": "managed-crash",
+  "frontends": "managed",
+  "ids": "timeout",
+  "msg": "",
+  "minTags": [
+    "arith.float-to-int-cast",
+    "arith.int",
+    "assign.compound",
+    "coll.local-init",
+    "coll.span",
+    "expr.compare",
+    "local.decl",
+    "localfunc.static",
+    "loop.for",
+    "loop.foreach",
+    "stmt.if"
+  ],
+  "seed": "4242",
+  "index": 8764,
+  "plan": "Loop\u003EArith\u003ELoop",
+  "mutations": [],
+  "reduceTests": 80,
+  "sizeBefore": 84,
+  "sizeAfter": 48,
+  "firstSeconds": 4430.5
+}

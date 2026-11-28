@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arg.out arith.int arith.shift assign.compound assign.simple bcl.tryparse expr.cast local.decl localfunc.static out.var pattern.relational span.from-coll span.index-from-end span.nm-moved span.read span.slice-call span.to-rospan span.write-after-shared switch.cross-section-var switch.default switch.section-local switch.sel.int switch.stmt
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@16:13 Unreachable code detected
+analyzer: VIB001@26:20 Use of moved value 's3'.
+stage0 check: REJECT VIB001@26:20 Use of moved value 's3'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001 | use of moved value 'x'.

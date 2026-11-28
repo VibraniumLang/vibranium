@@ -1,0 +1,9 @@
+validity: valid
+tags: arith.int assign.compound class.primary-ctor func.expr-body gen.auto-generated-header local.decl local.var localfunc.static method.instance type.field type.resource using.var view.param-stack-escape view.param-stack-scope-exit
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB006@9:17 Cannot move 'using' resource variable 'r3'. ; VIB007@13:75 Cannot return a reference or view backed by stack-allocated storage. ; VIB001@18:12 Use of moved value 'x'.
+stage0 check: REJECT VIB006@9:17 Cannot move 'using' resource variable 'r3'. ; VIB007@13:75 Cannot return a reference or view backed by stack-allocated storage. ; VIB001@18:12 Use of moved value 'x'.
+self check: exit=1 out=[] err=[Program.cs(9,17): error VIB006: Cannot move 'using' resource variable.|Program.cs(13,68): error VIB003: Stack-allocated buffer exits scope while borrowed by a live reference or view.|Program.cs(13,68): error VIB007: Cannot return a reference or view backed by stack-allocated storage.|w3...]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{} self-only:{VIB003} | 
+DISAGREEMENT: spec-wrong-id | view.param-stack-escape+view.param-stack-scope-exit | view.param-stack-scope-exit>analyzer:VIB001,VIB006,VIB007 view.param-stack-scope-exit>stage0:VIB001,VIB006,VIB007 | expected view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003

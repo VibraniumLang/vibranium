@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int assign.compound cut.nested-in-generic expr.compare expr.conditional func.expr-body local.decl localfunc.static pattern.is pattern.union pattern.var stmt.if union.ctor
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(6,16): error VIB000: Unknown type name.|Program.cs(6,33): error VIB000: Unsupported, unresolved, or inaccessible member access in Vibranium.|Program.cs(16,99): error VIB000: Unknown type name.|Program.cs(16,113): error VIB000: Unknown type name.|]
+DISAGREEMENT: banned-accepted | analyzer+stage0 | cut.nested-in-generic | 

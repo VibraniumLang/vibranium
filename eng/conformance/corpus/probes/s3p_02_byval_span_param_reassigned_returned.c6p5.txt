@@ -1,0 +1,13 @@
+Candidate 6 pre5 (with the Roslyn-side N16 fix), release-7 tool, run --exec:
+Span<int> x = [5, 6, 7];
+WriteLine(G(x)[1]);
+static Span<int> G(Span<int> p) { p = [1, 2]; return p; }
+
+validity: invalid
+tags: 
+sdk-roslyn errors: CS9203@3:39 A collection expression of type 'Span<int>' cannot be used in this context because it may be exposed outside of the current scope.
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@3:54 Stack-allocated buffer 'p' exits scope while borrowed by the returned value. ; VIB007@3:54 Cannot return a reference or view backed by stack-allocated storage.
+stage0 check: REJECT CS9203@3:39 A collection expression of type 'Span<int>' cannot be used in this context because it may be exposed outside of the current scope.
+self check: exit=1 out=[] err=[Program.cs(3,39): error VIB007: C# assignment cannot copy a borrowed value into a wider declared safe-context (CS8352/CS8353).|Program.cs(3,47): error VIB003: Stack-allocated buffer exits scope while borrowed by a live reference or view.|Program.cs(3,47): error VIB007: Cannot return a reference or view backed by stack-allocated storage.|]
+

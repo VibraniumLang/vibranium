@@ -1,0 +1,28 @@
+{
+  "signature": "invalid-accepted | self | CS8518 | ",
+  "category": "new",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS8518",
+  "msg": "",
+  "minTags": [
+    "coll.empty",
+    "coll.local-init",
+    "coll.span",
+    "local.decl",
+    "localfunc.static",
+    "loop.foreach",
+    "pattern.combinator",
+    "pattern.is",
+    "pattern.relational",
+    "stmt.if"
+  ],
+  "seed": "4242",
+  "index": 7625,
+  "plan": "Collection\u003ELoop",
+  "mutations": [],
+  "reduceTests": 58,
+  "sizeBefore": 63,
+  "sizeAfter": 34,
+  "firstSeconds": 1538.7
+}

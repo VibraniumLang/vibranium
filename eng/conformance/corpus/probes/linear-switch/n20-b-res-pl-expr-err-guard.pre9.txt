@@ -1,0 +1,14 @@
+WriteLine(Us(1) + Us(4) * 10 + Us(8) * 100);
+static int Us(int p) { int n = 0; Result<R, int> o = MkRL(p); n += o switch { Ok<R>(var v) => Eat(v), Err<int>(var e) when e > 21 => e, Err<int>(var e) => e + 1 }; return n; }
+static Result<R, int> MkRL(int a) { if (a > 2) return Ok(new R(a)); return Err(a + 20); }
+static int Eat(R r) { using var u = r; return u.Id; }
+public sealed class R(int id) : IDisposable { public int Id = id; public void Dispose() { WriteLine(Id); } }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB006@2:79 Cannot borrow-match linear Result<T, E> in place; consume it via '.IsErr(out ..., out ...)', '.Unwrap()', or 'Move(...)'. ; VIB005@2:99 Cannot move non-Copy value out of a field, indexed element, or borrowed place. ; VIB006@2:103 Cannot borrow-match linear Result<T, E> in place; consume it via '.IsErr(out ..., out ...)', '.Unwrap()', or 'Move(...)'. ; VIB006@2:137 Cannot borrow-match linear Result<T, E> in place; consume it via '.IsErr(out ..., out ...)', '.Unwrap()', or 'Move(...)'. ; VIB006@2:172 Linear IDisposable resource 'o' must be bound with 'using var' or moved/disposed on all paths.
+stage0 check: REJECT VIB006@2:79 Cannot borrow-match linear Result<T, E> in place; consume it via '.IsErr(out ..., out ...)', '.Unwrap()', or 'Move(...)'. ; VIB005@2:99 Cannot move non-Copy value out of a field, indexed element, or borrowed place. ; VIB006@2:103 Cannot borrow-match linear Result<T, E> in place; consume it via '.IsErr(out ..., out ...)', '.Unwrap()', or 'Move(...)'. ; VIB006@2:137 Cannot borrow-match linear Result<T, E> in place; consume it via '.IsErr(out ..., out ...)', '.Unwrap()', or 'Move(...)'. ; VIB006@2:172 Linear IDisposable resource 'o' must be bound with 'using var' or moved/disposed on all paths.
+self check: exit=1 out=[] err=[Program.cs(2,70): error VIB006: Cannot borrow-match linear Option<T>/Result<T, E> in place; consume it via Move(...), .Unwrap(), or .IsNone/.IsErr.|Program.cs(2,99): error VIB005: Cannot move non-Copy value out of a field, indexed element, or borrowed place.|Program.cs(2,165): error VIB006: Linear IDisposable resource must be bound with 'using var' or moved/disposed on all paths.|]
+

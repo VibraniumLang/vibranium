@@ -1,0 +1,211 @@
+# Safety-relevant CS IDs for the invalid-program mutation oracle (docs/MUTATION.md): a severity class, not a waiver list.
+# The contract: a C#-invalid program (a genuine C# error, default severity Error, or a warning that Vibranium.App.props
+# promotes explicitly) must be rejected by every frontend, including standalone vib-self and native vib-stage2.
+# Accepting one is a defect whatever its IDs. This class sets release priority: a self accept under one of these IDs is
+# P1, or P0 when asan mode shows a memory error (or invalid IR). Acceptance of these IDs could break memory or type
+# safety, ownership/linearity or a Std/Core invariant (access, readonly, in/this writes, definite assignment,
+# layout-relevant constraints, value reinterpretation, control flow that could emit malformed code).
+# Format: ID<TAB>likely self component<TAB>why it is safety-relevant. Components: parser, binder (declarations/types),
+# lowerer (expression binding, conversions, access, control flow), checker (flow analysis). An ID in neither severity
+# file is unclassified and is treated as safety-relevant.
+CS0019	lowerer	binary operator applied to operand types it does not accept (int && int, bool + bool): self would lower an operation on reinterpreted operands (type safety)
+CS0021	lowerer	indexing applied to a type with no indexer (byte[i]): type and memory safety
+CS0023	lowerer	unary operator applied to an operand type it does not accept (!int, -bool): type safety
+CS0026	lowerer	'this' used in a static member: there is no receiver, so lowering reads a missing argument (type and memory safety)
+CS0028	lowerer	entry point with the wrong signature (char Main(), Main(int)): a mis-typed entry point (type safety; CS5001 follows)
+CS0029	lowerer	implicit conversion between unrelated types (string to int, Vec<int> to int): value reinterpretation (type safety)
+CS0030	lowerer	explicit cast between types with no conversion ((string)int, (bool)int): value reinterpretation (type safety)
+CS0031	lowerer	constant does not fit the target type (byte b = 300): silent truncation reinterprets the value
+CS0034	lowerer	ambiguous operator overload (int > ulong): the chosen operand conversion reinterprets values
+CS0037	lowerer	null converted to a non-nullable value type: null-freedom and type safety
+CS0075	parser	negative value cast without parentheses ((T)-1): parse ambiguity between a cast and a subtraction, so the value is reinterpreted (type safety; parse errors are safety-relevant by doubt)
+CS0100	checker	duplicate parameter name: two parameters share one name, so binding and ownership tracking by name may merge them (as CS0128)
+CS0103	lowerer	name not declared in scope: an unbound name has no type or storage (type and memory safety)
+CS0117	lowerer	type has no member of that name: an unbound member has no layout slot (type and memory safety)
+CS0118	lowerer	a type or namespace used as a value: type safety
+CS0119	lowerer	a type used as an expression: type safety
+CS0120	lowerer	instance member used without a receiver from a static context: lowering reads a missing this (memory safety)
+CS0122	lowerer	member is inaccessible due to its protection level: access control (same check guards the private/internal state of Std/Core types such as Vec<T>._count)
+CS0126	lowerer	'return;' in a method that returns a value: the caller reads an unset return value (memory and type safety)
+CS0127	lowerer	value returned from a void method: malformed return in the emitted function (control flow)
+CS0128	checker	local declared twice in one scope: two owned or linear locals may share one ownership slot (moves, drops and Dispose can be skipped or doubled)
+CS0131	lowerer	assignment to something that is not a variable (method result, literal): write into a temporary or no storage (malformed code)
+CS0133	lowerer	const initialized with a non-constant value: constant folding of a runtime value (definite value and type safety)
+CS0136	checker	local shadows a local of an enclosing scope: ownership/borrow tracking keyed by one name may merge two variables (ownership and linearity)
+CS0139	lowerer	break/continue with no enclosing loop or switch: jump target does not exist (control flow; malformed code)
+CS0145	lowerer	const declared without a value: reads an undefined constant (definite assignment)
+CS0152	lowerer	duplicate case label in one switch: ambiguous dispatch target (control flow; malformed switch code)
+CS0159	lowerer	goto target label does not exist: jump target does not exist (control flow)
+CS0161	lowerer	not all code paths return a value: execution falls off the end of a non-void function (control flow; malformed code)
+CS0163	lowerer	control falls through from one switch section into the next: C# forbids it, so self's switch lowering has no defined successor (control flow)
+CS0165	checker	use of an unassigned local: reads uninitialized storage, including owned pointers (definite assignment, memory safety)
+CS0170	checker	use of a possibly unassigned struct field: reads uninitialized storage (definite assignment)
+CS0171	checker	struct constructor leaves a field unassigned: uninitialized field storage (definite assignment)
+CS0173	lowerer	conditional branches have no common type: the result slot gets two incompatible types (type safety)
+CS0176	lowerer	static member reached through an instance: lowered as an instance call, the receiver becomes an extra argument (frame mismatch)
+CS0177	checker	out parameter not assigned before return: caller reads uninitialized storage (definite assignment)
+CS0183	lowerer	'is' test that is always true (promoted): type test the project decided to reject; self may lower its binding without the C# checks
+CS0184	lowerer	'is' test that is never true (promoted): a binding of an impossible type would reinterpret the value (as CS8121)
+CS0188	checker	'this' used before all fields are assigned: definite assignment
+CS0191	lowerer	readonly field assigned outside a constructor: breaks readonly (Std/Core readonly invariants use the same check)
+CS0192	lowerer	readonly field passed as ref/out: writable alias to readonly storage
+CS0198	lowerer	static readonly field assigned outside a static constructor: breaks readonly (static fields are also banned)
+CS0200	lowerer	property or indexer without a setter assigned: writes to storage the type keeps read-only (Std/Core invariants such as Vec<T>.Count)
+CS0201	lowerer	expression that is not a statement (a bare value, a value returned from a void expression body): an owned value evaluated into nothing has undefined ownership (drop or no drop)
+CS0206	lowerer	property/indexer passed as ref/out: a reference to a temporary escapes (memory safety)
+CS0210	lowerer	using or fixed declaration with no initializer: a linear resource that is never initialized is disposed (linearity, definite assignment)
+CS0220	lowerer	constant expression overflows: the folded value is reinterpreted (value reinterpretation)
+CS0221	lowerer	constant cannot be converted without unchecked: value reinterpretation
+CS0234	binder	type or namespace not found in a namespace (System.IDisposableZz): an unbound type has no layout and loses its linear or IDisposable meaning (type safety)
+CS0236	checker	field initializer reads another instance field: reads storage before initialization (definite assignment)
+CS0246	binder	type name not found: an unbound type has no layout (type safety)
+CS0266	lowerer	implicit narrowing or reinterpreting conversion (int to char, long to int, int to enum): value reinterpretation (type safety)
+CS0269	checker	use of an unassigned out parameter: reads uninitialized storage (definite assignment)
+CS0271	lowerer	property getter is inaccessible: access control
+CS0272	lowerer	property setter is inaccessible: access control and Std/Core invariants
+CS0283	lowerer	const of a non-constant type (const Vec<int>): a folded owned value may be duplicated (ownership, double free)
+CS0305	binder	generic type used with the wrong number of type arguments: monomorphization/layout of an ill-formed instantiation
+CS0308	binder	type arguments on a non-generic type or method: monomorphization of an ill-formed instantiation
+CS0310	lowerer	new() constraint violated: generic constraint that affects monomorphization
+CS0311	lowerer	type argument does not satisfy a type constraint: generic constraint that affects monomorphization
+CS0315	lowerer	boxing/constraint violation for a value-type argument: generic constraint that affects layout
+CS0400	binder	type not found in the global namespace: an unbound type has no layout (type safety)
+CS0411	lowerer	generic type arguments cannot be inferred: the instantiation self picks is unchecked (monomorphization, type safety)
+CS0426	binder	type name not found in a type (K.NZz): an unbound nested type has no layout (type safety, as CS0246)
+CS0428	lowerer	method group converted to a non-delegate type: type safety
+CS0432	binder	alias not found: an unbound type has no layout (type safety)
+CS0452	lowerer	value type used for a 'class'-constrained type parameter: generic constraint that affects layout and monomorphization
+CS0453	lowerer	reference type used for a 'struct'-constrained type parameter: generic constraint that affects layout and monomorphization
+CS0458	lowerer	expression is always a null nullable value (warning): null-freedom
+CS0513	binder	abstract member without body in a non-abstract class: a call reaches a method that has no body (malformed code)
+CS0523	binder	struct contains itself by value: layout has no fixed size (malformed layout)
+CS0535	binder	type does not implement an interface member (class R : IDisposable without Dispose): linear resource with no Dispose (linearity)
+CS0591	binder	invalid value for a well-known attribute argument ([MethodImpl(1)], StructLayout, AttributeUsage): StructLayout values decide layout, and self must not lower code under an attribute Roslyn rejects
+CS0631	binder	ref, ref readonly or out on a parameter where C# allows no by-reference passing (an operator parameter): by-reference aliasing that the borrow rules do not model there (memory safety)
+CS0649	checker	field never assigned whose type is not zero-safe by Stage0's predicate (a class, string, Vec<T>, or a struct with such a field): its zero value is not a valid Vibranium value, a null hazard (Stage0 reports VIB008). A warning: warning-only parity input unless a genuine error is present. Zero-safe fields are CS0649.zero-safe (low)
+CS0663	binder	overloads that differ only in in versus ref: a call may bind the writing ref body for an in argument, a write through a readonly reference (as CS8331)
+CS0664	lowerer	double literal implicitly converted to float/decimal: value reinterpretation
+CS0712	lowerer	instance of a static class created: an object of a type with no instance layout
+CS0718	lowerer	static type used as a type argument (including in patterns such as Some<Program>): monomorphization over a type that has no values; the pattern binding reinterprets the payload
+CS0721	binder	static type used as a parameter type: a value of a type with no layout
+CS0723	binder	variable of a static type: a value of a type with no layout
+CS0736	binder	static method used to implement an instance interface member (static Dispose for IDisposable): interface dispatch, and the linear Dispose call, targets a method with no receiver (memory safety, linearity)
+CS0737	binder	Dispose that cannot implement IDisposable.Dispose (not public): the linear resource's disposal is ill-formed (linearity)
+CS0738	binder	Dispose with the wrong signature for IDisposable.Dispose: the linear resource's disposal is ill-formed (linearity)
+CS0815	lowerer	null assigned to an implicitly typed variable: null-freedom
+CS0841	checker	local used before its declaration: reads uninitialized storage (definite assignment)
+CS1001	parser	identifier expected: self compiles a token stream C# does not parse, so Roslyn's semantic checks never covered the program self accepts
+CS1002	parser	';' expected: parse recovery, see CS1001
+CS1003	parser	syntax error, token expected: parse recovery, see CS1001
+CS1022	parser	type or namespace definition or end of file expected: parse recovery, see CS1001
+CS1023	parser	declaration as an embedded statement (if (c) int x = 1;): the local's scope is undefined (definite assignment)
+CS1026	parser	')' expected: parse recovery, see CS1001
+CS1031	parser	type expected: parse recovery with a missing type (type safety)
+CS1059	lowerer	++/-- applied to something that is not a variable: write into a temporary or no storage (as CS0131)
+CS1061	lowerer	type has no such member or extension method: an unbound member has no layout slot (type and memory safety)
+CS1073	parser	unexpected 'ref' token: reference-kind syntax self may misread (memory safety)
+CS1100	lowerer	'this' modifier on a parameter other than the first: extension-receiver binding puts the receiver in the wrong argument slot (type safety)
+CS1105	lowerer	extension method that is not static: the receiver is passed where the callee expects its own this (frame mismatch)
+CS1106	binder	extension method in a generic or non-static class: the receiver binding and the class type arguments are undefined (monomorphization)
+CS1501	lowerer	no overload takes that many arguments: arguments do not match the callee's frame (type and memory safety)
+CS1503	lowerer	argument type does not match the parameter type: value reinterpretation at the call (type safety)
+CS1510	lowerer	ref/out argument is not an assignable variable: a reference to a temporary (memory safety)
+CS1513	parser	'}' expected: parse recovery leaves a truncated body (parse errors are safety-relevant by doubt)
+CS1525	parser	invalid expression term (ref ref x, a missing operand): parse recovery with a missing or doubled operand (memory and type safety)
+CS1526	parser	new without an argument list: an object allocated without running a constructor leaves fields uninitialized (definite assignment)
+CS1579	lowerer	foreach over a type with no enumerator: iteration over storage that is not a collection (memory safety)
+CS1604	lowerer	assignment to a read-only 'this' (readonly struct member or class): breaks readonly/receiver invariants
+CS1605	lowerer	read-only 'this' passed as ref/out: writable alias to readonly storage
+CS1612	lowerer	member of a value returned by a property/method modified: the write targets a temporary or the getter's storage (readonly/invariants)
+CS1615	lowerer	argument passed with ref/out to a by-value parameter: a pointer where the callee expects a value (type and memory safety)
+CS1620	lowerer	by-ref parameter passed without ref/out (or with the wrong one): a value where the callee expects a pointer (memory safety)
+CS1648	lowerer	member of a readonly field modified: breaks readonly
+CS1649	lowerer	member of a readonly field passed as ref/out: writable alias to readonly storage
+CS1654	lowerer	member of a foreach iteration variable modified: breaks the read-only iteration view
+CS1655	lowerer	member of a foreach iteration variable passed as ref/out: writable alias to read-only storage
+CS1656	lowerer	assignment to a foreach iteration variable or a using variable: breaks the read-only view; a reassigned using variable disposes the wrong resource (linearity)
+CS1657	lowerer	foreach/using variable passed as ref/out: writable alias; a using resource can be replaced (linearity)
+CS1674	lowerer	using on a type that is not IDisposable: Dispose call to a method that does not exist (linearity; malformed code)
+CS1717	lowerer	assignment of a variable to itself (warning): for an owned value this is a move into itself, an ownership event (drop or no drop). Harmless shapes that Stage0 accepts are warning-only parity
+CS1729	lowerer	no constructor takes that many arguments: arguments do not match the constructor's frame (type and memory safety)
+CS1739	lowerer	named argument names no parameter: argument-to-parameter binding is undefined (type safety)
+CS1741	lowerer	ref/out parameter with a default value: a call that omits the argument passes no reference (memory safety; needs C12)
+CS1743	lowerer	default value for an extension 'this' parameter: the receiver reference may be absent (memory safety; needs C10/C12)
+CS1744	lowerer	named argument repeats a positional argument: argument-to-parameter binding is undefined (type safety)
+CS1750	lowerer	default parameter value of the wrong type: a call that omits the argument passes a reinterpreted value (type safety; needs C12)
+CS1929	lowerer	extension method called on a receiver of the wrong type: value reinterpretation of the receiver
+CS1955	lowerer	non-invocable member (field) called like a method: a call through data (memory safety)
+CS7036	lowerer	required argument missing: the callee reads an unset parameter (memory and type safety)
+CS8070	lowerer	control falls out of the final switch section: no successor block (control flow; malformed code)
+CS8117	lowerer	null or a non-value used as a pattern operand: pattern binding over a missing value (type safety, null-freedom)
+CS8119	lowerer	switch expression over a non-value (null): the governing value has no type or storage (type safety, null-freedom)
+CS8121	lowerer	type pattern can never match the input type: the pattern binding would reinterpret the value (type safety)
+CS8150	lowerer	by-value return in a ref-returning method, or the reverse: the caller treats a value as a reference (memory safety)
+CS8151	lowerer	by-reference return of the wrong type (ref int returning ref to a long field): memory reinterpreted through the reference (type and memory safety)
+CS8156	lowerer	expression cannot be passed or returned by reference: a reference to a temporary escapes (memory safety)
+CS8160	lowerer	readonly field returned by writable reference: callers write through the reference into a readonly field (readonly)
+CS8166	lowerer	non-ref parameter returned by reference: dangling reference (memory safety)
+CS8167	lowerer	member of a non-ref parameter returned by reference: dangling reference (memory safety)
+CS8168	lowerer	local returned by reference: dangling reference (memory safety)
+CS8169	lowerer	member of a local returned by reference: dangling reference (memory safety)
+CS8170	lowerer	struct member returns this or a field by reference: dangling reference to a copy (memory safety)
+CS8171	lowerer	by-value variable initialized with a reference: reference/value confusion (memory safety)
+CS8172	lowerer	ref local initialized with a value: reference to a temporary (memory safety)
+CS8173	lowerer	ref assignment of an expression of another type: memory reinterpreted through the reference (type and memory safety)
+CS8174	lowerer	ref local declared without an initializer: unbound reference (memory safety)
+CS8183	lowerer	discard whose type cannot be inferred (_ = null): a value with no type (type safety, as CS0815)
+CS8310	lowerer	operator applied to null/default without a type: null-freedom and type safety
+CS8323	lowerer	named argument out of position followed by a positional one: argument-to-parameter binding is undefined (type safety)
+CS8327	lowerer	conditional ref branches of different types: memory reinterpreted through the reference (needs C15)
+CS8328	parser	conflicting parameter modifiers (in ref, out in): reference-kind conflict between readonly and writable (in/readonly)
+CS8329	lowerer	readonly variable passed as ref/out: writable alias to readonly storage (readonly, in)
+CS8330	lowerer	readonly variable returned by writable reference: writable alias to readonly storage
+CS8331	lowerer	assignment to a readonly variable (in parameter, ref readonly local): breaks in/readonly
+CS8332	lowerer	assignment to a member of a readonly variable: breaks in/readonly
+CS8333	lowerer	readonly variable returned by writable reference: writable alias to readonly storage
+CS8337	binder	'ref' extension receiver that is not a value type (class, unconstrained T): a by-reference receiver bound over a reference or unknown type (reference-kind binding, as CS8338)
+CS8338	lowerer	'in' extension receiver that is not a concrete value type: reference-kind receiver binding over a generic (monomorphization)
+CS8340	binder	mutable instance field in a readonly struct: callers pass it by reference without defensive copies, so members can mutate through in/readonly references (readonly)
+CS8341	binder	mutable auto-property in a readonly struct: as CS8340 (readonly)
+CS8345	binder	ref-like field (Span<T>) in a non-ref struct or class: a borrowed view outlives its owner (memory safety)
+CS8347	lowerer	call result may expose a reference outside its scope: dangling reference (memory safety)
+CS8350	lowerer	argument combination may expose a reference outside its scope: dangling reference (memory safety)
+CS8352	lowerer	ref-like value used outside its declaration scope: dangling reference (memory safety)
+CS8373	lowerer	left side of a ref assignment is not a ref variable: ref reassignment of plain storage (memory safety)
+CS8374	lowerer	ref-assignment to a variable with a wider scope: dangling reference (memory safety)
+CS8377	lowerer	managed or non-unmanaged type for an 'unmanaged' type parameter (Vec<string>): layout and monomorphization of Vec<T>/Span<T> (memory safety)
+CS8421	lowerer	static local function that uses a local of the enclosing method: that storage is not in the function's frame, and returning an owned local from it breaks single ownership (memory and ownership safety)
+CS8422	lowerer	static local function references this: there is no receiver (memory safety, as CS0026)
+CS8506	lowerer	switch expression arms have no common type: the result slot gets incompatible types (type safety)
+CS8509	lowerer	non-exhaustive switch expression (promoted): no arm matches, so control leaves the expression without a value (control flow)
+CS8519	lowerer	pattern never matches (promoted): a binding of an impossible type would reinterpret the value (as CS8121)
+CS8520	lowerer	pattern always matches (promoted): decided an error by the project; self may lower the test without the C# checks
+CS8524	lowerer	switch expression misses unnamed enum values (promoted): as CS8509 (control flow)
+CS8600	lowerer	null literal or possibly-null value converted to a non-nullable type (warning): null-freedom
+CS8601	lowerer	possible null reference assignment (warning): null-freedom
+CS8602	checker	dereference of a possibly null reference (warning): null-freedom
+CS8604	checker	possibly null argument (warning): null-freedom
+CS8618	checker	non-nullable reference field left null by a constructor: null reference in native code (null-freedom, memory safety)
+CS8619	lowerer	nullability mismatch involving null (warning): null-freedom
+CS8625	lowerer	null literal converted to a non-nullable reference: null-freedom (memory safety)
+CS8629	checker	nullable value type may be null (warning): null-freedom
+CS8641	parser	'else' cannot start a statement: parse recovery drops or re-attaches a branch (control flow; parse errors are safety-relevant by doubt)
+CS8656	lowerer	non-readonly member called from a readonly member (warning): C# copies this; without the copy the call mutates through a readonly receiver (readonly, in)
+CS8781	lowerer	relational pattern on a type without ordering (string): comparison over reinterpreted operands (needs C20)
+CS8793	lowerer	input never matches the pattern (promoted): as CS8519
+CS8794	lowerer	input always matches the pattern (promoted): as CS8520
+CS8846	lowerer	switch expression not exhaustive when when-clauses fail (promoted): as CS8509 (control flow)
+CS8983	binder	struct with field initializers but no explicit constructor: whether new S() runs the initializers is undefined, and a skipped initializer leaves class-typed fields null (null-freedom, definite assignment)
+CS9075	checker	scoped parameter returned by reference: the reference outlives the parameter's scope (memory safety, ref escape)
+CS9101	binder	UnscopedRef on a member where it is not allowed: widens a reference's escape scope (memory safety)
+CS9105	lowerer	primary-constructor parameter used where there is no instance (static member): no receiver (memory safety)
+CS9109	lowerer	ref/in/out primary-constructor parameter captured by an instance member: the reference outlives the constructor (memory safety)
+CS9174	lowerer	collection expression for a type that is not constructible (bool b = [..]): layout and type safety
+CS9191	lowerer	ref argument for an in parameter (promoted): reference-kind mismatch at a call
+CS9192	lowerer	ref readonly argument passing mismatch (promoted): reference-kind mismatch at a call
+CS9193	lowerer	non-variable passed to a ref readonly parameter (promoted): reference to a temporary
+CS9195	lowerer	argument for a ref readonly parameter passed without 'in' (warning): ref-kind mismatch at the call, like the App.props-promoted CS9191-CS9193 (in/readonly)
+CS9200	lowerer	default value for a ref readonly parameter (warning): a call that omits it passes a reference to a temporary (needs C10/C12)
+CS9203	lowerer	collection expression of a ref struct type (Span<int>) that may escape its scope: a view of dead stack storage (memory safety, as CS8352)
+CS9330	binder	invalid MethodImpl value: the Async bit 0x2000 ([MethodImpl(8192)], MethodImplOptions.Async) is rejected by Roslyn; same reason as CS0591, self must not lower code under an attribute Roslyn rejects
+CS9340	lowerer	operator not applicable to the operand types (Vec<byte> + Vec<byte>): type safety (as CS0019)

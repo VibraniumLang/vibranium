@@ -1,0 +1,27 @@
+{
+  "signature": "spec-accepted | analyzer\u002Bstage0\u002Bself | ca.borrow-then-move | expected ca.borrow-then-move:VIB003",
+  "category": "known:O11-1",
+  "kind": "spec-accepted",
+  "frontends": "analyzer\u002Bstage0\u002Bself",
+  "ids": "ca.borrow-then-move",
+  "msg": "expected ca.borrow-then-move:VIB003",
+  "minTags": [
+    "ca.borrow-then-move",
+    "ca.form-local",
+    "ca.loan-in",
+    "ca.move-bare",
+    "ca.owner-vec",
+    "ca.rel-same",
+    "local.decl",
+    "localfunc.static"
+  ],
+  "seed": "8181",
+  "profile": "activation",
+  "index": 0,
+  "plan": "CaCall\u003EArith",
+  "mutations": [],
+  "reduceTests": 28,
+  "sizeBefore": 45,
+  "sizeAfter": 29,
+  "firstSeconds": 18.8
+}

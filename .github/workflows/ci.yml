@@ -1,0 +1,131 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: "${{ github.workflow }}-${{ github.ref }}"
+  cancel-in-progress: "${{ github.event_name == 'pull_request' }}"
+
+jobs:
+  build-and-smoke:
+    name: Build, Smoke & Bootstrap
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-toolchain
+
+      - name: Build Vibranium.slnx (0 warnings, 0 errors)
+        run: dotnet build --disable-build-servers Vibranium.slnx
+
+      - name: Verify exhaustive xUnit shard coverage
+        run: |
+          python3 eng/ci/xunit-shards.py self-test
+          python3 eng/ci/xunit-shards.py verify --shards 6 --solution Vibranium.slnx
+
+      - name: Smoke-test vib CLI (check, emit-ll, build)
+        run: |
+          scratch=$(mktemp -d)
+          trap 'rm -rf "$scratch"' EXIT
+          dotnet run --project src/vib/vib.csproj --no-build -- check samples/demo/Program.cs
+          dotnet run --project src/vib/vib.csproj --no-build -- emit-ll samples/demo/Program.cs -o "$scratch/demo.ll"
+          opt-18 -passes=verify -disable-output "$scratch/demo.ll"
+          dotnet run --project src/vib/vib.csproj --no-build -- build samples/demo/Program.cs -O3 -o "$scratch/demo-native"
+          "$scratch/demo-native"
+
+      - name: Verify Self-Hosting Triple-Identity Bootstrap (vib-self)
+        run: ./eng/bootstrap/bootstrap.sh --skip-benchmark
+
+  xunit:
+    name: "xUnit Differential & Analyzer Parity (${{ matrix.shard }}/6)"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4, 5, 6]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-toolchain
+
+      - name: Build Vibranium.slnx
+        run: dotnet build --disable-build-servers Vibranium.slnx
+
+      - name: Run xUnit shard
+        env:
+          XUNIT_SHARD: "${{ matrix.shard }}"
+        run: python3 eng/ci/xunit-shards.py run --shard "$XUNIT_SHARD" --shards 6 --solution Vibranium.slnx -- --logger "console;verbosity=normal"
+
+  conformance:
+    name: Differential Conformance
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-toolchain
+
+      - name: Differential conformance fuzzer (fixed budget, see docs/CONFORMANCE.md)
+        env:
+          CONF_FAIL_ON: open
+        run: ./eng/conformance/run-conformance.sh ci
+
+      - name: Conformance activation profile
+        env:
+          CONF_FAIL_ON: open
+          CONF_PROFILE: activation
+          CONF_SKIP_BUILD: "1"
+        run: ./eng/conformance/run-conformance.sh ci
+
+      - name: Conformance soundness profile (ASan/LSan at -O0 and -O3)
+        env:
+          CONF_FAIL_ON: open
+          CONF_PROFILE: soundness
+          CONF_SKIP_BUILD: "1"
+        run: ./eng/conformance/run-conformance.sh ci
+
+      - name: Conformance feature matrix
+        env:
+          CONF_SKIP_BUILD: "1"
+        run: ./eng/conformance/run-conformance.sh matrix
+
+  mutation:
+    name: Mutation Oracle & Regression Gate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: ./.github/actions/setup-toolchain
+        with:
+          install-llvm: "false"
+
+      - name: Mutation oracle self-test
+        run: ./eng/mutation/run-mutation.sh self-test
+
+      - name: Mutation diagnostic regression gate (not release sign-off)
+        env:
+          MUTATION_SKIP_BUILD: "1"
+        run: ./eng/mutation/run-mutation.sh ci
+
+  formal-proofs:
+    name: Lean 4 Formal Proofs (VibraniumFormal)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install elan & Lean 4 toolchain
+        shell: bash
+        run: |
+          curl --retry 3 --retry-delay 2 -fsSL https://raw.githubusercontent.com/leanprover/elan/master/elan-init.sh | sh -s -- -y --default-toolchain none
+          echo "$HOME/.elan/bin" >> "$GITHUB_PATH"
+
+      - name: Build VibraniumFormal & Run Proof Verifier
+        working-directory: formal
+        run: lake build && lake exe vibranium-formal-verify

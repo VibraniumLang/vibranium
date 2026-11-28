@@ -1,0 +1,27 @@
+{
+  "signature": "invalid-accepted | self | CS0119 | ",
+  "category": "known:N4",
+  "kind": "invalid-accepted",
+  "frontends": "self",
+  "ids": "CS0119",
+  "msg": "",
+  "minTags": [
+    "arith.int",
+    "expr.cast",
+    "local.decl",
+    "local.var",
+    "localfunc.static",
+    "span.arg-span",
+    "span.from-coll",
+    "stmt.nested-block"
+  ],
+  "seed": "9090",
+  "profile": "extended",
+  "index": 3909,
+  "plan": "Arith\u003ESpanSlice\u003ESpanSlice",
+  "mutations": [],
+  "reduceTests": 123,
+  "sizeBefore": 86,
+  "sizeAfter": 39,
+  "firstSeconds": 800
+}

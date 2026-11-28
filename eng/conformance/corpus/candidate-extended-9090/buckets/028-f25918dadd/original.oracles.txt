@@ -1,0 +1,8 @@
+validity: valid
+tags: arith.int arith.long arith.rem-int assign.compound class.primary-ctor expr.compare expr.conditional expr.conditional-arg local.decl localfunc.static method.instance span.foreach-ref span.from-vec span.index-from-end span.slice-call span.to-rospan span.vec-after-borrow span.vec-slice-call type.class type.field
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@10:18 Cannot borrow 'v2' mutably while borrowed by 's1'. ; VIB003@10:31 Cannot read 'v2' while exclusively borrowed by 's1'. ; VIB003@10:35 Cannot borrow 'v2' immutably while borrowed by 's1'. ; VIB001@11:20 Use of moved value 's1'. ; VIB004@22:9 Cannot take a mutable reference through a shared borrow.
+stage0 check: REJECT VIB003@10:18 Cannot borrow 'v2' mutably while borrowed by 's1'. ; VIB003@10:31 Cannot read 'v2' while exclusively borrowed by 's1'. ; VIB003@10:35 Cannot borrow 'v2' immutably while borrowed by 's1'. ; VIB001@11:20 Use of moved value 's1'. ; VIB004@22:9 Cannot take a mutable reference through a shared borrow.
+self check: exit=1 out=[] err=[Program.cs(22,11): error VIB004: Cannot take a mutable reference through a shared borrow.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB001,VIB003} self-only:{} | 

@@ -1,0 +1,8 @@
+validity: warn-only
+tags: arg.out arith.bitwise arith.float-to-int-cast arith.int arith.rem-int arith.shift assign.compound assign.simple bcl.tryparse class.primary-ctor expr.cast expr.compare local.decl local.uninit localfunc.static mut.calls-mut mut.drain mut.field-foreach mut.in-param-shared mut.local mut.shared-call out.var pattern.discard pattern.relational pattern.var switch.cross-section-var switch.default switch.expr switch.guard switch.section-local switch.sel.int switch.sel.unsigned switch.stmt type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): CS0162@22:13 Unreachable code detected
+analyzer: VIB001@30:12 Use of uninitialized value 'r2'.
+stage0 check: REJECT VIB001@30:12 Use of uninitialized value 'r2'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB001 | use of uninitialized value 'x'.

@@ -1,0 +1,8 @@
+validity: valid
+tags: arg.out banned.checked bcl.tryparse local.decl localfunc.static method.instance out.existing-local type.class type.field
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB000@5:15 'checked(...)' expressions are banned in Vibranium. ; VIB004@13:28 Cannot pass shared borrow as mutable reference or receiver.
+stage0 check: REJECT VIB000@5:15 'checked(...)' expressions are banned in Vibranium. ; VIB004@13:28 Cannot pass shared borrow as mutable reference or receiver.
+self check: exit=1 out=[] err=[Program.cs(5,15): error VIB000: 'checked(...)' expressions are banned in Vibranium.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB004} self-only:{} | 

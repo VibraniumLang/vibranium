@@ -1,0 +1,14 @@
+validity: valid
+tags: expr.compare local.decl local.underscore local.underscore-read loop.do method.static type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: TIMEOUT
+self-O0 run: TIMEOUT
+stage0-O0 run: TIMEOUT
+DISAGREEMENT: managed-crash | managed | timeout | 
+DISAGREEMENT: output-mismatch | stage0+self | stdout | stage0-O0,self-O0

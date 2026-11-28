@@ -1,0 +1,8 @@
+validity: valid
+tags: cut.nested-in-generic func.expr-body local.decl localfunc.static union.ctor
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(9,99): error VIB000: Unknown type name.|Program.cs(9,113): error VIB000: Unknown type name.|]
+DISAGREEMENT: banned-accepted | analyzer+stage0 | cut.nested-in-generic | 

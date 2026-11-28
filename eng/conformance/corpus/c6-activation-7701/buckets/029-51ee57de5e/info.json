@@ -1,0 +1,33 @@
+{
+  "signature": "spec-wrong-id | view.param-stack-escape\u002Bview.param-stack-scope-exit | view.param-stack-scope-exit\u003Eanalyzer:VIB001,VIB006,VIB007 view.param-stack-scope-exit\u003Estage0:VIB001,VIB006,VIB007 | expected view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "category": "new:N16",
+  "kind": "spec-wrong-id",
+  "frontends": "view.param-stack-escape\u002Bview.param-stack-scope-exit",
+  "ids": "view.param-stack-scope-exit\u003Eanalyzer:VIB001,VIB006,VIB007 view.param-stack-scope-exit\u003Estage0:VIB001,VIB006,VIB007",
+  "msg": "expected view.param-stack-escape:VIB007 view.param-stack-scope-exit:VIB003",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "class.primary-ctor",
+    "func.expr-body",
+    "local.decl",
+    "local.var",
+    "method.instance",
+    "method.static",
+    "type.class",
+    "type.field",
+    "type.resource",
+    "using.var",
+    "view.param-stack-escape",
+    "view.param-stack-scope-exit"
+  ],
+  "seed": "7701",
+  "profile": "activation",
+  "index": 33743,
+  "plan": "Using\u003EViewReturn",
+  "mutations": [],
+  "reduceTests": 43,
+  "sizeBefore": 63,
+  "sizeAfter": 44,
+  "firstSeconds": 3216.1
+}

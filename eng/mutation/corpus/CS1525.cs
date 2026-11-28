@@ -1,0 +1,1 @@
+int a=12;a+=Set(ref ref a)>0?3:2;WriteLine(a);static int Set(ref int a){a=90;return 1;}

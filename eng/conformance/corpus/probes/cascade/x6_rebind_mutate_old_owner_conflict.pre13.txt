@@ -1,0 +1,16 @@
+Vec<int> a = [1, 2];
+Vec<int> b = [3, 4, 5];
+Span<int> t = a.AsSpan();
+Span<int> u = t[..1];
+t = b.AsSpan();
+a.Add(7);
+WriteLine(u[0] + t[0]);
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@5:5 Cannot mutate 't' while borrowed by 'u'. ; VIB003@6:1 Cannot borrow 'a' immutably while borrowed by 'u'.
+stage0 check: REJECT VIB003@5:5 Cannot mutate 't' while borrowed by 'u'. ; VIB003@6:1 Cannot borrow 'a' immutably while borrowed by 'u'.
+self check: exit=1 out=[] err=[Program.cs(5,3): error VIB003: Cannot mutate value while borrowed.|Program.cs(6,6): error VIB003: Borrow conflicts with an active borrow.|]
+

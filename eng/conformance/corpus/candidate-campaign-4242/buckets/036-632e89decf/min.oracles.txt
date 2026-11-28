@@ -1,0 +1,8 @@
+validity: invalid
+tags: arith.int arith.rem-double assign.compound func.expr-body local.decl local.var localfunc.static pattern.discard switch.expr switch.sel.float
+sdk-roslyn errors: CS0266@6:5 Cannot implicitly convert type 'double' to 'int'. An explicit conversion exists (are you missing a cast?) ; CS1503@7:19 Argument 2: cannot convert from 'double' to 'int' ; CS8422@7:12 A static local function cannot contain a reference to 'this' or 'base'.
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS0266@6:5 Cannot implicitly convert type 'double' to 'int'. An explicit conversion exists (are you missing a cast?) ; CS1503@7:19 Argument 2: cannot convert from 'double' to 'int' ; CS8422@7:12 A static local function cannot contain a reference to 'this' or 'base'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS0266,CS1503,CS8422 | 

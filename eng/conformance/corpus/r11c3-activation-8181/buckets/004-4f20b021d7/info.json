@@ -1,0 +1,23 @@
+{
+  "signature": "analyzer-vs-stage0 | analyzer\u002Bstage0 | analyzer:{} stage0:{VIB003} | ",
+  "category": "known:O11-13",
+  "kind": "analyzer-vs-stage0",
+  "frontends": "analyzer\u002Bstage0",
+  "ids": "analyzer:{} stage0:{VIB003}",
+  "msg": "",
+  "minTags": [
+    "gen.auto-generated-header",
+    "type.class",
+    "view.elision-single",
+    "view.use-after-mutate"
+  ],
+  "seed": "8181",
+  "profile": "activation",
+  "index": 21,
+  "plan": "SwitchStmt\u003EViewReturn",
+  "mutations": [],
+  "reduceTests": 10,
+  "sizeBefore": 60,
+  "sizeAfter": 11,
+  "firstSeconds": 26.2
+}

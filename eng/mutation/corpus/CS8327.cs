@@ -1,0 +1,1 @@
+long a=12;int b=20;int c=0;bool flag=true;(flag?ref a:ref b)+=Set(out c)>0?3:2;WriteLine(a);WriteLine(b);static int Set(out int a){a=90;return 1;}

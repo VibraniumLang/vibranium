@@ -1,0 +1,20 @@
+Candidate 6 pre8 (before the N17 and N18 fixes), release-7 tool, run --exec:
+Vec<int> b = [3, 4, 5];
+Span<int> s = b.AsSpan();
+for (int i = 0; i < 2; i++)
+{
+    s = Pick(s, b.AsSpan());
+}
+WriteLine(s[0]);
+
+static Span<int> Pick(Span<int> x, Span<int> y) => x.Length > y.Length ? x : y;
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB002@5:17 Overlapping borrows in a single call where at least one borrow is exclusive. ; VIB003@5:17 Cannot read 'b' while exclusively borrowed by 's'. ; VIB007@9:52 Returned reference or view escapes local or scoped/by-value owner 'x'.
+stage0 check: REJECT VIB002@5:17 Overlapping borrows in a single call where at least one borrow is exclusive. ; VIB003@5:17 Cannot read 'b' while exclusively borrowed by 's'. ; VIB007@9:52 Returned reference or view escapes local or scoped/by-value owner 'x'.
+self check: exit=1 out=[] err=[Program.cs(5,17): error VIB002: Overlapping borrows in a single call where at least one borrow is exclusive.|Program.cs(9,52): error VIB007: Returned reference or view escapes local or scoped/by-value owner.|]
+DISAGREEMENT: id-mismatch | stage0+self | stage0-only:{VIB003} self-only:{} | 
+

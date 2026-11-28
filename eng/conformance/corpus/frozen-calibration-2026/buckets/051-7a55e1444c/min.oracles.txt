@@ -1,0 +1,8 @@
+validity: invalid
+tags: arith.int assign.compound assign.simple local.decl local.uninit localfunc.static pattern.type pattern.union pattern.var switch.no-default switch.sel.result switch.stmt union.ctor
+sdk-roslyn errors: CS0165@12:12 Use of unassigned local variable 'r2'
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: REJECT CS0165@12:12 Use of unassigned local variable 'r2'
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: invalid-accepted | self | CS0165 | 

@@ -1,0 +1,26 @@
+{
+  "signature": "accept-reject | self-accepts | stage0:VIB003 | cannot move \u0027x\u0027 while borrowed by \u0027x\u0027.",
+  "category": "new:N17",
+  "kind": "accept-reject",
+  "frontends": "self-accepts",
+  "ids": "stage0:VIB003",
+  "msg": "cannot move \u0027x\u0027 while borrowed by \u0027x\u0027.",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "local.decl",
+    "local.var",
+    "localfunc.static",
+    "view.assign-value-copy-view",
+    "view.loop-rebind-old-owner-mutated"
+  ],
+  "seed": "1",
+  "profile": "activation",
+  "index": 230,
+  "plan": "ViewMove\u003ESwitchExpr\u003EViewMove",
+  "mutations": [],
+  "reduceTests": 31,
+  "sizeBefore": 69,
+  "sizeAfter": 30,
+  "firstSeconds": 104.2
+}

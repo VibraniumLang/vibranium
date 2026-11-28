@@ -1,0 +1,15 @@
+validity: valid
+tags: arith.int assign.compound expr.compare local.decl localfunc.in-class-method localfunc.static method.static stmt.nested-block type.class uswitch.case-guard uswitch.exhaustive uswitch.guard uswitch.nonunion-label uswitch.not-case uswitch.payload-owner uswitch.place uswitch.result uswitch.stmt uswitch.stmt-nonunion-label uswitch.two-fallbacks
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-ir-contract: OK
+stage0-ir-contract: OK
+managed run: exit=0 out=[True|113312|True|113308|] err=[]
+self-O0-asan run: exit=0 out=[True|116381|True|116377|] err=[]
+self-O3-asan run: exit=0 out=[True|116381|True|116377|] err=[]
+stage0-O0-asan run: exit=0 out=[True|113312|True|113308|] err=[]
+stage0-O3-asan run: exit=0 out=[True|113312|True|113308|] err=[]
+DISAGREEMENT: output-mismatch | self | stdout | self-O0-asan,self-O3-asan

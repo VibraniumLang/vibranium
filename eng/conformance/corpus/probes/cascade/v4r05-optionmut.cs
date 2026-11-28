@@ -1,0 +1,1 @@
+Option<Node> o = Some(new Node(1)); Option<Node> p = Some(new Node(2)); OptionMut<Node> m = o.AsMut(); bool b = (m = p.AsMut()).IsSome; WriteLine(b); WriteLine(m.IsSome); sealed class Node(int v) { public int V = v; }

@@ -1,0 +1,15 @@
+validity: valid
+tags: arg.ref arith.int assign.compound class.primary-ctor expr.conditional local.decl localfunc.static optref.asref-pattern optslot.local optslot.take param.ref type.class
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+stage0-O0-needed: libc.so.6
+managed run: exit=0 out=[True|False|3|15|-1|15|True|False|3|17|-1|17|] err=[]
+self-O0 run: exit=0 out=[True|False|3|15|-1|15|True|False|3|17|-1|17|] err=[]
+self-O3-asan run: exit=0 out=[True|False|3|15|-1|15|True|False|3|17|-1|17|] err=[]
+stage0-O0 run: exit=0 out=[True|False|3|20|-1|20|True|False|3|22|-1|22|] err=[]
+stage0-O3-asan run: exit=0 out=[True|False|3|20|-1|20|True|False|3|22|-1|22|] err=[]
+DISAGREEMENT: output-mismatch | stage0 | stdout | stage0-O0,stage0-O3-asan

@@ -1,0 +1,17 @@
+Vec<int> a = [1, 2];
+Vec<int> b = [3, 4, 5];
+ReadOnlySpan<int> t = a.AsReadOnlySpan();
+WriteLine(t[0]);
+t = b.AsReadOnlySpan();
+a.Add(7);
+WriteLine(t[0]);
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=1 out=[] err=[Program.cs(6,6): error VIB003: Borrow conflicts with an active borrow.|]
+DISAGREEMENT: accept-reject | stage0-accepts | self:VIB003 | borrow conflicts with an active borrow.
+

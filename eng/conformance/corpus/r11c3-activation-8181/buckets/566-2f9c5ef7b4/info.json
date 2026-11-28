@@ -1,0 +1,31 @@
+{
+  "signature": "sanitizer | stage0-O3-asan | heap-use-after-free on | ",
+  "category": "known:O11-1",
+  "kind": "sanitizer",
+  "frontends": "stage0-O3-asan",
+  "ids": "heap-use-after-free on",
+  "msg": "",
+  "minTags": [
+    "arith.int",
+    "assign.compound",
+    "ca.borrow-then-move",
+    "ca.form-instance",
+    "ca.loan-ref-proj",
+    "ca.loan-ref-readonly",
+    "ca.move-bare",
+    "ca.owner-holder",
+    "ca.rel-ext",
+    "local.decl",
+    "local.var",
+    "localfunc.static"
+  ],
+  "seed": "8181",
+  "profile": "activation",
+  "index": 8386,
+  "plan": "CaCall\u003ESwitchExpr",
+  "mutations": [],
+  "reduceTests": 31,
+  "sizeBefore": 69,
+  "sizeAfter": 31,
+  "firstSeconds": 2646.3
+}

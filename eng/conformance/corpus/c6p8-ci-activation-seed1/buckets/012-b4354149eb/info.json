@@ -1,0 +1,27 @@
+{
+  "signature": "accept-reject | self-accepts | stage0:VIB003 | cannot move \u0027x\u0027 while it is borrowed by an earlier argument or receiver of the same call.",
+  "category": "new:N17",
+  "kind": "accept-reject",
+  "frontends": "self-accepts",
+  "ids": "stage0:VIB003",
+  "msg": "cannot move \u0027x\u0027 while it is borrowed by an earlier argument or receiver of the same call.",
+  "minTags": [
+    "arg.out",
+    "arith.float-int-runtime",
+    "assign.simple",
+    "local.decl",
+    "localfunc.static",
+    "out.typed-discard",
+    "param.out",
+    "view.loop-assign-value-receiver"
+  ],
+  "seed": "1",
+  "profile": "activation",
+  "index": 122,
+  "plan": "OutArg\u003EFloatNint\u003EViewMove",
+  "mutations": [],
+  "reduceTests": 42,
+  "sizeBefore": 72,
+  "sizeAfter": 45,
+  "firstSeconds": 79.5
+}

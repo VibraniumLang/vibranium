@@ -1,0 +1,30 @@
+{
+  "signature": "accept-reject | stage0-accepts | self:VIB005 | cannot move non-copy value out of a field, indexed element, or borrowed place.",
+  "category": "new:N19",
+  "kind": "accept-reject",
+  "frontends": "stage0-accepts",
+  "ids": "self:VIB005",
+  "msg": "cannot move non-copy value out of a field, indexed element, or borrowed place.",
+  "minTags": [
+    "type.class",
+    "uswitch.case-guard",
+    "uswitch.exhaustive",
+    "uswitch.expr",
+    "uswitch.expr-whole-union-arm",
+    "uswitch.guard",
+    "uswitch.nonunion-label",
+    "uswitch.not-case",
+    "uswitch.option",
+    "uswitch.payload-owner",
+    "uswitch.place"
+  ],
+  "seed": "1",
+  "profile": "soundness",
+  "index": 108,
+  "plan": "UnionSwitch\u003ECondArg\u003EUnionSwitch",
+  "mutations": [],
+  "reduceTests": 15,
+  "sizeBefore": 64,
+  "sizeAfter": 10,
+  "firstSeconds": 70.7
+}

@@ -1,0 +1,27 @@
+{
+  "signature": "accept-reject | stage0-accepts | self:VIB000 | switch expression must be exhaustive (include a \u0027x\u0027 or \u0027x\u0027 catch-all arm) in vibranium.",
+  "category": "new:N2",
+  "kind": "accept-reject",
+  "frontends": "stage0-accepts",
+  "ids": "self:VIB000",
+  "msg": "switch expression must be exhaustive (include a \u0027x\u0027 or \u0027x\u0027 catch-all arm) in vibranium.",
+  "minTags": [
+    "local.decl",
+    "local.var",
+    "method.static",
+    "pattern.type-discard",
+    "switch.expr",
+    "switch.expr-no-discard",
+    "switch.guard-true",
+    "switch.sel.int",
+    "type.class"
+  ],
+  "seed": "4242",
+  "index": 378,
+  "plan": "SwitchExpr\u003EPatternVar",
+  "mutations": [],
+  "reduceTests": 27,
+  "sizeBefore": 69,
+  "sizeAfter": 24,
+  "firstSeconds": 103.8
+}

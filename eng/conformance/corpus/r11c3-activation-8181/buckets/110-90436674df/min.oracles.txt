@@ -1,0 +1,8 @@
+validity: valid
+tags: assign.simple ca.borrow-then-move ca.form-instance ca.loan-view ca.move-explicit ca.owner-vec ca.rel-same local.decl local.uninit localfunc.static
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: VIB003@10:105 Cannot move 'x' while borrowed by '__tmp_3'.
+stage0 check: REJECT VIB003@10:105 Cannot move 'x' while borrowed by '__tmp_3'.
+self check: exit=0 out=[] err=[]
+DISAGREEMENT: accept-reject | self-accepts | stage0:VIB003 | cannot move 'x' while borrowed by 'x'.

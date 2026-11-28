@@ -1,0 +1,20 @@
+Candidate 6 pre5 (with the Roslyn-side N16 fix), release-7 tool, run --exec:
+ReadOnlySpan<int> x = [5, 6, 7];
+WriteLine(G(x)[1]);
+static ReadOnlySpan<int> G(ReadOnlySpan<int> p) { return p[1..]; }
+
+validity: valid
+tags: 
+sdk-roslyn errors: none
+sdk-roslyn warnings (errors under TreatWarningsAsErrors): none
+analyzer: none
+stage0 check: OK
+self check: exit=0 out=[] err=[]
+self-O0-needed: libc.so.6
+self-ir-contract: OK
+stage0-O0-needed: libc.so.6
+stage0-ir-contract: OK
+managed run: exit=0 out=[7|] err=[]
+self-O0 run: exit=0 out=[7|] err=[]
+stage0-O0 run: exit=0 out=[7|] err=[]
+

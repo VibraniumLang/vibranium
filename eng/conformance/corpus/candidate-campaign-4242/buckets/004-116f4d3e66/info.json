@@ -1,0 +1,27 @@
+{
+  "signature": "accept-reject | stage0-accepts | self:VIB000 | no applicable method overload on enclosing type in vibranium.",
+  "category": "new:N1",
+  "kind": "accept-reject",
+  "frontends": "stage0-accepts",
+  "ids": "self:VIB000",
+  "msg": "no applicable method overload on enclosing type in vibranium.",
+  "minTags": [
+    "arg.ref",
+    "arith.int",
+    "assign.compound",
+    "local.decl",
+    "method.static",
+    "param.in",
+    "type.class"
+  ],
+  "seed": "4242",
+  "index": 235,
+  "plan": "PatternVar\u003EOutArg\u003ERefParams",
+  "mutations": [
+    "scope-leak"
+  ],
+  "reduceTests": 45,
+  "sizeBefore": 86,
+  "sizeAfter": 31,
+  "firstSeconds": 74.8
+}
