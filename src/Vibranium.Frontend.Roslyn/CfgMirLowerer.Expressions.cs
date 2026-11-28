@@ -5545,10 +5545,21 @@ internal sealed partial class CfgMirLowerer
             KeepCallHold(outHold, argSpan);
         }
         // N116: an `out` target is borrowed exclusively until the call returns, so later arguments cannot use it.
+        // N131: keep a direct local as the `out` place (so emission sets its post-call drop flag) and hold it with an
+        // analysis-only IsCallHold instead of wrapping it in a runtime ref temp.
         if (hasSubsequentExplicitArgs && passKind is MirPassKind.Ref or MirPassKind.Out)
         {
-            borrowPlace = ReserveReceiverPlaceBeforeArgs(borrowPlace, pType, isMutable: true,
-                isTwoPhaseBorrow: passKind == MirPassKind.Ref, argSpan, isOut: passKind == MirPassKind.Out);
+            if (passKind == MirPassKind.Out && borrowPlace.Projections.Count == 0)
+            {
+                int outHoldId = CreateTempRefLocal(pType, isMutable: true, argSpan, "__out_hold", isCallHold: true);
+                _currentStmts.Add(new MirStatement.BindRef(outHoldId, true, borrowPlace, argSpan));
+                hold = new CallHold { Hold = outHoldId };
+            }
+            else
+            {
+                borrowPlace = ReserveReceiverPlaceBeforeArgs(borrowPlace, pType, isMutable: true,
+                    isTwoPhaseBorrow: passKind == MirPassKind.Ref, argSpan, isOut: passKind == MirPassKind.Out);
+            }
         }
         return WithCallHold(new MirCallArg(passKind, null, borrowPlace, argSpan), hold);
     }

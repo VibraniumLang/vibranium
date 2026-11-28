@@ -652,6 +652,7 @@ public static class BorrowAndMoveAnalyzer
                         _callInvocations.Add(call.Span);
                         foreach (var arg in call.Args)
                         {
+                            if (arg.Hold is int callHold) carriers.Add(callHold);
                             if (arg.ValueOperand is not null) AddOperandCarrierUses(arg.ValueOperand, carriers);
                             if (arg.BorrowPlace is not null) AddPlaceReadCarrierUses(arg.BorrowPlace, carriers);
                         }
@@ -2443,6 +2444,7 @@ public static class BorrowAndMoveAnalyzer
                     var intraCallLive = new HashSet<int>(liveDuringArgs);
                     foreach (var arg in c.Args)
                     {
+                        if (arg.Hold is int callHold) intraCallLive.Add(callHold);
                         if (arg.ValueOperand is not null) AddOperandCarrierUses(arg.ValueOperand, intraCallLive);
                         if (arg.BorrowPlace is not null) AddPlaceReadCarrierUses(arg.BorrowPlace, intraCallLive);
                     }

@@ -1935,7 +1935,7 @@ public sealed class Round12RbWrapTests
             static int Two(int a, int b) => a + b;
             static class HD { public static long F(out Box a, long v) { a = new Box(1); return v; } }
             sealed class Box(int v) { public int V = v; }
-            """, "VIB001,VIB003"];
+            """, "VIB003"];
         yield return ["a116-x02-vec-cond-assign-expr", """
             long t = 0;
             for (int i = 0; i < 200; i++) { t += Run(i % 2 == 0); }
@@ -1945,7 +1945,7 @@ public sealed class Round12RbWrapTests
                 return HD.F(out Vec<int> x, c ? (x = [1, 2, 3]).Count : 0) + x.Count;
             }
             static class HD { public static long F(out Vec<int> a, long v) { a = [9]; return v; } }
-            """, "VIB001,VIB003"];
+            """, "VIB003"];
         yield return ["a116-x03-linear-cond-assign", """
             WriteLine(Run(true));
             static long Run(bool c)
@@ -1956,7 +1956,7 @@ public sealed class Round12RbWrapTests
             }
             static class HD { public static long F(out Res a, long v) { a = new Res(1); return v; } }
             sealed class Res(int id) : IDisposable { public int Id = id; public void Dispose() => WriteLine("dispose " + Id); }
-            """, "VIB000,VIB001,VIB003,VIB006"];
+            """, "VIB000,VIB003,VIB006"];
         yield return ["a90-c03-later-args-read", """
             Some<P> s = Some(new P(1));
             WriteLine(F(in s.Value, s.Value.X));
